@@ -1,0 +1,16 @@
+#==========================================================================
+# Function:    [netUse]
+# Description: Mount my frequent drive
+#==========================================================================
+function netUse {
+  typeset drive=$1
+  shift
+
+  net use $drive >/dev/null && return
+  case $drive in
+  v:) volume='\\sjc-filer17a\projects\wnbu\SwDev' ;;
+  esac
+  set -x
+  net use $drive $volume /persistent:no "/user:amer\\$USER" $@
+  set +x
+}

@@ -1,0 +1,268 @@
+#!/bin/bash
+. ${0%/*}/../etc/tool.env
+#######################################################################
+# File: 	admtool
+# Description:  Sysadmin tools
+# Created:	2002-06-23
+# $Id$
+#######################################################################
+
+#==========================================================================
+# Function:    [f_editFile]
+# Description: .
+#==========================================================================
+function f_editFile {
+  typeset file=$1
+  typeset tmpf=$(F_tmpf 4)
+
+  touch $tmpf
+  $EDITOR $file
+  [ "$file" -nt $tmpf ] && return 0
+  return 1
+}
+
+#==========================================================================
+# Function:    [f_diffNMove]
+# Description: .
+#==========================================================================
+function f_diffNMove {
+  typeset src=$1
+  typeset dst=$2
+  typeset asroot=$3
+  if [ ! -s "$src" ]; then
+    F_logError "Nothing found in $src.  Skip" $LINENO
+    return 1
+  fi
+  if diff -q $src $dst; then
+    F_logProgress "Nothing changed in $dst.  Skip"
+    return 1
+  fi
+  if [ "$asroot" ]; then
+    [ -f $dst ] && F_surun mv $dst $dst.OLD
+    F_surun mv $src $dst
+  else
+    [ -f $dst ] && mv $dst $dst.OLD
+    F_system mv $src $dst
+  fi
+  return 0
+}
+
+function f_rsoption {
+  typeset host=$1
+  typeset rsopt
+
+  case $(etmachines -O -n $host) in
+  sunos)
+    rsopt="--rsync-path=/etrade/pkgs/opensrc/1.0/bin/rsync"
+    ;;
+  *)
+    rsopt="--rsync-path=/etrade/pkgs/linux/intel/opensrc/1.0/bin/rsync"
+    ;;
+  esac
+  echo $rsopt
+}
+
+PATH=$PATH:/sbin:/usr/sbin
+
+#------------------------------------------------------ Begin of script ---
+#------------------------------------------------------ Begin of script ---
+#------------------------------------------------------ Begin of script ---
+
+F_subCommand $*
+oper=$1; shift
+case $oper in
+  setup)
+    user=$OPTARG
+    while getopts :u: i; do
+      case $i in
+      u) user=$OPTARG ;;
+      *) F_usageOper $oper ;;
+      esac
+    done
+    let j=$OPTIND-1; shift $j; OPTIND=0
+    [ $# -gt 0 ] || F_usageOper $oper
+    F_system emssh -u $user keypull $* || exit 1
+    for host in $*; do
+      F_system sshsetup syncto $user@$host
+      F_system ssh $user@$host "
+        ln -s myprofile/* .
+        mv .profile .profile.old
+        ln -s myprofile/.* .
+        ln -s .bash_profile .profile
+        touch .usebash
+      "
+    done
+    ;;
+
+  syncto)
+    [ $# -gt 0 ] || F_usageOper $oper
+    cd $HOME
+    for host in $*; do
+      rsopt="--rsh=ssh --exclude .svn --delete --delete-excluded"
+      rsopt="$rsopt $(f_rsoption $host)"
+      F_system rsync $rsopt -vaz myprofile $host: &
+      F_system rsync $rsopt -vaz etfw2 --exclude /etfw2/pem/ $host: &
+    done
+    F_waitBg "Wait for sync complete"
+    ;;
+
+  cntlm)
+    F_system pkill cntlm
+    #sleep 2
+    domain=CORP
+    passwd=$(F_passwdGetNew $domain) || exit 1
+    if [ -f ~/.tool/cntlm.conf ]; then
+      cfile=~/.tool/cntlm.conf
+    else
+      cfile=$(F_tmpf 0)
+      touch $cfile
+    fi
+    cntlm -g -c $cfile -l 6100 -u $USER@$domain -p $passwd 10.50.79.250:8080
+    ;;
+
+  #@Use: kinit user password
+  #@Des: Kerberos init (authentication session)
+  kinit)
+    for path in /etrade/pkgs/linux/intel/sunjava2/1.5.0r06DST2 \
+        /usr/kerberos; do
+      if [ -x $path/bin/kinit ]; then
+        exec $path/bin/kinit $@
+      fi
+    done
+    ;;
+
+  syncetf)
+    dir=~/etfw2/
+    for host in $*; do
+      rsopt="--rsh=ssh $(f_rsoption $host)"
+      exlist="--exclude .svn --exclude pem/cfg --exclude pem/etc --exclude pem/packages"
+      F_system rsync --delete --delete-excluded $rsopt -vaz $exlist $dir $host:$dir
+    done
+    F_waitBg "Wait for sync complete"
+    ;;
+
+  syncdir)
+    [ $# -gt 1 ] || F_usageOper $oper
+    dir=$1
+    shift
+    for host in $*; do
+      rsopt="--rsh=ssh"
+      rsopt="$rsopt $(f_rsoption $host)"
+      case $dir in
+      */selaf*|selaf*)
+        exlist="--exclude .svn --exclude OLD --exclude dump --exclude log --exclude doc --exclude doc_script --exclude webapp --exclude var --exclude ffprofiles"
+        ;;
+      *)
+        exlist="--exclude .svn"
+        ;;
+      esac
+      F_system rsync --delete --delete-excluded $rsopt -vaz $exlist $dir $host:$dir
+    done
+    F_waitBg "Wait for sync complete"
+    ;;
+
+#@Use: synergy [host]
+#@Des: Running synergy
+#=begin
+# This detects where you're logged in from (using SSH) and run a client
+# connect to the server you're from.  This allow laptop to ssh connect
+# to a Unix ws and have it connected to the current ip address
+#
+# If host is specified, it ssh to host first before run.  This allows
+# running this command on the laptop and have the WS connected to it
+# w/o having to ssh in.
+#=end
+  synergy)
+    dossh= ropt= user=$LOGNAME
+    while getopts :su: i; do
+      case $i in
+      s) dossh=yes ropt="$ropt -$i" ;;
+      u) user=$OPTARG ;;
+      *) F_usageOper $oper ;;
+      esac
+    done
+    let j=$OPTIND-1; shift $j; OPTIND=0
+    rhost=$1
+    if [ "$rhost" -a "$rhost" != "$EM_HOST" ]; then
+      F_exec ssh $user@$rhost bin/sshsetup $oper $ropt -u $LOGNAME
+    else
+      set -- $SSH_CLIENT
+      [ $# -gt 0 ] || F_abort "You must logon from ssh to invoke this"
+      fromip=$1
+      pgrep -f 'X .*:0'
+      if [ $? -ne 0 ]; then
+        F_confirm "X windows not started.  Starting" || exit 1
+        DISPLAY=:0 nohup startx &
+        F_wait 20 "Waiting for x windows to start"
+        pgrep -f 'X :0' || exit 1
+      fi
+      F_system pkill synergyc && F_wait 1
+      F_logProgress "Turn off screen saver"
+      DISPLAY=:0 F_system xset -dpms
+      if [ "$dossh" ]; then
+        F_system ssh -f -N -L localhost:24800:$fromip:24800 $user@$fromip
+        F_exec synergyc --display :0 localhost
+      else
+        F_exec synergyc --display :0 $fromip
+      fi
+    fi
+    ;;
+
+  splitvpn)
+    dest=$1
+    [ "$dest" ] || dest=etrade
+    (
+      ifconfig
+      netstat -nrf inet
+      F_rbrun vpnhelper $dest split 
+    ) 2>&1 | \
+    tee ~/$oper.log
+    ;;
+
+  vpn-connect)
+    (
+      F_system sshsetup splitvpn
+      # Must put tunnel all in background to avoid blockage if
+      # a remote node is down
+      F_system emssh tunnel all &
+      sleep 3
+      open -a iCal
+      open -a Mail
+      # These require tunnel to finish opening
+      sleep 3
+      open -a Firefox https://citrix.etrade.com/vpn/index.html
+      open -a Firefox https://cwa.corp.etradegrp.com/
+    ) &
+    ;;
+
+  homewire-connect)
+    #open -a 'OpenDNS Updater'
+    #open -a Skype
+    ;;
+
+  etrade-connect)
+    F_system emssh tunnel all
+    open -a iCal
+    open -a Mail
+    open -a "Microsoft Messenger"
+    set -- $(ifconfig en0 inet | grep 'inet')
+    if [ $# -gt 2 ]; then
+      addr=$2
+      case $addr in
+      10.85.41.*|10.85.40.*)
+        F_exec ssh tvuong@lxp6d199m0 bin/sshsetup synergy
+        ;;
+      esac
+    fi
+    ;;
+
+  rsynergy)
+    F_exec ssh tvuong@lxp6d199m0 bin/sshsetup synergy
+    ;;
+
+  *)
+    F_usageOper $oper
+    ;;
+esac
+exit 0
+

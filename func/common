@@ -1,0 +1,382 @@
+############################################################################
+# File:        func/common
+# Author:      tvuong
+# Created:     Thu Mar 23 22:38:28 PST 2006
+# Description:
+############################################################################
+case $(uname) in
+Linux)   OSTYPE=linux   ;;
+SunOS)   OSTYPE=solaris ;;
+CYGWIN*) OSTYPE=cygwin ;;
+esac
+
+#==========================================================================
+# Function:    [cd2]
+# Description: cd to with subdir after that.  Use for cd aliases
+# Use:         cd2 basedir subdir
+#==========================================================================
+function cd2 {
+  _cd $1/$2
+}
+
+#-------------------------------------------- Edit from a tag directory ---
+function cedtag {
+  \cd $1
+  if [ "$DISPLAY" ]; then
+    gvim -t $2
+  else
+    $EDITOR -t $2
+  fi
+  \cd ~-
+}
+
+#==========================================================================
+# Function:    [genalias]
+# Description: Generate alias list
+#==========================================================================
+function genalias {
+  typeset cfile= alopt= learnonly=
+  while getopts :fl i; do
+    case $i in
+    f) alopt="$alopt -$i" ;;
+    l) learnonly=yes ;;
+    esac
+  done
+  let j=$OPTIND-1; shift $j; OPTIND=0
+  #svn update ~/myprofile/.alias.yml
+  if [ "$learnonly" ]; then
+    cd
+    ruby -S alias.rb make2 $alopt .alias-common || return 1
+    realias
+    cd ~-
+  else
+    alias >~/.newalias
+    cd
+    ruby -S alias.rb make2 -n ~/.newalias $alopt .alias-common || return 1
+    realias
+    cd ~-
+  fi
+}
+
+#==========================================================================
+# Function:    [realias]
+# Description: Reload all aliases and common functions
+#==========================================================================
+function realias {
+  for file in ~/.alias-* ~/func/common ~/func/$OSTYPE; do
+    if [ -r $file ]; then
+      echo "+Loading $file"
+      . $file
+    fi
+  done
+}
+
+function l {
+  \ls -sFC $* | less -EX
+}
+
+#---------------------------------------------------------- function : _cd
+# Purpose  : A customized 'cd' version to display essential info on the
+#	xterm title bar
+#-------------------------------------------------------------------------
+function _cdTitle {
+  [ "$HOST" ] || export HOST=$(hostname)
+  if [ "$CLEARCASE_ROOT" ]; then
+    ident="$HOST(${CLEARCASE_ROOT##*/})"
+  elif [ "$ET_ENVIRONMENT" ]; then
+    ident="$ET_ENVIRONMENT:$ET_APPLICATION:$ET_SERVER:$ET_INSTANCE:$HOST"
+  else
+    ident=$HOST
+  fi
+  typeset here=${PWD##*/fuse/}
+  if [ "$here" != "$PWD" ]; then
+    rhost=${here%%/*}
+    export HCD_HOST=$rhost
+    ident="$ident($rhost)"
+  fi
+  echo -n "]0;$ident"
+  if [ "$BASH_VERSION" ]; then
+    export PS1="[\!.$ident] \W>"
+  else
+    export PS1="[!.$ident] ${PWD##*/}>"
+  fi
+}
+
+#==========================================================================
+# Function:    [hcd]
+# Description: CD while under fuse dir
+#==========================================================================
+function hcd {
+  typeset path=$1 host=$2
+
+  if [ "$host" ]; then
+    if ! grep $host ~/.ssh/known_hosts >/dev/null; then
+      emssh keypush $host
+    fi
+    export HCD_HOST=$host
+  else
+    host=$HCD_HOST
+  fi
+  path=~/fuse/$host/$path
+  _cd $path
+}
+
+#==========================================================================
+# Function:    [_cd]
+# Description: Emulate the switch cd of ksh to bash
+# Use:         cd newdir | cd oldir newdir
+#==========================================================================
+function _cd {
+  typeset ident
+
+  if [ "$BASH" -a $# -gt 1 ]; then
+    'cd' ${PWD/$1/$2}
+  else
+    if [ "$#" -gt 0 ]; then
+      'cd' "$*"
+    else
+      'cd'
+    fi
+  fi
+  _cdTitle
+}
+alias cd=_cd
+
+#==========================================================================
+# Function:    [pd newdir] or [pd pattern replacement]
+# Description: Push to new directory.  Also emulate the cd substitution
+#	of ksh.
+# Use:         .
+#==========================================================================
+function pd {
+  if [ "$BASH" -a $# -gt 1 ]; then
+    pushd ${PWD/$1/$2}
+  else
+    pushd $*
+  fi
+  _cdTitle
+}
+
+function xname {
+  echo -n "]0;$*:$HOST:$TTY"
+}
+
+function cls {
+  clear
+  echo -n "[m"
+}
+
+function scrsend {
+  echo "]83;${*}"
+}
+function scropen {
+  echo "]83;screen -t \"$*\" ${*}"
+}
+
+function _sudo {
+  if [ -x /local/bin/sudo ]; then
+    /local/bin/sudo $@
+  else
+    \sudo $@
+  fi
+}
+
+function xvim {
+  xterm -rv -title "VIM:$@" -bg black -fg yellow -e vim $@ &
+}
+
+#--- gvim ---
+case $OSTYPE in
+cygwin)
+  export XEDITOR="cygtool gvim"
+  export GVIM=$XEDITOR
+  alias gvim=$XEDITOR
+  ;;
+*)
+  unalias gvim 2>/dev/null
+  set -- $(/usr/bin/which gvim 2>/dev/null)
+  if [ $? -eq 0 ]; then
+    export XEDITOR=$*
+    export GVIM=$XEDITOR
+  else
+    alias gvim=xvim
+  fi
+  ;;
+esac
+
+#==========================================================================
+# Function:    [mklog]
+# Description: Make with log
+# Use:         .
+#==========================================================================
+function mklog {
+  make $@ 2>&1 | tee make.log
+  echo "Log is in make.log"
+}
+
+#==========================================================================
+# Function:    [gvmake]
+# Description: .
+# Use:         .
+#==========================================================================
+function gvmake {
+  gvim -n -c "copen | make $@"
+}
+
+#==========================================================================
+# Function:    [nodisplay]
+# Description: Unset the diplay and mark it for further setting
+#==========================================================================
+function nodisplay {
+  export NODISPLAY=$DISPLAY
+  [ "$NODISPLAY" ] || NODISPLAY=yes
+  unset DISPLAY
+  echo "Display unset"
+}
+
+function ftpput {
+  typeset file=$1 dest=$2
+
+  [ "$dest" ] || return 1
+  set -x
+  curl -T $file --netrc ftp://$dest
+  rc=$?
+  set +x
+  return $rc
+}
+
+function setvimfont {
+  eval $(shhelper.rb vimFont "$@")
+}
+
+function terminal {
+  typeset count=${1:-1}
+  shift
+
+  if [ $# -gt 0 ]; then
+    export MRXVT_OPT=$@
+  else
+    set -- $MRXVT_OPT
+  fi
+  while [ $count -gt 0 ]; do
+    set -x
+    mrxvt -ls "$@" &
+    set +x
+    let count=$count-1
+  done
+}
+
+function cterm {
+  typeset count=${1:-1}
+
+  ruby -e '
+    1.upto(ARGV.shift.to_i) {|count|
+      value = "%02x%02x%02x" % [16+rand(40), 16+rand(40), 16+rand(40)]
+      bg = "-bg \\##{value}"
+      ENV["MRXVT_OPT"] = bg
+      cmd = "mrxvt #{bg} -ls &"
+      STDERR.puts "+ #{cmd}"
+      system cmd
+    }
+  ' $count
+}
+
+#==========================================================================
+# Function:    [ssh2]
+# Description: Run ssh with env RDISPLAY/RHOST set to indicate the source
+#       of the ssh session.  This allows destination to communicate with
+#       the source node if needed (i.e. for remote editing support)
+#==========================================================================
+function ssh2 {
+  typeset dest=$1
+
+  set -- $(host $dest)
+  if [ $# -gt 3 ]; then
+    ip=$4
+    set -- $(ip route get $ip)
+    if [ $# -gt 4 ]; then
+      if [ "$2" == "via" ]; then
+        myip=$7
+      else
+        myip=$5
+      fi
+      export SSH_RDISPLAY=$DISPLAY
+      export SSH_RHOST=$myip
+    fi
+  fi
+  ssh $dest
+}
+
+function l {
+  \ls -sFC $* | less -EX
+}
+
+function _sudo {
+  if /usr/bin/which etcmd >/dev/null 2>&1; then
+    etcmd -s $@
+  else
+    sudo $@
+  fi
+}
+
+function _rm {
+  if [ -d /etrade/.snapshots ]; then
+    \rm $@
+  else
+    qu.rb remove $@
+  fi
+}
+
+if ! /usr/bin/which pgrep >/dev/null 2>&1; then
+  function pgrep {
+    ps -ax | grep $@ | egrep -v "grep"
+  }
+  function pkill {
+    set -- $(ps -ax | grep "$@" | \
+             sed -e "/(grep|sed)/D" -e 's/^ +//' -e 's/ .*$//')
+    if [ $# -gt 0 ]; then
+      kill $@
+    fi
+  }
+fi
+alias rm=_rm
+
+
+function _ssh {
+  typeset target=$1
+  if [ "$USER" == "tvuong" ]; then
+    emssh connect $@
+  else
+    if ifconfig | grep -w inet | grep 10.150.175; then
+      case $target in
+      *m7)
+        emssh -l tvuong connect lxp6d199m0#$@
+        ;;
+      *)
+        emssh -l tvuong connect $@
+        ;;
+      esac
+    else
+      emssh -l tvuong connect $@
+    fi
+  fi
+}
+typeset -fx _ssh
+alias s=_ssh
+
+function setview {
+  typeset view=$1
+
+  if [ ! "$view" ]; then
+    [ -f ~/.ccview ] && view=$(<~/.ccview)
+  else
+    echo $view >~/.ccview
+  fi
+  if [ ! "$view" ]; then
+    echo "+ No view specivied" >&2
+    return 1
+  fi
+  cleartool startview $view &&
+  exec cleartool setview -login $view
+}
+

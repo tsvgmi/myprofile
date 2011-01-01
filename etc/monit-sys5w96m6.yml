@@ -1,0 +1,12 @@
+---
+servers:
+  - [tcp, sys5w96m6:22 ]
+  - [tcp, sys6w96m6:22 ]
+  - [tcp, sys7w96m6:22 ]
+  - [tcp, sys8w96m6:22 ]
+controller:
+  - [http, sys5w96m6:80 ]
+  # mmonit server
+  - [http, sys5w96m6:8080 ]
+database:
+  - [mysql, localhost:3306]

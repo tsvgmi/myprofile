@@ -1,0 +1,87 @@
+<?xml version='1.0'?>
+<!DOCTYPE signatures SYSTEM "file://localhost/System/Library/DTDs/BridgeSupport.dtd">
+<signatures version='0.9'>
+<enum name='iTermEnumDetailed' value='1819763828'/>
+<enum name='iTermEnumStandard' value='1819767668'/>
+<enum name='iTermSavoAsk' value='1634954016'/>
+<enum name='iTermSavoNo' value='1852776480'/>
+<enum name='iTermSavoYes' value='2036691744'/>
+<class name='iTermDocument'>
+<method selector='modified'>
+<retval type='B'/>
+</method>
+</class>
+<class name='iTermITermApplication'>
+<method selector='frontmost'>
+<retval type='B'/>
+</method>
+<method selector='print:printDialog:withProperties:'>
+<arg type='B' index='1'/>
+</method>
+</class>
+<class name='iTermItem'>
+<method selector='exists'>
+<retval type='B'/>
+</method>
+</class>
+<class name='iTermPrintSettings'>
+<method selector='collating'>
+<retval type='B'/>
+</method>
+<method selector='exists'>
+<retval type='B'/>
+</method>
+<method selector='setCollating:'>
+<arg type='B' index='0'/>
+</method>
+</class>
+<class name='iTermTerminal'>
+<method selector='antiAlias'>
+<retval type='B'/>
+</method>
+<method selector='setAntiAlias:'>
+<arg type='B' index='0'/>
+</method>
+</class>
+<class name='iTermWindow'>
+<method selector='closeable'>
+<retval type='B'/>
+</method>
+<method selector='floating'>
+<retval type='B'/>
+</method>
+<method selector='miniaturizable'>
+<retval type='B'/>
+</method>
+<method selector='miniaturized'>
+<retval type='B'/>
+</method>
+<method selector='modal'>
+<retval type='B'/>
+</method>
+<method selector='resizable'>
+<retval type='B'/>
+</method>
+<method selector='setMiniaturized:'>
+<arg type='B' index='0'/>
+</method>
+<method selector='setVisible:'>
+<arg type='B' index='0'/>
+</method>
+<method selector='setZoomed:'>
+<arg type='B' index='0'/>
+</method>
+<method selector='titled'>
+<retval type='B'/>
+</method>
+<method selector='visible'>
+<retval type='B'/>
+</method>
+<method selector='zoomable'>
+<retval type='B'/>
+</method>
+<method selector='zoomed'>
+<retval type='B'/>
+</method>
+</class>
+</signatures>

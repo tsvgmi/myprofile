@@ -1,0 +1,156 @@
+#!/usr/bin/env macruby
+#---------------------------------------------------------------------------
+# File:        webpass.rb
+# Date:        Wed Nov 07 09:23:03 PST 2007
+# $Id: vpnhelper.rb 17 2009-12-31 23:00:16Z tvuong $
+#---------------------------------------------------------------------------
+#+++
+require File.dirname(__FILE__) + "/../../etc/toolenv"
+require 'mtool/core'
+require 'yaml'
+require 'fileutils'
+require 'find'
+
+framework 'Foundation'
+framework 'ScriptingBridge'
+ 
+class SBElementArray
+  def [](value)
+    if value.is_a?(String)
+      self.objectWithName(value)
+    else
+      super
+    end
+  end
+end
+
+class ITuneHelper
+  extendCli __FILE__
+
+  def initialize
+    @itunes = SBApplication.applicationWithBundleIdentifier("com.apple.itunes")
+    @itunes.run
+    #load_bridge_support_file 'iTunes.bridgesupport'
+  end
+
+  def get_playlist(*plists)
+    result = []
+    plists.each do |plist|
+      playlist = @itunes.sources["Library"].playlists[plist]
+      playlist.tracks.each do |afl|
+        afl.reveal
+        if afl.location && test(?f, afl.location.path)
+          album  = afl.album.gsub(/\//, '_')
+          result << [afl, album, afl.location.path]
+        end
+      end
+    end
+    result
+  end
+
+  def sync_media(plists, *ddirs)
+    fset   = []
+    xfsize = 0
+    icount = (ITuneHelper.getOption(:incr) || 0).to_i
+    get_playlist(*plists.split(',')).each do |afl, album, file|
+      fsize  = (File.size(file)+99999)/100000
+      fset << [album, fsize, file]
+      xfsize += fsize
+      if icount > 0
+        afl.playedCount += icount
+        afl.playedDate = NSDate.date
+      end
+      STDERR.print "."
+      STDERR.flush
+    end
+    Plog.info "Attempt to transfer #{fset.size} files - #{xfsize/10}M"
+
+    csize   = 0
+    outlist = {}
+    ddirs.each do |dentry|
+      dlist = []
+      ddir, dsize = dentry.split(/:/)
+      dsize = dsize ? dsize.to_i*10 : 1_000_000_000
+      while nfile = fset.shift
+        album, fsize, file = nfile
+        csize += fsize
+        if (csize >= dsize)
+          fset.unshift(nfile)
+          csize = 0
+          break
+        end
+        dfile = "#{ddir}/#{album}/#{File.basename(file)}"
+        dlist << [file, dfile, album]
+      end
+      outlist[ddir] = dlist
+    end
+    if ofile = ITuneHelper.getOption(:ofile)
+      fod = File.open(ofile, "w")
+    else
+      fod = STDOUT
+    end
+    fod.puts outlist.to_yaml
+    fod.close
+    true
+  end
+
+  def self.copy_media(ymlfile)
+    require 'find'
+
+    config = YAML.load_file(ymlfile)
+
+    verbose = getOption(:verbose)
+    if getOption(:purge)
+      Pf.system "rm -rf #{config.keys.join(' ')}"
+    else
+      cflist = {}
+      config.each do |ddir, content|
+        Find.find(ddir) do |afile|
+          next unless test(?f, afile)
+          cflist[afile] = true
+        end
+        content.each do |sfile, dfile|
+          cflist.delete(dfile)
+        end
+      end
+      if cflist.size > 0
+        FileUtils.remove(cflist.keys, :verbose=>verbose)
+      end
+    end
+
+    config.each do |ddir, content|
+      content.each do |sfile, dfile|
+        if test(?f, dfile)
+          Plog.info "Destination #{dfile} exists - skip"
+          next
+        end
+        if !test(?f, sfile)
+          Plog.info "Source #{sfile} does not exist - skip"
+          next
+        end
+        ddir = File.dirname(dfile)
+        unless test(?d, ddir)
+          Pf.system("mkdir -p '#{ddir}'", 1)
+          # This is gross, it calls to system w/o quoting...  So bad code
+          #FileUtils.mkpath(ddir, :verbose=>verbose)
+        end
+        FileUtils.cp(sfile, dfile, :verbose=>verbose)
+      end
+    end
+    true
+  end
+
+  def self.cliNew
+    new
+  end
+end
+
+if (__FILE__ == $0)
+  ITuneHelper.handleCli(
+        ['--incr',    '-i', 1],
+        ['--ofile',   '-o', 1],
+        ['--verbose', '-v', 0]
+  )
+end
+
+
