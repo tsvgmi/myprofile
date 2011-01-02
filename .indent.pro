@@ -1,0 +1,12 @@
+-nbc
+-br
+-brs
+-bli0
+-nbs
+-ncdb
+-ci2
+-ncs
+-i4
+-npcs
+-nprs
+-sob
