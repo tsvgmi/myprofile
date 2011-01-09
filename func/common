@@ -94,13 +94,18 @@ function _cdTitle {
     export HCD_HOST=$rhost
     ident="$ident($rhost)"
   fi
-  echo -n "]0;$ident"
+  termTitle $ident
   if [ "$BASH_VERSION" ]; then
     export PS1="[\!.$ident] \W>"
   else
     export PS1="[!.$ident] ${PWD##*/}>"
   fi
 }
+
+function termTitle {
+  echo -n "]0;$*"
+}
+
 
 #==========================================================================
 # Function:    [hcd]

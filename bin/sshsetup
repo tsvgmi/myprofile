@@ -235,6 +235,13 @@ case $oper in
     ) &
     ;;
 
+  cvpn-reset)
+    set -x
+    sudo kextunload /System/Library/Extensions/CiscoVPN.kext
+    sleep 1
+    sudo kextload /System/Library/Extensions/CiscoVPN.kext
+    ;;
+
   homewire-connect)
     #open -a 'OpenDNS Updater'
     #open -a Skype

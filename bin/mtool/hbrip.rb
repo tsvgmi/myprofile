@@ -97,7 +97,7 @@ EOI
     @data[:chapters].select do |title, chapter, duration|
       duration > "00:01:00"
     end.each do |title, chapter, duration|
-      #puts "T: #{title} C: #{chapter} D: #{duration}"
+      puts "T: #{title} C: #{chapter} D: #{duration}"
       seconds = 0
       duration.split(/:/).each do |f|
         seconds = seconds*60 + f.to_i
@@ -105,6 +105,7 @@ EOI
       tsize[title] ||= 0
       tsize[title] += seconds
     end
+    p tsize
     maxtitle, duration = tsize.max
     _rip_chapter(0, maxtitle.to_i, encopt)
   end
