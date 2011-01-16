@@ -91,22 +91,24 @@ EOI
     end
   end
 
-  def rip_dvd
+  def rip_dvd(maxtitle = nil)
     encopt  = HbRip.encode_option('highdvd')
-    tsize   = {}
-    @data[:chapters].select do |title, chapter, duration|
-      duration > "00:01:00"
-    end.each do |title, chapter, duration|
-      puts "T: #{title} C: #{chapter} D: #{duration}"
-      seconds = 0
-      duration.split(/:/).each do |f|
-        seconds = seconds*60 + f.to_i
+    unless maxtitle
+      tsize   = {}
+      @data[:chapters].select do |title, chapter, duration|
+        duration > "00:01:00"
+      end.each do |title, chapter, duration|
+        puts "T: #{title} C: #{chapter} D: #{duration}"
+        seconds = 0
+        duration.split(/:/).each do |f|
+          seconds = seconds*60 + f.to_i
+        end
+        tsize[title] ||= 0
+        tsize[title] += seconds
       end
-      tsize[title] ||= 0
-      tsize[title] += seconds
+      p tsize
+      maxtitle, duration = tsize.max {|a, b| a[1] <=> b[1]}
     end
-    p tsize
-    maxtitle, duration = tsize.max
     _rip_chapter(0, maxtitle.to_i, encopt)
   end
 

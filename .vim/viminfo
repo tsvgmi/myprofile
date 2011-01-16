@@ -17,7 +17,7 @@
 $
 
 # Command Line History (newest to oldest):
-:qa
+:1
 
 # Search String History (newest to oldest):
 ? \<host\>
@@ -51,27 +51,25 @@ $
 "0	LINE	0
 	  echo -n "]0;$ident"
 ""1	LINE	0
-	  echo -n "]0;$ident"
+	set -x
 "2	LINE	0
-	  `command` varchar(40) DEFAULT NULL,
+	  cd $here
 "3	LINE	0
-	  `cmdline` datetime DEFAULT NULL,
+	  here=$PWD
 "4	LINE	0
+	  echo -n "]0;$ident"
+"5	LINE	0
+	  `command` varchar(40) DEFAULT NULL,
+"6	LINE	0
+	  `cmdline` datetime DEFAULT NULL,
+"7	LINE	0
 	  KEY `index_em_accounts_on_function` (`function`),
 	  KEY `index_em_accounts_on_em_instance_id` (`em_instance_id`),
 	  KEY `rcs_file_id` (`rcs_file_id`)
-"5	LINE	0
-	  `rcs_file_id` int(11) NOT NULL DEFAULT '0',
-"6	LINE	0
-	  `em_instance_id` int(11) NOT NULL DEFAULT '0',
-"7	LINE	0
-	1. There are 4 dead.  2 civilians and 2 soldiers.  But only 2 soldiers are honored by dignitaries.
-	
-	2. Thousand-fold retaliation.  Does that mean 2000 soldiers dead on NK in response to this attack?
 "8	LINE	0
-	    brate   = getOption(:brate) || 4000
+	  `rcs_file_id` int(11) NOT NULL DEFAULT '0',
 "9	LINE	0
-	    encopt  = config[profile]
+	  `em_instance_id` int(11) NOT NULL DEFAULT '0',
 "a	LINE	0
 	  def self.to_divx(srcfile)
 	    encopt  = HbRip.encode_option('divx')
@@ -151,10 +149,10 @@ $
 	s= package_list(' xeC')
 "y	LINE	0
 	dWi= f] D
-"z	LINE	0
+"z@	LINE	0
 	0wcwf_send2f" Dn
 "-	CHAR	0
-	ident
+	here
 
 # global variables:
 !ST_UNIX	NUM	2
@@ -163,18 +161,21 @@ $
 !ST_WIN_CMD	NUM	0
 
 # File marks:
-'0  24  31  ~/myprofile/etc/etproxy.pac
-'1  493  4  ~/etfw2/bin/emssh.sh
-'2  98  2  ~/myprofile/func/common
-'3  3  47  ~/Library/Application Support/Firefox/Profiles/bqnp4j7o.default/itsalltext/news.yahoo.com.1k1h201e27.txt
-'4  99  0  ~/schema.txt
-'5  10  5  ~/cep/src/demo0/run.sh
-'6  1  0  ~/cep/src/demo0/Makefile
-'7  3  3  ~/Esper/esper-4.0.0/examples/testing/setenv.sh
-'8  1  39  ~/Downloads/test.dat
-'9  8  48  ~/test.dmp
+'0  1  0  ~/tewok/dosync
+'1  24  31  ~/myprofile/etc/etproxy.pac
+'2  493  4  ~/etfw2/bin/emssh.sh
+'3  98  2  ~/myprofile/func/common
+'4  3  47  ~/Library/Application Support/Firefox/Profiles/bqnp4j7o.default/itsalltext/news.yahoo.com.1k1h201e27.txt
+'5  99  0  ~/schema.txt
+'6  10  5  ~/cep/src/demo0/run.sh
+'7  1  0  ~/cep/src/demo0/Makefile
+'8  3  3  ~/Esper/esper-4.0.0/examples/testing/setenv.sh
+'9  1  39  ~/Downloads/test.dat
 
 # Jumplist (newest first):
+-'  1  0  ~/tewok/dosync
+-'  4  8  ~/tewok/dosync
+-'  2  0  ~/tewok/dosync
 -'  24  31  ~/myprofile/etc/etproxy.pac
 -'  1  0  ~/myprofile/etc/etproxy.pac
 -'  493  4  ~/etfw2/bin/emssh.sh
@@ -271,17 +272,415 @@ $
 -'  155  6  ~/myprofile/bin/mtool/hbrip.rb
 -'  217  0  ~/myprofile/bin/mtool/hbrip.rb
 -'  83  2  ~/myprofile/bin/mtool/hbrip.rb
--'  67  0  ~/myprofile/bin/mtool/hbrip.rb
--'  23  2  ~/myprofile/bin/mtool/hbrip.rb
--'  24  31  ~/myprofile/etc/etproxy.pac
 
 # History of marks within files (newest to oldest):
 
-> ~/myprofile/.git/COMMIT_EDITMSG
+> ~/etfw2/bin/emenv.sh
+	"	122	6
+
+> ~/etfw2/bin/em2roll.sh
+	"	71	25
+
+> ~/etfw2/lib/pem/prun.rb
+	"	1	0
+
+> ~/etfw2/-MiniBufExplorer-
+	"	1	0
+	.	2	0
+	+	2	0
+	+	2	0
+
+> ~/doc/README.environment
+	"	27	18
+
+> ~/Library/Application Support/Firefox/Profiles/bqnp4j7o.default/itsalltext/wiki.corp.etradegrp.com.2a3c1y3c2d.txt
+	"	152	0
+	^	153	2
+	.	151	0
+	+	65	20
+	+	58	27
+	+	105	33
+	+	155	5
+	+	112	0
+	+	133	0
+	+	136	0
+	+	139	0
+	+	112	0
+	+	106	0
+	+	111	1
+	+	112	32
+	+	113	1
+	+	112	29
+	+	118	1
+	+	114	0
+	+	118	0
+	+	115	30
+	+	116	1
+	+	117	0
+	+	118	1
+	+	118	19
+	+	119	1
+	+	121	0
+	+	122	0
+	+	125	0
+	+	128	0
+	+	131	0
+	+	134	0
+	+	135	0
+	+	135	0
+	+	137	0
+	+	141	0
+	+	144	0
+	+	147	0
+	+	150	0
+	+	153	0
+	+	118	0
+	+	154	0
+	+	155	0
+	+	118	0
+	+	119	61
+	+	119	122
+	+	119	181
+	+	119	235
+	+	119	288
+	+	119	338
+	+	120	0
+	+	122	106
+	+	122	160
+	+	122	213
+	+	123	0
+	+	125	98
+	+	125	155
+	+	126	0
+	+	128	98
+	+	128	156
+	+	128	210
+	+	128	265
+	+	128	316
+	+	129	0
+	+	131	106
+	+	131	160
+	+	132	0
+	+	134	101
+	+	134	156
+	+	134	214
+	+	134	270
+	+	134	328
+	+	135	0
+	+	137	100
+	+	137	156
+	+	137	211
+	+	137	264
+	+	137	315
+	+	137	373
+	+	137	431
+	+	137	487
+	+	137	543
+	+	137	594
+	+	138	0
+	+	141	106
+	+	141	157
+	+	141	216
+	+	141	265
+	+	141	325
+	+	142	0
+	+	144	104
+	+	144	161
+	+	144	220
+	+	144	272
+	+	144	324
+	+	144	377
+	+	144	430
+	+	144	484
+	+	144	539
+	+	145	0
+	+	147	112
+	+	148	0
+	+	151	0
+
+> ~/doc/README
+	"	446	21
+
+> ~/doc/-MiniBufExplorer-
+	"	1	0
+	.	2	0
+	+	2	0
+	+	2	0
+	+	2	0
+	+	2	0
+	+	2	0
+	+	2	0
+	+	2	0
+	+	2	0
+	+	2	0
+
+> ~/doc/barrett_diagram
+	"	103	1
+
+> ~/doc/README.linux
+	"	12	38
+
+> ~/Library/Application Support/Firefox/Profiles/bqnp4j7o.default/itsalltext/wiki.corp.etradegrp.com.2g1v262x23.txt
+	"	40	0
+	^	29	118
+	.	29	117
+	+	1	246
+	+	1	0
+	+	5	24
+	+	27	12
+	+	49	20
+	+	149	14
+	+	51	16
+	+	64	0
+	+	53	25
+	+	7	135
+	+	53	76
+	+	49	0
+	+	4	8
+	+	5	25
+	+	9	30
+	+	53	0
+	+	11	0
+	+	10	0
+	+	15	0
+	+	14	27
+	+	15	24
+	+	15	0
+	+	16	93
+	+	15	0
+	+	19	0
+	+	17	0
+	+	18	7
+	+	16	196
+	+	24	22
+	+	25	56
+	+	22	0
+	+	9	20
+	+	28	0
+	+	34	65
+	+	41	75
+	+	1	132
+	+	1	198
+	+	3	0
+	+	149	0
+	+	54	0
+	+	55	25
+	+	56	19
+	+	58	66
+	+	88	6
+	+	65	0
+	+	66	0
+	+	88	0
+	+	59	69
+	+	64	0
+	+	61	2
+	+	60	64
+	+	63	12
+	+	58	0
+	+	118	6
+	+	147	5
+	+	121	0
+	+	147	0
+	+	148	0
+	+	149	0
+	+	118	10
+	+	91	70
+	+	94	36
+	+	92	65
+	+	118	0
+	+	98	66
+	+	99	65
+	+	94	9
+	+	103	33
+	+	51	36
+	+	113	47
+	+	94	65
+	+	95	43
+	+	96	13
+	+	94	0
+	+	101	21
+	+	116	48
+	+	2	0
+	+	6	23
+	+	28	0
+	+	29	117
+
+> ~/Library/Application Support/Firefox/Profiles/bqnp4j7o.default/itsalltext/wiki.corp.etradegrp.com.292v1t242x.txt
+	"	8	11
+
+> ~/var/thienvuong-cifile.yml
+	"	79	2
+
+> ~/etfw2/bin/emssh.sh
+	"	427	4
+	.	399	0
+	+	536	0
+	+	482	54
+	+	489	24
+	+	525	7
+	+	525	0
+	+	530	5
+	+	514	0
+	+	515	0
+	+	523	0
+	+	514	24
+	+	538	25
+	+	538	25
+	+	539	0
+	+	524	32
+	+	525	0
+	+	527	5
+	+	528	0
+	+	514	0
+	+	399	12
+	+	399	19
+	+	399	6
+	+	399	0
+	+	401	54
+	+	399	0
+	a	399	4
+
+> ~/Library/Application Support/Firefox/Profiles/bqnp4j7o.default/itsalltext/wiki.corp.etradegrp.com.2b241g2p35.txt
+	"	64	19
+	.	68	0
+	+	67	37
+	+	68	53
+	+	68	5
+	+	34	51
+	+	31	12
+	+	35	43
+	+	43	45
+	+	51	0
+	+	54	31
+	+	53	12
+	+	47	12
+	+	53	39
+	+	50	39
+	+	44	31
+	+	43	53
+	+	44	32
+	+	60	16
+	+	3	34
+	+	27	111
+	+	3	34
+	+	21	35
+	+	35	0
+	+	37	0
+	+	9	0
+	+	8	0
+	+	9	0
+	+	17	22
+	+	68	0
+
+> ~/test.dmp
+	"	1	0
+	.	1	0
+	+	1	0
+
+> ~/BUILD/etfw2-trunk/src/tools/filestat
+	"	14	1
+
+> ~/var/thienvuong-filestat
+	"	13	0
+
+> ~/BUILD/etfw2-trunk/src/tools/etrotate
+	"	399	1
+
+> ~/Library/Mail Downloads/bethiraj_dsa.pub
+	"	1	0
+
+> ~/Library/Mail Downloads/id_dsa-1.pub
+	"	1	0
+
+> ~/Library/Mail Downloads/-MiniBufExplorer-
+	"	1	20
+	.	2	0
+	+	2	0
+
+> ~/.profile_priv
+	"	15	23
+	^	15	24
+	.	15	23
+	+	15	23
+
+> ~/Library/Mail Downloads/task.EM,backup_schema-1.log
 	"	1	0
 
 > ~/tewok/dosync
 	"	1	0
+	^	9	4
+	.	1	0
+	+	10	3
+	+	7	6
+	+	3	19
+	+	7	9
+	+	2	15
+	+	6	15
+	+	4	11
+	+	6	18
+	+	1	5
+	+	4	8
+	+	6	30
+	+	5	11
+	+	8	33
+	+	10	9
+	+	4	0
+	+	1	0
+	+	10	0
+	+	11	0
+	+	5	20
+	+	6	0
+	+	9	3
+	+	1	0
+
+> ~/myprofile/bin/sshsetup
+	"	217	14
+	^	241	11
+	.	241	10
+	+	243	5
+	+	242	0
+	+	239	9
+	+	240	14
+	+	241	10
+
+> ~/myprofile/bin/mtool/vpnhelper.rb
+	"	66	6
+	^	54	17
+	.	54	16
+	+	54	16
+
+> ~/myprofile/-MiniBufExplorer-
+	"	1	12
+	.	2	0
+	+	2	0
+
+> ~/KA/rip/INVICTUS.err
+	"	8	10
+
+> ~/KA/rip/INVICTUS.yml
+	"	121	6
+
+> ~/myprofile/bin/mtool/hbrip.rb
+	"	110	57
+	^	110	58
+	.	110	57
+	+	101	6
+	+	112	10
+	+	112	41
+	+	94	27
+	+	96	18
+	+	97	0
+	+	111	6
+	+	112	0
+	+	109	0
+	+	112	0
+	+	110	57
+
+> ~/myprofile/.git/COMMIT_EDITMSG
+	"	1	14
+	^	1	15
+	.	1	14
+	+	1	14
 
 > ~/etfw2/lib/kshfunc/F_cli
 	"	130	14
@@ -728,84 +1127,3 @@ $
 	+	2	0
 	+	2	0
 	+	2	0
-
-> ~/fuse/adm0m3/etfw-pem/src/tools/etupdate
-	"	308	28
-
-> ~/myprofile/bin/mtool/hbrip.rb
-	"	1	0
-
-> ~/tewok/.git/COMMIT_EDITMSG
-	"	1	15
-	^	1	16
-	.	1	15
-	+	1	15
-
-> ~/etfw2/bin/emssh.sh
-	"	514	4
-	^	514	12
-	.	514	0
-	+	536	0
-	+	482	54
-	+	489	24
-	+	525	7
-	+	525	0
-	+	530	5
-	+	514	0
-	+	515	0
-	+	523	0
-	+	514	24
-	+	538	25
-	+	538	25
-	+	539	0
-	+	524	32
-	+	525	0
-	+	527	5
-	+	528	0
-	+	514	0
-
-> ~/Library/Application Support/Firefox/Profiles/bqnp4j7o.default/itsalltext/wiki.corp.etradegrp.com.372t301732.txt
-	"	115	0
-	^	193	2
-	.	180	67
-	+	16	0
-	+	41	63
-	+	44	12
-	+	42	0
-	+	60	0
-	+	45	0
-	+	51	0
-	+	52	76
-	+	57	68
-	+	57	26
-	+	59	0
-	+	57	0
-	+	58	0
-	+	56	0
-	+	50	0
-	+	48	19
-	+	27	37
-	+	180	67
-
-> /private/var/folders/Ty/TyHM8XOoEbCkN+R+JYsnWU+++TQ/-Tmp-/smartsvn5226525302410451600tmp/openfile__1912843532337843352_Makefile.xml
-	"	1	0
-
-> ~/myprofile/func/common
-	"	98	2
-	^	97	18
-	.	98	0
-	+	105	20
-	+	107	0
-	+	106	16
-	+	97	17
-	+	98	0
-
-> ~/myprofile/bin/sshsetup
-	"	242	0
-	^	241	11
-	.	241	10
-	+	243	5
-	+	242	0
-	+	239	9
-	+	240	14
-	+	241	10

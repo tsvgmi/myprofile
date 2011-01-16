@@ -51,7 +51,7 @@ and route the rest through regular interface
       return false
     end
     gwip = nil
-    ['en1', 'en0'].each do |intf|
+    ['en0', 'en1'].each do |intf|
       if (enip = VpnHelper.intf_addr(intf)) != nil
         gwip = `netstat -nrf inet`.grep(/default.*#{intf}/).first
         if gwip

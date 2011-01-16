@@ -1,5 +1,5 @@
 --- !ruby/object:Alias 
-cfile: /etrade/home/tvuong/.alias.yml
+cfile: /Users/thienvuong/.alias.yml
 dellist: 
   gvim: 
   - "'xvim'"
@@ -21,21 +21,21 @@ dellist:
   - "'ls --color=tty'"
   - .alias-linux
   - 2009-02-01 12:01:45.584071 -08:00
-  setview: 
-  - "'cleartool setview -login'"
-  - ""
-  - 2009-06-30 00:17:19.144812 -07:00
   vi: 
   - "'vim'"
   - .alias-common
   - 2008-05-28 23:13:08.268527 -07:00
+  setview: 
+  - "'cleartool setview -login'"
+  - ""
+  - 2009-06-30 00:17:19.144812 -07:00
 oldlist: {}
 
 valias: 
-version: 84
+version: 86
 valias: 
   _ALIAS_VERSION:
-  - "'82'"
+  - "'85'"
   - ".alias-common"
   cd:
   - "'_cd'"
@@ -161,7 +161,7 @@ valias:
   - "'_ssh'"
   - ".alias-common"
   s2:
-  - "'emssh -l tvuong connect'"
+  - "'emssh -u tvuong run -th lxp6d199m0 emtools/bin/screens resume'"
   - ".alias-common"
   sclearcase:
   - "'ssh -X dev2m12'"
