@@ -20,7 +20,7 @@ function FindProxyForURL(url, host) {
     //// in localhost to allow access of non std port
     if (isInNet(DestIP, "10.0.0.0", "255.0.0.0")) {
         if (shExpMatch(url, "*:*")) {
-          return "PROXY localhost:16100";
+          return "PROXY localhost:16101";
         }
         return "DIRECT";
     }

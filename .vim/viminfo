@@ -8,7 +8,7 @@
 # hlsearch on (H) or off (h):
 ~H
 # Last Search Pattern:
-~Msle0~/\<host\>
+~MSle0~/run.*)
 
 # Last Substitute Search Pattern:
 ~MSle0&
@@ -17,11 +17,18 @@
 $
 
 # Command Line History (newest to oldest):
-:1
+:q!
 
 # Search String History (newest to oldest):
-? \<host\>
 ?/run.*)
+?/run)
+?/resume
+?/vpn
+?/vpnc
+?/von
+?/vonc
+? \<find\>
+? \<host\>
 ?/run
 ?/connect)
 ? \<_cdTitle\>
@@ -33,13 +40,6 @@ $
 ?/created_
 ?/U
 ? \<run_handbrake\>
-? \<srcfile\>
-?/to_divx
-? \<encode_option\>
-? \<encopt\>
-? \<_rip_chapter\>
-? \<rip_chapter\>
-?/divx
 
 # Expression History (newest to oldest):
 
@@ -49,27 +49,27 @@ $
 
 # Registers:
 "0	LINE	0
-	  echo -n "]0;$ident"
-""1	LINE	0
-	set -x
+	192.168.1.58    vuong-2010
+"1	LINE	0
+	find . -type d | grep -i plugin
 "2	LINE	0
-	  cd $here
+	set -x
 "3	LINE	0
-	  here=$PWD
+	  cd $here
 "4	LINE	0
-	  echo -n "]0;$ident"
+	  here=$PWD
 "5	LINE	0
-	  `command` varchar(40) DEFAULT NULL,
+	  echo -n "]0;$ident"
 "6	LINE	0
-	  `cmdline` datetime DEFAULT NULL,
+	  `command` varchar(40) DEFAULT NULL,
 "7	LINE	0
+	  `cmdline` datetime DEFAULT NULL,
+"8	LINE	0
 	  KEY `index_em_accounts_on_function` (`function`),
 	  KEY `index_em_accounts_on_em_instance_id` (`em_instance_id`),
 	  KEY `rcs_file_id` (`rcs_file_id`)
-"8	LINE	0
-	  `rcs_file_id` int(11) NOT NULL DEFAULT '0',
 "9	LINE	0
-	  `em_instance_id` int(11) NOT NULL DEFAULT '0',
+	  `rcs_file_id` int(11) NOT NULL DEFAULT '0',
 "a	LINE	0
 	  def self.to_divx(srcfile)
 	    encopt  = HbRip.encode_option('divx')
@@ -149,10 +149,10 @@ $
 	s= package_list(' xeC')
 "y	LINE	0
 	dWi= f] D
-"z@	LINE	0
+"z	LINE	0
 	0wcwf_send2f" Dn
-"-	CHAR	0
-	here
+""-	CHAR	0
+	Firefox
 
 # global variables:
 !ST_UNIX	NUM	2
@@ -161,18 +161,32 @@ $
 !ST_WIN_CMD	NUM	0
 
 # File marks:
-'0  1  0  ~/tewok/dosync
-'1  24  31  ~/myprofile/etc/etproxy.pac
-'2  493  4  ~/etfw2/bin/emssh.sh
-'3  98  2  ~/myprofile/func/common
-'4  3  47  ~/Library/Application Support/Firefox/Profiles/bqnp4j7o.default/itsalltext/news.yahoo.com.1k1h201e27.txt
-'5  99  0  ~/schema.txt
-'6  10  5  ~/cep/src/demo0/run.sh
-'7  1  0  ~/cep/src/demo0/Makefile
-'8  3  3  ~/Esper/esper-4.0.0/examples/testing/setenv.sh
-'9  1  39  ~/Downloads/test.dat
+'0  8  0  ~/etfw2/Makefile
+'1  144  6  ~/emtools/bin/screens
+'2  234  19  ~/myprofile/bin/sshsetup
+'3  1  29  /private/var/folders/Ty/TyHM8XOoEbCkN+R+JYsnWU+++TQ/-Tmp-/bash-fc-1295755270
+'4  15  2  ~/.ssh/sshfwd.yml
+'5  1  0  ~/.ssh/*ssh
+'6  13  18  /private/etc/hosts
+'7  1  0  ~/tewok/dosync
+'8  24  31  ~/myprofile/etc/etproxy.pac
+'9  493  4  ~/etfw2/bin/emssh.sh
 
 # Jumplist (newest first):
+-'  8  0  ~/etfw2/Makefile
+-'  1  0  ~/etfw2/Makefile
+-'  144  6  ~/emtools/bin/screens
+-'  119  0  ~/emtools/bin/screens
+-'  21  0  ~/emtools/bin/screens
+-'  1  0  ~/emtools/bin/screens
+-'  234  19  ~/myprofile/bin/sshsetup
+-'  1  0  ~/myprofile/bin/sshsetup
+-'  1  29  /private/var/folders/Ty/TyHM8XOoEbCkN+R+JYsnWU+++TQ/-Tmp-/bash-fc-1295755270
+-'  15  2  ~/.ssh/sshfwd.yml
+-'  1  0  ~/.ssh/sshfwd.yml
+-'  1  0  ~/.ssh/*ssh
+-'  13  18  /private/etc/hosts
+-'  1  0  /private/etc/hosts
 -'  1  0  ~/tewok/dosync
 -'  4  8  ~/tewok/dosync
 -'  2  0  ~/tewok/dosync
@@ -258,151 +272,237 @@ $
 -'  76  31  ~/Esper/esper-4.0.0/examples/testing/exampleMain.java
 -'  59  18  ~/Esper/esper-4.0.0/examples/testing/exampleMain.java
 -'  57  13  ~/Esper/esper-4.0.0/examples/testing/exampleMain.java
--'  61  27  ~/Esper/esper-4.0.0/examples/testing/exampleMain.java
--'  55  6  ~/Esper/esper-4.0.0/examples/testing/exampleMain.java
--'  56  8  ~/Esper/esper-4.0.0/examples/testing/exampleMain.java
--'  79  0  ~/Esper/esper-4.0.0/examples/testing/exampleMain.java
--'  68  46  ~/Esper/esper-4.0.0/examples/testing/exampleMain.java
--'  35  27  ~/Esper/esper-4.0.0/examples/testing/exampleMain.java
--'  1  0  ~/Esper/esper-4.0.0/examples/testing/exampleMain.java
--'  196  31  ~/myprofile/bin/mtool/hbrip.rb
--'  29  6  ~/myprofile/bin/mtool/hbrip.rb
--'  12  0  ~/myprofile/bin/mtool/hbrip.rb
--'  16  6  ~/myprofile/bin/mtool/hbrip.rb
--'  155  6  ~/myprofile/bin/mtool/hbrip.rb
--'  217  0  ~/myprofile/bin/mtool/hbrip.rb
--'  83  2  ~/myprofile/bin/mtool/hbrip.rb
 
 # History of marks within files (newest to oldest):
 
-> ~/etfw2/bin/emenv.sh
-	"	122	6
-
-> ~/etfw2/bin/em2roll.sh
-	"	71	25
-
-> ~/etfw2/lib/pem/prun.rb
+> ~/myprofile/.git/COMMIT_EDITMSG
 	"	1	0
+
+> ~/Library/Application Support/Plex Media Server/Plug-ins/HGTV.bundle/Contents/Code/__init__.py
+	"	6	0
+
+> ~/Library/Application Support/Plex Media Server/Plug-ins/MSNBC.bundle/Contents/Code/__init__.py
+	"	407	2
+
+> ~/tmp/tshuffle
+	"	14	5
+	^	4	12
+	.	4	11
+	+	1	6
+	+	11	2
+	+	6	22
+	+	10	4
+	+	9	22
+	+	14	5
+	+	8	29
+	+	2	0
+	+	6	7
+	+	7	4
+	+	6	7
+	+	9	42
+	+	7	0
+	+	6	0
+	+	6	0
+	+	6	0
+	+	6	0
+	+	5	30
+	+	6	4
+	+	6	0
+	+	9	36
+	+	4	8
+	+	5	0
+	+	12	2
+	+	4	11
+
+> ~/tmp/doshuffle.c
+	"	20	12
+	^	2	16
+	.	2	15
+	+	30	0
+	+	5	2
+	+	10	51
+	+	14	7
+	+	12	28
+	+	26	4
+	+	25	19
+	+	28	14
+	+	28	0
+	+	27	32
+	+	28	35
+	+	29	16
+	+	9	0
+	+	8	13
+	+	10	0
+	+	10	0
+	+	27	0
+	+	24	9
+	+	20	35
+	+	17	0
+	+	19	33
+	+	23	38
+	+	16	27
+	+	10	14
+	+	20	0
+	+	18	25
+	+	10	27
+	+	10	60
+	+	21	48
+	+	22	50
+	+	23	27
+	+	20	0
+	+	29	0
+	+	26	43
+	+	26	8
+	+	26	0
+	+	26	50
+	+	32	0
+	+	32	0
+	+	5	6
+	+	26	0
+	+	1	0
+	+	3	18
+	+	2	15
+
+> ~/tmp/-MiniBufExplorer-
+	"	1	12
+	.	2	0
+	+	2	0
+
+> ~/test2.c
+	"	16	0
+	.	17	0
+	+	13	0
+	+	56	0
+	+	45	20
+	+	46	4
+	+	34	44
+	+	35	53
+	+	39	5
+	+	40	4
+	+	41	52
+	+	63	0
+	+	20	0
+	+	19	0
+	+	13	0
+	+	9	0
+	+	6	15
+	+	9	11
+	+	8	17
+	+	7	18
+	+	13	3
+	+	13	33
+	+	1	18
+	+	11	17
+	+	25	61
+	+	41	42
+	+	2	15
+	+	5	0
+	+	2	15
+	+	5	0
+	+	3	15
+	+	23	0
+	+	13	17
+	+	42	0
+	+	41	39
+	+	60	32
+	+	61	54
+	+	13	0
+	+	13	14
+	+	13	0
+	+	41	34
+	+	60	27
+	+	61	0
+	+	34	44
+	+	33	39
+	+	21	0
+	+	13	0
+	+	4	15
+	+	17	0
+
+> ~/test3.c
+	"	20	0
+	^	16	29
+	.	16	28
+	+	16	28
+
+> ~/-MiniBufExplorer-
+	"	1	64
+	.	2	0
+	+	2	0
+	+	2	0
+	+	2	0
+	+	2	0
+	+	2	0
+	+	2	0
+
+> ~/Library/Application Support/Firefox/Profiles/bqnp4j7o.default/itsalltext/wiki.corp.etradegrp.com.2y201j2422.txt
+	"	35	20
+	^	52	109
+	.	52	108
+	+	68	69
+	+	65	34
+	+	68	69
+	+	61	44
+	+	62	43
+	+	60	0
+	+	60	6
+	+	61	5
+	+	62	5
+	+	76	83
+	+	76	363
+	+	7	109
+	+	7	10
+	+	7	190
+	+	78	6
+	+	78	0
+	+	78	89
+	+	78	0
+	+	4	25
+	+	5	14
+	+	79	146
+	+	79	0
+	+	80	0
+	+	38	2
+	+	39	0
+	+	40	2
+	+	39	2
+	+	41	0
+	+	54	6
+	+	43	112
+	+	43	0
+	+	45	0
+	+	44	0
+	+	45	52
+	+	46	3
+	+	47	3
+	+	46	51
+	+	47	44
+	+	47	62
+	+	48	29
+	+	48	46
+	+	50	0
+	+	52	108
+
+> ~/Library/Mail Downloads/task.scheduler_check_updates-1.log
+	"	6	33
+
+> ~/etfw2/Makefile
+	"	8	0
+
+> ~/etfw2/src/tools/etlogger
+	"	7	0
+
+> ~/.tool/10.85.41.92-thienvuong.rdp
+	"	39	1
+
+> ~/etfw2/bin/emcfg.sh
+	"	1284	16
+
+> ~/etfw2/lib/pem/empatch.rb
+	"	174	0
 
 > ~/etfw2/-MiniBufExplorer-
-	"	1	0
-	.	2	0
-	+	2	0
-	+	2	0
-
-> ~/doc/README.environment
-	"	27	18
-
-> ~/Library/Application Support/Firefox/Profiles/bqnp4j7o.default/itsalltext/wiki.corp.etradegrp.com.2a3c1y3c2d.txt
-	"	152	0
-	^	153	2
-	.	151	0
-	+	65	20
-	+	58	27
-	+	105	33
-	+	155	5
-	+	112	0
-	+	133	0
-	+	136	0
-	+	139	0
-	+	112	0
-	+	106	0
-	+	111	1
-	+	112	32
-	+	113	1
-	+	112	29
-	+	118	1
-	+	114	0
-	+	118	0
-	+	115	30
-	+	116	1
-	+	117	0
-	+	118	1
-	+	118	19
-	+	119	1
-	+	121	0
-	+	122	0
-	+	125	0
-	+	128	0
-	+	131	0
-	+	134	0
-	+	135	0
-	+	135	0
-	+	137	0
-	+	141	0
-	+	144	0
-	+	147	0
-	+	150	0
-	+	153	0
-	+	118	0
-	+	154	0
-	+	155	0
-	+	118	0
-	+	119	61
-	+	119	122
-	+	119	181
-	+	119	235
-	+	119	288
-	+	119	338
-	+	120	0
-	+	122	106
-	+	122	160
-	+	122	213
-	+	123	0
-	+	125	98
-	+	125	155
-	+	126	0
-	+	128	98
-	+	128	156
-	+	128	210
-	+	128	265
-	+	128	316
-	+	129	0
-	+	131	106
-	+	131	160
-	+	132	0
-	+	134	101
-	+	134	156
-	+	134	214
-	+	134	270
-	+	134	328
-	+	135	0
-	+	137	100
-	+	137	156
-	+	137	211
-	+	137	264
-	+	137	315
-	+	137	373
-	+	137	431
-	+	137	487
-	+	137	543
-	+	137	594
-	+	138	0
-	+	141	106
-	+	141	157
-	+	141	216
-	+	141	265
-	+	141	325
-	+	142	0
-	+	144	104
-	+	144	161
-	+	144	220
-	+	144	272
-	+	144	324
-	+	144	377
-	+	144	430
-	+	144	484
-	+	144	539
-	+	145	0
-	+	147	112
-	+	148	0
-	+	151	0
-
-> ~/doc/README
-	"	446	21
-
-> ~/doc/-MiniBufExplorer-
-	"	1	0
+	"	1	12
 	.	2	0
 	+	2	0
 	+	2	0
@@ -413,717 +513,474 @@ $
 	+	2	0
 	+	2	0
 	+	2	0
-
-> ~/doc/barrett_diagram
-	"	103	1
-
-> ~/doc/README.linux
-	"	12	38
-
-> ~/Library/Application Support/Firefox/Profiles/bqnp4j7o.default/itsalltext/wiki.corp.etradegrp.com.2g1v262x23.txt
-	"	40	0
-	^	29	118
-	.	29	117
-	+	1	246
-	+	1	0
-	+	5	24
-	+	27	12
-	+	49	20
-	+	149	14
-	+	51	16
-	+	64	0
-	+	53	25
-	+	7	135
-	+	53	76
-	+	49	0
-	+	4	8
-	+	5	25
-	+	9	30
-	+	53	0
-	+	11	0
-	+	10	0
-	+	15	0
-	+	14	27
-	+	15	24
-	+	15	0
-	+	16	93
-	+	15	0
-	+	19	0
-	+	17	0
-	+	18	7
-	+	16	196
-	+	24	22
-	+	25	56
-	+	22	0
-	+	9	20
-	+	28	0
-	+	34	65
-	+	41	75
-	+	1	132
-	+	1	198
-	+	3	0
-	+	149	0
-	+	54	0
-	+	55	25
-	+	56	19
-	+	58	66
-	+	88	6
-	+	65	0
-	+	66	0
-	+	88	0
-	+	59	69
-	+	64	0
-	+	61	2
-	+	60	64
-	+	63	12
-	+	58	0
-	+	118	6
-	+	147	5
-	+	121	0
-	+	147	0
-	+	148	0
-	+	149	0
-	+	118	10
-	+	91	70
-	+	94	36
-	+	92	65
-	+	118	0
-	+	98	66
-	+	99	65
-	+	94	9
-	+	103	33
-	+	51	36
-	+	113	47
-	+	94	65
-	+	95	43
-	+	96	13
-	+	94	0
-	+	101	21
-	+	116	48
 	+	2	0
-	+	6	23
-	+	28	0
-	+	29	117
+	+	2	0
+	+	2	0
+	+	2	0
+	+	2	0
+	+	2	0
 
-> ~/Library/Application Support/Firefox/Profiles/bqnp4j7o.default/itsalltext/wiki.corp.etradegrp.com.292v1t242x.txt
-	"	8	11
+> ~/emtools/bin/svctool
+	"	146	19
 
 > ~/var/thienvuong-cifile.yml
-	"	79	2
+	"	16	42
+	^	16	43
+	.	16	42
+	+	20	41
+	+	16	42
+
+> ~/etfw2/bin/emssh.rb
+	"	14	0
 
 > ~/etfw2/bin/emssh.sh
-	"	427	4
-	.	399	0
-	+	536	0
-	+	482	54
-	+	489	24
-	+	525	7
-	+	525	0
-	+	530	5
-	+	514	0
-	+	515	0
+	"	523	8
+	.	559	0
+	+	534	0
+	+	480	54
+	+	487	24
+	+	523	7
 	+	523	0
-	+	514	24
-	+	538	25
-	+	538	25
-	+	539	0
-	+	524	32
-	+	525	0
-	+	527	5
-	+	528	0
-	+	514	0
-	+	399	12
-	+	399	19
-	+	399	6
-	+	399	0
-	+	401	54
-	+	399	0
-	a	399	4
+	+	528	5
+	+	512	0
+	+	513	0
+	+	521	0
+	+	512	24
+	+	536	25
+	+	536	25
+	+	537	0
+	+	522	32
+	+	523	0
+	+	525	5
+	+	526	0
+	+	512	0
+	+	397	12
+	+	397	19
+	+	397	6
+	+	397	0
+	+	399	54
+	+	397	0
+	+	305	0
+	+	305	0
+	+	305	0
+	+	303	0
+	+	308	0
+	+	316	0
+	+	312	0
+	+	312	0
+	+	558	0
+	+	559	0
+	a	397	4
 
-> ~/Library/Application Support/Firefox/Profiles/bqnp4j7o.default/itsalltext/wiki.corp.etradegrp.com.2b241g2p35.txt
-	"	64	19
-	.	68	0
-	+	67	37
-	+	68	53
-	+	68	5
-	+	34	51
-	+	31	12
-	+	35	43
-	+	43	45
-	+	51	0
-	+	54	31
-	+	53	12
-	+	47	12
-	+	53	39
-	+	50	39
-	+	44	31
-	+	43	53
-	+	44	32
-	+	60	16
-	+	3	34
-	+	27	111
-	+	3	34
-	+	21	35
-	+	35	0
-	+	37	0
-	+	9	0
-	+	8	0
-	+	9	0
-	+	17	22
-	+	68	0
+> ~/emtools/bin/screens
+	"	351	24
 
-> ~/test.dmp
-	"	1	0
-	.	1	0
-	+	1	0
-
-> ~/BUILD/etfw2-trunk/src/tools/filestat
-	"	14	1
-
-> ~/var/thienvuong-filestat
-	"	13	0
-
-> ~/BUILD/etfw2-trunk/src/tools/etrotate
-	"	399	1
-
-> ~/Library/Mail Downloads/bethiraj_dsa.pub
+> /Volumes/movies/Movies.old/The Godfather (1972)/The Godfather (1972).srt
 	"	1	0
 
-> ~/Library/Mail Downloads/id_dsa-1.pub
-	"	1	0
+> /Volumes/movies/Movies.old/The Godfather (1972)/Godfather The.DVDRip.UNDEAD.part1.en.srt
+	"	149	34
 
-> ~/Library/Mail Downloads/-MiniBufExplorer-
-	"	1	20
+> /Volumes/movies/Movies.old/The Godfather (1972)/-MiniBufExplorer-
+	"	1	0
 	.	2	0
 	+	2	0
+	+	2	0
+	+	2	0
+	+	2	0
 
-> ~/.profile_priv
-	"	15	23
-	^	15	24
-	.	15	23
-	+	15	23
+> ~/myprofile/bin/mtool/srtfile.rb
+	"	44	6
+	^	34	37
+	.	34	36
+	+	52	4
+	+	51	35
+	+	34	41
+	+	32	55
+	+	35	14
+	+	34	36
 
-> ~/Library/Mail Downloads/task.EM,backup_schema-1.log
+> ~/Downloads/the.godfather.(1972).eng.1cd.(3864681)/test2.srt
+	"	155	0
+
+> ~/Downloads/the.godfather.(1972).eng.1cd.(3864681)/test1.srt
+	"	153	0
+
+> ~/Downloads/the.godfather.(1972).eng.1cd.(3864681)/-MiniBufExplorer-
+	"	1	0
+	.	2	0
+	+	2	0
+	+	2	0
+	+	2	0
+	+	2	0
+	+	2	0
+	+	2	0
+	+	2	0
+	+	2	0
+	+	2	0
+	+	2	0
+	+	2	0
+	+	2	0
+	+	2	0
+	+	2	0
+	+	2	0
+	+	2	0
+	+	2	0
+	+	2	0
+	+	2	0
+	+	2	0
+
+> ~/.tool/mb45-0095.etrade.com-thienvuong.rdp
+	"	17	12
+	^	17	13
+	.	17	12
+	+	16	16
+	+	17	12
+
+> ~/fuse/qa63m3/svc_gold/src/aat/batch/aat_createFCUserId.pl
 	"	1	0
 
-> ~/tewok/dosync
-	"	1	0
-	^	9	4
-	.	1	0
-	+	10	3
-	+	7	6
-	+	3	19
-	+	7	9
-	+	2	15
-	+	6	15
-	+	4	11
-	+	6	18
-	+	1	5
-	+	4	8
-	+	6	30
-	+	5	11
-	+	8	33
-	+	10	9
-	+	4	0
-	+	1	0
-	+	10	0
-	+	11	0
-	+	5	20
+> ~/etfw2/lib/pem/emdb.rb
+	"	21	30
+
+> ~/.ssh/sshfwd.yml
+	"	28	7
+	^	13	22
+	.	13	21
+	+	16	22
+	+	17	0
+	+	13	21
+
+> /Library/ODBC/odbc.ini
+	"	7	0
+
+> ~/Library/Application Support/Firefox/Profiles/bqnp4j7o.default/itsalltext/wiki.corp.etradegrp.com.361x2h201i.txt
+	"	50	3
+	^	50	4
+	.	50	3
+	+	9	36
+	+	11	86
+	+	12	9
+	+	6	75
 	+	6	0
-	+	9	3
-	+	1	0
+	+	9	48
+	+	10	43
+	+	11	3
+	+	11	90
+	+	12	57
+	+	30	0
+	+	12	57
+	+	9	44
+	+	10	39
+	+	11	86
+	+	12	62
+	+	36	67
+	+	37	60
+	+	50	55
+	+	53	40
+	+	51	0
+	+	51	0
+	+	56	0
+	+	62	0
+	+	58	2
+	+	62	0
+	+	62	0
+	+	64	0
+	+	60	0
+	+	61	55
+	+	50	3
+
+> /Applications/MacVim.app/Contents/Resources/vim/runtime/doc/help.txt
+	"	4	10
 
 > ~/myprofile/bin/sshsetup
-	"	217	14
-	^	241	11
-	.	241	10
+	"	234	45
+	^	234	29
+	.	234	28
 	+	243	5
 	+	242	0
 	+	239	9
 	+	240	14
 	+	241	10
+	+	233	19
+	+	234	14
+	+	233	28
+	+	234	28
 
-> ~/myprofile/bin/mtool/vpnhelper.rb
-	"	66	6
-	^	54	17
-	.	54	16
-	+	54	16
-
-> ~/myprofile/-MiniBufExplorer-
-	"	1	12
-	.	2	0
-	+	2	0
-
-> ~/KA/rip/INVICTUS.err
-	"	8	10
-
-> ~/KA/rip/INVICTUS.yml
-	"	121	6
-
-> ~/myprofile/bin/mtool/hbrip.rb
-	"	110	57
-	^	110	58
-	.	110	57
-	+	101	6
-	+	112	10
-	+	112	41
-	+	94	27
-	+	96	18
-	+	97	0
-	+	111	6
-	+	112	0
-	+	109	0
-	+	112	0
-	+	110	57
-
-> ~/myprofile/.git/COMMIT_EDITMSG
-	"	1	14
-	^	1	15
-	.	1	14
-	+	1	14
-
-> ~/etfw2/lib/kshfunc/F_cli
-	"	130	14
-
-> ~/fuse/lxp6d199m0/selaf/ats/script/dshelper.rb
+> ~/Library/Application Support/Firefox/Profiles/bqnp4j7o.default/itsalltext/wiki.corp.etradegrp.com.26243d1i1j.txt
 	"	1	0
-	^	72	18
-	.	72	17
-	+	48	40
-	+	49	31
-	+	40	0
-	+	28	0
-	+	60	4
-	+	77	0
-	+	60	0
-	+	21	9
-	+	54	16
-	+	39	4
-	+	54	4
-	+	66	14
-	+	73	0
-	+	74	9
-	+	16	23
-	+	60	0
-	+	17	9
-	+	134	23
-	+	135	16
-	+	142	0
-	+	136	24
-	+	138	23
-	+	139	30
-	+	140	0
-	+	141	6
-	+	74	7
-	+	138	7
-	+	143	0
-	+	20	0
-	+	44	0
-	+	22	15
-	+	21	11
-	+	31	22
-	+	28	26
-	+	29	23
-	+	78	0
-	+	74	14
-	+	75	15
-	+	74	0
-	+	76	0
-	+	74	11
-	+	19	0
-	+	121	0
-	+	121	0
-	+	257	24
-	+	274	37
-	+	276	28
-	+	201	25
-	+	213	24
-	+	59	0
-	+	215	10
-	+	220	15
-	+	217	0
-	+	217	21
-	+	218	12
-	+	221	0
-	+	227	0
-	+	223	36
-	+	224	11
-	+	225	0
-	+	222	68
-	+	223	0
-	+	214	0
-	+	201	0
-	+	231	27
-	+	217	0
-	+	219	0
-	+	233	0
-	+	231	0
-	+	233	34
-	+	169	0
-	+	168	25
-	+	169	21
-	+	183	29
-	+	260	26
-	+	319	0
-	+	94	0
-	+	96	0
-	+	99	0
-	+	16	0
-	+	121	0
-	+	94	0
-	+	100	22
-	+	101	13
-	+	136	58
-	+	134	0
-	+	276	0
-	+	274	0
-	+	257	41
-	+	136	59
-	+	361	0
-	+	360	0
-	+	361	6
-	+	363	14
-	+	234	17
-	+	233	29
-	+	69	17
-	+	70	12
-	+	71	17
-	+	72	17
-	a	213	6
-
-> ~/fuse/lxp6d199m0/selaf/script/seldata.sh
-	"	308	9
-	^	308	10
-	.	308	9
-	+	308	9
-
-> ~/fuse/lxp6d199m0/selaf/-MiniBufExplorer-
-	"	1	15
-	.	2	0
+	^	27	16
+	.	27	15
+	+	30	0
+	+	4	0
+	+	3	4
+	+	29	1
 	+	2	0
+	+	31	0
+	+	1	40
+	+	31	12
+	+	5	0
+	+	4	0
+	+	37	12
+	+	38	0
+	+	42	0
+	+	44	0
+	+	46	0
+	+	38	72
+	+	39	3
+	+	41	0
+	+	39	59
+	+	40	109
+	+	40	217
+	+	37	67
+	+	36	0
+	+	37	139
+	+	37	0
+	+	47	0
+	+	46	15
+	+	47	2
+	+	47	156
+	+	47	0
+	+	47	156
+	+	40	252
+	+	46	0
+	+	49	11
+	+	35	37
+	+	22	5
+	+	24	8
+	+	25	0
+	+	27	15
 
-> ~/selaf-trunk/ats/script/dshelper.rb
-	"	98	0
-
-> ~/Library/Application Support/Firefox/Profiles/bqnp4j7o.default/itsalltext/news.yahoo.com.2a391f1h3e.txt
-	"	7	93
-	^	7	94
-	.	7	93
-	+	7	0
-	+	5	37
-	+	7	93
+> ~/Library/Application Support/Firefox/Profiles/bqnp4j7o.default/itsalltext/wiki.corp.etradegrp.com.3e1d293c2e.txt
+	"	1	0
+	.	57	0
+	+	1	0
+	+	1	0
+	+	18	17
+	+	3	0
+	+	3	0
+	+	19	0
+	+	18	0
+	+	59	0
+	+	50	164
+	+	48	76
+	+	28	70
+	+	48	213
+	+	48	220
+	+	49	18
+	+	49	144
+	+	49	17
+	+	49	138
+	+	25	134
+	+	49	177
+	+	51	53
+	+	56	5
+	+	53	0
+	+	56	0
+	+	53	0
+	+	56	0
+	+	57	0
 
 > /-MiniBufExplorer-
-	"	1	15
+	"	1	84
 	.	2	0
 	+	2	0
 	+	2	0
 	+	2	0
 	+	2	0
+	+	2	0
+	+	2	0
+	+	2	0
 
-> ~/emtools/bin/screens
-	"	119	4
-	^	128	26
-	.	128	25
-	+	72	23
-	+	71	25
-	+	76	23
-	+	90	29
-	+	120	51
-	+	122	26
-	+	131	0
-	+	131	9
-	+	131	0
-	+	134	9
-	+	145	37
-	+	31	5
-	+	134	0
-	+	32	17
-	+	31	14
-	+	31	0
-	+	31	0
-	+	32	0
-	+	33	0
-	+	32	0
-	+	47	14
-	+	32	17
-	+	34	19
-	+	32	17
-	+	31	9
-	+	32	0
-	+	20	21
-	+	34	0
-	+	31	0
-	+	47	0
-	+	128	25
-
-> ~/myprofile/etc/etproxy.pac
-	"	24	31
-
-> ~/fuse/lxp6d199m0/emtools/bin/screens
-	"	244	0
-	^	26	14
-	.	220	0
-	+	182	0
-	+	177	60
-	+	176	0
-	+	181	4
-	+	180	27
-	+	126	0
-	+	126	45
-	+	127	48
-	+	126	0
-	+	137	4
-	+	136	5
-	+	135	52
-	+	133	84
-	+	133	14
-	+	133	0
-	+	123	25
-	+	121	31
-	+	132	33
-	+	121	75
-	+	54	20
-	+	55	35
-	+	73	4
-	+	56	1
-	+	73	1
-	+	72	5
-	+	60	8
-	+	62	8
-	+	64	8
-	+	70	8
-	+	61	32
-	+	63	67
-	+	65	27
-	+	66	0
-	+	67	62
-	+	58	65
-	+	54	44
-	+	68	13
-	+	69	80
-	+	72	0
-	+	71	52
-	+	54	0
-	+	19	33
-	+	20	63
-	+	29	4
-	+	22	73
-	+	28	5
-	+	27	35
-	+	26	13
-	+	19	0
-	+	220	0
-	a	182	7
-
-> ~/Library/Application Support/Firefox/Profiles/bqnp4j7o.default/itsalltext/wiki.corp.etradegrp.com.2636261717.txt
-	"	5	0
-	.	5	0
-	+	4	0
-	+	5	0
-
-> ~/Library/Application Support/Firefox/Profiles/bqnp4j7o.default/itsalltext/wiki.corp.etradegrp.com.35201v1h2u.txt
-	"	40	0
-	^	26	7
-	.	38	0
-	+	16	0
-	+	17	5
-	+	18	5
-	+	16	0
-	+	22	1
-	+	22	0
-	+	23	0
-	+	22	0
-	+	23	7
-	+	26	0
-	+	29	0
-	+	23	11
-	+	26	6
-	+	32	0
-	+	34	0
-	+	36	0
-	+	38	0
-
-> ~/fuse/adm1m7/etfw2/lib/pem/emrepo.rb
-	"	640	21
-	^	545	42
-	.	545	41
-	+	621	48
-	+	545	36
-	+	633	30
-	+	545	41
-	+	556	34
-	+	561	69
-	+	562	26
-	+	567	34
-	+	567	46
-	+	568	0
-	+	556	35
-	+	562	31
-	+	567	64
-	+	573	0
-	+	572	73
-	+	545	36
-	+	544	42
-	+	545	41
-
-> ~/fuse/adm1m7/etfw2/bin/emrepo.sh
-	"	273	23
-	^	173	29
-	.	173	28
-	+	240	5
-	+	240	0
-	+	239	7
-	+	238	9
-	+	221	31
-	+	215	10
-	+	221	22
-	+	217	0
-	+	219	29
-	+	221	11
-	+	221	0
-	+	221	9
-	+	219	25
-	+	221	18
-	+	237	2
-	+	222	0
-	+	237	0
-	+	214	36
-	+	219	0
-	+	221	0
-	+	233	12
-	+	234	41
-	+	235	49
-	+	219	14
-	+	220	38
-	+	233	19
-	+	217	33
-	+	198	21
-	+	203	7
-	+	199	0
-	+	202	9
-	+	202	9
-	+	196	0
-	+	217	0
-	+	214	13
-	+	217	16
-	+	197	0
-	+	202	0
-	+	201	44
-	+	201	53
-	+	200	22
-	+	201	21
-	+	201	37
-	+	201	55
-	+	182	31
-	+	201	15
-	+	201	24
-	+	202	0
-	+	196	9
-	+	201	10
-	+	184	29
-	+	196	0
-	+	152	10
-	+	157	67
-	+	174	44
-	+	177	4
-	+	176	47
-	+	187	17
-	+	188	53
-	+	190	42
-	+	193	2
-	+	191	0
-	+	193	25
-	+	207	71
-	+	212	4
-	+	212	0
-	+	211	25
-	+	212	0
-	+	206	24
-	+	187	21
-	+	173	28
-
-> ~/fuse/adm1m7/etfw2/-MiniBufExplorer-
+> ~/Library/Mail Downloads/task.SCM,svc2dox_bld1w104m7.log
 	"	1	0
-	.	2	0
-	+	2	0
-	+	2	0
-	+	2	0
-	+	2	0
-	+	2	0
-	+	2	0
-	+	2	0
-	+	2	0
-	+	2	0
-	+	2	0
-	+	2	0
-	+	2	0
 
-> ~/fuse/adm0m3/etfw-pem/bin/em2roll.sh
-	"	252	0
-	^	251	14
-	.	251	13
-	+	293	5
-	+	293	0
-	+	293	0
-	+	291	5
-	+	253	16
-	+	253	13
-	+	259	0
-	+	258	12
-	+	259	0
-	+	290	4
-	+	288	33
-	+	281	30
-	+	288	25
-	+	254	9
-	+	257	0
-	+	256	31
-	+	258	5
-	+	254	36
-	+	254	0
-	+	257	21
-	+	255	22
-	+	256	0
-	+	255	25
-	+	256	0
-	+	261	0
-	+	262	53
-	+	267	19
-	+	261	38
-	+	254	0
-	+	261	55
-	+	263	29
-	+	264	18
-	+	265	16
-	+	282	16
-	+	263	22
-	+	282	29
-	+	288	79
-	+	263	29
-	+	282	14
-	+	270	14
-	+	285	17
-	+	286	55
-	+	287	10
-	+	288	65
-	+	255	31
-	+	267	20
-	+	286	16
-	+	253	0
-	+	247	23
-	+	248	66
-	+	251	13
+> ~/Library/Application Support/Firefox/Profiles/bqnp4j7o.default/itsalltext/wiki.corp.etradegrp.com.2q2y3e342x.txt
+	"	106	0
+	^	13	44
+	.	66	0
+	+	11	11
+	+	8	32
+	+	10	29
+	+	8	2
+	+	13	35
+	+	16	37
+	+	9	0
+	+	8	48
+	+	9	40
+	+	3	55
+	+	12	44
+	+	13	43
+	+	66	0
 
-> ~/fuse/adm0m3/etfw-pem/bin/dist_acl.pl
-	"	94	4
-	.	17	0
-	+	1	0
+> ~/analysis/lockacnt.txt
+	"	16	0
+	^	36	26
+	.	16	0
+	+	13	52
+	+	9	0
+	+	8	0
+	+	8	127
+	+	6	13
+	+	6	0
+	+	6	0
+	+	6	5
+	+	6	17
+	+	6	18
+	+	6	37
+	+	6	18
+	+	6	38
+	+	6	34
+	+	6	59
+	+	7	0
+	+	3	38
+	+	4	0
+	+	16	48
+	+	38	6
+	+	18	38
+	+	19	44
+	+	18	51
+	+	21	54
+	+	20	32
+	+	24	45
+	+	23	17
+	+	18	23
+	+	20	23
+	+	24	57
+	+	25	38
+	+	23	13
+	+	25	41
+	+	26	42
+	+	37	8
+	+	27	24
+	+	28	14
+	+	20	12
+	+	18	12
+	+	28	71
+	+	10	2
+	+	10	92
+	+	11	0
+	+	10	105
+	+	8	160
+	+	29	59
+	+	30	0
+	+	31	40
+	+	37	0
+	+	32	22
+	+	32	8
+	+	32	26
+	+	32	41
+	+	37	0
+	+	32	0
+	+	30	0
+	+	22	12
+	+	22	81
+	+	37	0
+	+	32	66
+	+	29	34
+	+	29	0
+	+	37	12
+	+	29	0
+	+	37	0
+	+	33	18
+	+	34	86
+	+	33	38
+	+	37	84
+	+	40	68
+	+	16	0
+	+	30	82
+	+	37	0
+	+	35	18
+	+	37	0
+	+	16	0
+	+	37	0
+	+	37	7
+	+	37	0
+	+	36	0
+	+	36	25
+	+	37	0
+	+	36	0
+	+	37	0
+	+	16	0
+
+> ~/var/thienvuong-diff
+	"	628	0
+
+> ~/decline.txt
+	"	9	17
+	^	6	0
+	.	5	12
+	+	7	22
+	+	8	70
+	+	7	74
+	+	8	73
+	+	12	77
+	+	24	44
+	+	12	75
+	+	12	55
+	+	24	0
+	+	12	0
+	+	11	0
 	+	17	0
+	+	12	58
+	+	12	78
+	+	12	29
+	+	12	72
+	+	12	113
+	+	16	0
+	+	11	0
+	+	7	0
+	+	18	25
+	+	17	11
+	+	18	34
+	+	17	36
+	+	11	19
+	+	12	10
+	+	12	99
+	+	11	0
+	+	17	0
+	+	18	16
+	+	17	53
+	+	12	121
+	+	11	0
+	+	13	37
+	+	18	23
+	+	13	0
+	+	12	62
+	+	11	0
+	+	14	64
+	+	15	32
+	+	13	71
+	+	11	0
+	+	14	67
+	+	21	0
+	+	22	0
+	+	19	44
+	+	12	0
+	+	19	45
+	+	23	10
+	+	3	12
+	+	5	12
 
-> ~/fuse/adm0m3/etfw-pem/-MiniBufExplorer-
+> /private/var/folders/Ty/TyHM8XOoEbCkN+R+JYsnWU+++TQ/-Tmp-/bash-fc-1295755270
+	"	1	29
+	^	1	30
+	.	1	29
+	+	1	29
+
+> ~/.ssh/*ssh
+	"	1	0
+
+> ~/myprofile/etc/webproxy.pac
+	"	28	0
+	^	23	39
+	.	23	38
+	+	23	38
+
+> ~/sshfwd.yml
+	"	1	0
+
+> ~/.ssh/-MiniBufExplorer-
 	"	1	14
 	.	2	0
-	+	2	0
-	+	2	0
 	+	2	0

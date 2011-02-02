@@ -28,8 +28,11 @@ class SrtFile
 
   # Add a delay to the srt (subtitle file)
   # Use: delay sec_offset - delay 28.3
+  # If lyrics goes before sound, increase delay till sync
+  # If lyrics goes after sound, decreate delay till sync
   def delay(ioffset)
-    offset   = (ioffset.to_f * 1000).to_i
+    offset   = (ioffset.gsub(/[^0-9\.]/, '').to_f * 1000).to_i
+    STDERR.puts offset
     time_ptn = Regexp.new(/^([0-9:,]+) --> ([0-9:,]+)$/)
     File.read(@file).split("\n").each do |aline|
       aline.chomp!
@@ -42,6 +45,10 @@ class SrtFile
       puts aline
     end
     true
+  end
+
+  def self.delay(file, ioffset)
+    SrtFile.new(file).delay(ioffset)
   end
 end
 

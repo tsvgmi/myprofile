@@ -1,14 +1,14 @@
 --- !ruby/object:Alias 
 cfile: /Users/thienvuong/.alias.yml
 dellist: 
-  gvim: 
-  - "'xvim'"
-  - 
-  - 2008-05-08 00:12:39.240669 -07:00
   grai: 
   - "'cd2 /home/thien/etool/staf-rails'"
   - .alias-common
   - 2008-09-30 10:09:56.270954 -07:00
+  gvim: 
+  - "'xvim'"
+  - 
+  - 2008-05-08 00:12:39.240669 -07:00
   sudo: 
   - "'etcmd -s'"
   - .alias-rhas3
@@ -32,10 +32,10 @@ dellist:
 oldlist: {}
 
 valias: 
-version: 86
+version: 87
 valias: 
   _ALIAS_VERSION:
-  - "'85'"
+  - "'86'"
   - ".alias-common"
   cd:
   - "'_cd'"
@@ -163,6 +163,9 @@ valias:
   s2:
   - "'emssh -u tvuong run -th lxp6d199m0 emtools/bin/screens resume'"
   - ".alias-common"
+  s3:
+  - "'emssh -u tvuong run -th qa63m3 emtools/bin/screens resume'"
+  - ""
   sclearcase:
   - "'ssh -X dev2m12'"
   - ".alias-common"

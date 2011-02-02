@@ -230,13 +230,12 @@ case $oper in
       open -a Mail
       # These require tunnel to finish opening
       sleep 3
-      open -a Firefox https://citrix.etrade.com/vpn/index.html
-      open -a Firefox https://cwa.corp.etradegrp.com/
+      open -a 'Google Chrome' https://citrix.etrade.com/vpn/index.html
+      open -a 'Google Chrome' https://cwa.corp.etradegrp.com/
     ) &
     ;;
 
   cvpn-reset)
-    set -x
     sudo kextunload /System/Library/Extensions/CiscoVPN.kext
     sleep 1
     sudo kextload /System/Library/Extensions/CiscoVPN.kext
