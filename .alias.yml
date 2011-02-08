@@ -32,10 +32,10 @@ dellist:
 oldlist: {}
 
 valias: 
-version: 87
+version: 89
 valias: 
   _ALIAS_VERSION:
-  - "'86'"
+  - "'88'"
   - ".alias-common"
   cd:
   - "'_cd'"
@@ -161,7 +161,7 @@ valias:
   - "'_ssh'"
   - ".alias-common"
   s2:
-  - "'emssh -u tvuong run -th lxp6d199m0 emtools/bin/screens resume'"
+  - "'emssh run -th tvuong@lxp6d199m0 emtools/bin/screens resume'"
   - ".alias-common"
   s3:
   - "'emssh -u tvuong run -th qa63m3 emtools/bin/screens resume'"
