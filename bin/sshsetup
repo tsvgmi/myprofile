@@ -208,6 +208,8 @@ case $oper in
     fi
     ;;
 
+#@Use: splitvpn [dest]
+#@Des: Split the network to 2 zone to allow access to normal network after VPN connect
   splitvpn)
     dest=$1
     [ "$dest" ] || dest=etrade
@@ -219,13 +221,31 @@ case $oper in
     tee ~/$oper.log
     ;;
 
+#@Use: vpn-connect [-t]
+#@Des: Trigger at VPN connection
+#=begin
+#=over
+#=item -t
+# Skip rebuild SSH tunnel
+#=back
+#=end
   vpn-connect)
+    dotunnel=yes
+    while getopts :t i; do
+      case $i in
+      t) dotunnel= ;;
+      *) F_usageOper $oper ;;
+      esac
+    done
+    let j=$OPTIND-1; shift $j; OPTIND=0
     (
       F_system sshsetup splitvpn
       # Must put tunnel all in background to avoid blockage if
       # a remote node is down
-      F_system emssh tunnel all &
-      sleep 3
+      if [ "$dotunnel" ]; then
+        F_system emssh tunnel all &
+        sleep 3
+      fi
       open -a iCal
       open -a Mail
       # These require tunnel to finish opening

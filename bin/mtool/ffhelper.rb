@@ -28,7 +28,7 @@ class FirefoxHelper
   def self.get_dname(ddir, file, ftype)
     if ftype == 'mp3'
       m3info = Mp3File.new(file)
-      p m3info.tag
+      #p "tag = #{m3info.tag}"
       fname  = m3info.tag['title']
       if fname
         return "#{ddir}/#{fname.strip}.#{ftype}"
@@ -56,11 +56,15 @@ class FirefoxHelper
       # First time, just keep track of file and size
       ftypes.each do |ftype|
         ptn    = FilePtn[ftype]
+        unless ptn
+          Plog.error "File type #{ftype} not supported - need identification"
+          next
+        end
         fsizes = {}
-        flist  = `find . -type f`.split("\n")
+        flist  = `find . -type f | xargs file`.split("\n")
         if !flist.empty?
           flist.grep(/#{ptn}/).each do |line|
-            #p line
+            #p "l: #{ftype} - #{ptn} - #{line}"
             file = line.chomp.sub(/:.*$/, '')
             begin
               fsizes[file] = File.size(file)
@@ -76,7 +80,7 @@ class FirefoxHelper
         Plog.info "No files to collect"
         return true
       end
-      puts fsets.to_yaml
+      #puts fsets.to_yaml
 
       interval = (getOption(:wait) || 3).to_i
       Plog.info "Wait #{interval}s for change to stop"
