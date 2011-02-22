@@ -97,7 +97,7 @@ EOI
 
   def encode_option(profile)
     config = YAML.load_file("#{ENV['HOME']}/.tool/hbrip.conf")
-    brate  = (@data[:bitrate] || 2000).to_i
+    brate  = (@data[:bitrate] || 1000).to_i
     if mrate = @options[:mrate]
       if brate > mrate.to_i
         brate = mrate.to_i
@@ -264,10 +264,18 @@ class HbRip
     if !Pf.system("#{cmd} -i '#{sfile}' -o '#{tmp_ofile}' 2>'#{errfile}'", 1) ||
        !test(?f, "#{tmp_ofile}")
       STDERR.puts File.read(errfile)
+      growl_notify "Handbrake error for #{ofile}"
       return false
     end
     FileUtils.move("#{tmp_ofile}", ofile, :verbose=>true, :force=>true)
+    growl_notify "Handbrake complete for #{ofile}"
     true
+  end
+
+  def self.growl_notify(msg)
+    if getOption(:growl)
+      Pf.system "growlnotify --appIcon Handbrake --message '#{msg}' 2>/dev/null"
+    end
   end
 
   def self.cliNew
@@ -288,6 +296,7 @@ if (__FILE__ == $0)
                   ['--brate',   '-b', 1],
                   ['--debug',   '-d', 0],
                   ['--force',   '-f', 0],
+                  ['--growl',   '-g', 0],
                   ['--input',   '-i', 1],
                   ['--mrate',   '-m', 1],
                   ['--otype',   '-o', 1],

@@ -25,16 +25,7 @@ class FirefoxHelper
   }
 
 
-  def self.get_dname(ddir, file, ftype)
-    if ftype == 'mp3'
-      m3info = Mp3File.new(file)
-      #p "tag = #{m3info.tag}"
-      fname  = m3info.tag['title']
-      if fname
-        return "#{ddir}/#{fname.strip}.#{ftype}"
-      end
-    end
-    dfile = nil
+  def self.get_typedname(ddir, ftype)
     count = 0
     while true
       dfile = "#{ddir}/#{ftype}-#{count}.#{ftype}"
@@ -44,6 +35,18 @@ class FirefoxHelper
       count += 1
     end
     nil
+  end
+
+  def self.get_dname(ddir, file, ftype)
+    if ftype == 'mp3'
+      m3info = Mp3File.new(file)
+      #p "tag = #{m3info.tag}"
+      fname  = m3info.tag['title']
+      if fname
+        return "#{ddir}/#{fname.strip}.#{ftype}"
+      end
+    end
+    get_typedname(ddir, ftype)
   end
 
   def self._harvest(scandir, ftypes)
@@ -103,7 +106,16 @@ class FirefoxHelper
             if getOption(:copy)
               FileUtils.cp(file, dfile, :verbose=>true)
             else
-              FileUtils.move(file, dfile, :verbose=>true)
+              begin
+                FileUtils.move(file, dfile, :verbose=>true)
+                growl "#{File.basename(dfile)} collected"
+              rescue ArgumentError
+                dfile = get_typedname(here, ftype)
+                FileUtils.move(file, dfile, :verbose=>true)
+                growl "#{File.basename(dfile)} collected"
+              rescue => errmsg
+                p errmsg
+              end
             end
             mcount += 1
           else
@@ -115,6 +127,12 @@ class FirefoxHelper
       return (pending <= 0)
     end
     true
+  end
+
+  def self.growl(msg)
+    if getOption(:growl)
+      Pf.system "growlnotify --appIcon Firefox --message '#{msg}' 2>/dev/null"
+    end
   end
 
   def self.harvest(scandir, *ftypes)
@@ -132,6 +150,7 @@ end
 
 if (__FILE__ == $0)
   FirefoxHelper.handleCli(
+        ['--growl',  '-g', 0],
         ['--copy',   '-k', 0],
         ['--server', '-s', 0],
         ['--wait',   '-w', 1]
