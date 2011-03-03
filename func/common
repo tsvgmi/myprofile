@@ -84,28 +84,23 @@ function _cdTitle {
   if [ "$CLEARCASE_ROOT" ]; then
     ident="$HOST(${CLEARCASE_ROOT##*/})"
   elif [ "$ET_ENVIRONMENT" ]; then
-    ident="$ET_ENVIRONMENT:$ET_APPLICATION:$ET_SERVER:$ET_INSTANCE:$HOST"
+    ident="$HOST:$ET_ENVIRONMENT:$ET_APPLICATION:$ET_SERVER:$ET_INSTANCE"
   else
     ident=$HOST
   fi
   typeset here=${PWD##*/fuse/}
-  if [ "$here" != "$PWD" ]; then
+  if [ "$here" != $PWD ]; then
     rhost=${here%%/*}
     export HCD_HOST=$rhost
     ident="$ident($rhost)"
   fi
-  termTitle $ident
+  echo -n "]0;$ident"
   if [ "$BASH_VERSION" ]; then
     export PS1="[\!.$ident] \W>"
   else
     export PS1="[!.$ident] ${PWD##*/}>"
   fi
 }
-
-function termTitle {
-  echo -n "]0;$*"
-}
-
 
 #==========================================================================
 # Function:    [hcd]
@@ -137,11 +132,7 @@ function _cd {
   if [ "$BASH" -a $# -gt 1 ]; then
     'cd' ${PWD/$1/$2}
   else
-    if [ "$#" -gt 0 ]; then
-      'cd' "$*"
-    else
-      'cd'
-    fi
+    'cd' $*
   fi
   _cdTitle
 }
@@ -276,7 +267,7 @@ function cterm {
 
   ruby -e '
     1.upto(ARGV.shift.to_i) {|count|
-      value = "%02x%02x%02x" % [16+rand(40), 16+rand(40), 16+rand(40)]
+      value = "%02x%02x%02x" % [16+rand(80), 16+rand(80), 16+rand(80)]
       bg = "-bg \\##{value}"
       ENV["MRXVT_OPT"] = bg
       cmd = "mrxvt #{bg} -ls &"
@@ -355,14 +346,14 @@ function _ssh {
     if ifconfig | grep -w inet | grep 10.150.175; then
       case $target in
       *m7)
-        emssh connect tvuong@lxp6d199m0#tvuong@$@
+        emssh -l tvuong connect lxp6d199m0#$@
         ;;
       *)
-        emssh connect tvuong@$@
+        emssh -l tvuong connect $@
         ;;
       esac
     else
-      emssh connect tvuong@$@
+      emssh -l tvuong connect $@
     fi
   fi
 }

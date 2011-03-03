@@ -200,8 +200,8 @@ map 	7	:7bu<CR>
 map 	8	:8bu<CR>
 map 	9	:9bu<CR>
 
-nmap 	<M-C>	!!vimfilt.rb % cbar<CR>
-nmap 	c	!!vimfilt.rb % cbar<CR>
+nmap 	<M-C>	!!~/bin/vimfilt.rb % cbar<CR>
+nmap 	c	!!~/bin/vimfilt.rb % cbar<CR>
 map	,in	ma/^}<CR>:'a,.!tclIndent<CR>
 map	,fl	:g/^\(proc\\|sub\\|func\)/p
 
@@ -265,17 +265,17 @@ if version >= 600
   filetype plugin on
 endif
 
-command! -range AlignColumn1 <line1>,<line2>!vimfilt.rb % alcol 1
-command! -range AlignColumn2 <line1>,<line2>!vimfilt.rb % alcol 2
-command! -range AlignColumn3 <line1>,<line2>!vimfilt.rb % alcol 3
-command! -range AlignColumn <line1>,<line2>!vimfilt.rb % alcol
-command! -range AlignEqual <line1>,<line2>!vimfilt.rb % ae
-command! -range FmtComment <line1>,<line2>!vimfilt.rb % fmtcmt
-command! -range FmtHaml    <line1>,<line2>!vimfilt.rb % fmt_haml
-command! -range FuncHeader <line1>,<line2>!vimfilt.rb % funcHeader
+command! -range AlignColumn1 <line1>,<line2>!~/bin/vimfilt.rb % alcol 1
+command! -range AlignColumn2 <line1>,<line2>!~/bin/vimfilt.rb % alcol 2
+command! -range AlignColumn3 <line1>,<line2>!~/bin/vimfilt.rb % alcol 3
+command! -range AlignColumn <line1>,<line2>!~/bin/vimfilt.rb % alcol
+command! -range AlignEqual <line1>,<line2>!~/bin/vimfilt.rb % ae
+command! -range FmtComment <line1>,<line2>!~/bin/vimfilt.rb % fmtcmt
+command! -range FmtHaml    <line1>,<line2>!~/bin/vimfilt.rb % fmt_haml
+command! -range FuncHeader <line1>,<line2>!~/bin/vimfilt.rb % funcHeader
 
-command! AddFold    	.!vimfilt.rb % addFold
-command! FileHeader	0r!vimfilt.rb % fileTemplate
+command! AddFold    	.!~/bin/vimfilt.rb % addFold
+command! FileHeader	0r!~/bin/vimfilt.rb % fileTemplate
 
 command! Bartedit      set guifont=Monaco:h14|color zellner
 command! Normedit      set guifont=Monaco:h12|color koehler
@@ -289,7 +289,7 @@ vmap ,a2c	:AlignColumn2<CR>
 vmap ,a3c	:AlignColumn3<CR>
 vmap ,ac	:AlignColumn<CR>
 vmap ,ae	:AlignEqual<CR>
-vmap ,cb        !vimfilt.rb % cbar<CR>
+vmap ,cb        !~/bin/vimfilt.rb % cbar<CR>
 vmap ,cf	:FmtComment<CR>
 vmap ,hf	:FmtHaml<CR>
 vmap ,fh	:FuncHeader<CR>
@@ -338,3 +338,6 @@ let g:miniBufExplMapCTabSwitchWindows = 1
 let g:miniBufExplUseSingleClick = 1
 let g:miniBufExplModSelTarget = 1
 
+color darkblue
+
+set ttymouse=xterm

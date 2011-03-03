@@ -7,40 +7,16 @@
 # Description: Common profile for all nodes
 # $Id$
 ############################################################################
-
-if [ -f ~/.usebash ]; then
-  case $0 in
-  *[-ck]sh)
-    PATH=/etrade/tools/bin:$PATH:/etrade/bin
-    if whence bash >/dev/null 2>&1; then
-      export SHELL=$(whence bash)
-      echo "... switching to bash ..."
-      exec $SHELL --login
-    fi
-    ;;
-  esac
-else
-  case $0 in
-  *ksh)
-    case $(uname) in
-    Linux)
-      set -o vi-tabcomplete
-      ;;
-    esac
-    ;;
-  esac
-fi
-
 unset EM_TOOL_DEFINED EM_TOOL_DIR
+
+HOST=$(hostname)
+HOST=${HOST%%.*}
+[ "$USER" ] || USER=$LOGNAME
 
 # Keep track of where I logged on from.
 lrec=$(who am i)
 [ "$lrec" ] && echo "$HOST: $(who am i)"  >>~/lastlogin.dat
 [ -f ~/lastlogin.dat ] && tail ~/lastlogin.dat
-
-HOST=$(hostname)
-HOST=${HOST%%.*}
-[ "$USER" ] || USER=$LOGNAME
 
 case $(uname) in
   Linux)
@@ -64,7 +40,7 @@ case $OSTYPE in
   cygwin)
     PATH=$PATH:/bin:/usr/bin
     # Windows box ip address and name is a mess
-    set -- $(ipconfig | grep "IP Address" | sed 's/^.* //')
+    set -- $(ipconfig | egrep "(IP|IPv4) Address" | sed 's/^.* //')
     address=$1
     set -- $(nslookup $address 2>/dev/null| sed 's/^.* //')
     if [ $# -gt 2 ]; then
@@ -95,7 +71,7 @@ for path in $pathlist; do
   [ -d $path/man ] && MANPATH=$MANPATH:$path/man
   [ -d $path/share/man ] && MANPATH=$MANPATH:$path/share/man
 done
-for dir in ~/bin ~/bin/mtool ~/etool/bin ~/etfw2/bin \
+for dir in ~/bin ~/emtools/bin ~/bin/mtool ~/etool/bin ~/etfw2/bin \
         ~/etfw2/lib/pem ~/selaf/bin /usr/winbin \
         /usr/java/jre1.6*/bin; do
   [ -d $dir ] && PATH=$dir:$PATH
@@ -112,7 +88,7 @@ stty echoe
 set -o vi
 set -o ignoreeof
 
-if whiich shopt >/dev/null 2>&1; then
+if which shopt >/dev/null 2>&1; then
   shopt -s cdspell
   shopt -s cmdhist
 fi
@@ -122,14 +98,33 @@ export OPATH=$PATH
 export OLD_LIBRARY_PATH=$LD_LIBRARY_PATH
 
 set -- $SSH_CLIENT
-RHOST=$1
-case $RHOST in
-# From my MAC Pro
-10.50.75.*|10.80.40.*)
-  echo "Clear display from $DISPLAY"
-  ODISPLAY=$DISPLAY DISPLAY=
-  ;;
-esac
+remip=$1
+
+netlan=yes
+if [ "$remip" ]; then
+# This will hang if DNS server is down or no internet access ....
+  set -- $(host $HOST)
+  myip=$4
+
+  netlan=
+  case $myip in
+  10.21.*|10.152.*)        # lxp6d
+    case $remip in
+    10.21.*|10.85.*|127.0.*)      # lxp6d, mb45-
+      netlan=yes ;;
+    esac
+    ;;
+  esac
+fi
+
+if [ ! "$netlan" ]; then
+  if [ "$DISPLAY" ]; then
+    echo "Clear display from $DISPLAY"
+    export ODISPLAY=$DISPLAY
+    unset DISPLAY
+  fi
+fi
+
 if [ ! "$DISPLAY" ]; then
   if [ "$SSH_RDISPLAY" ]; then
     export XEDITOR="sshedit.rb edit"
@@ -139,12 +134,6 @@ fi
 echo "Display is [$DISPLAY]"
 
 export http_proxy=http://lxp6d199m0:6100
-
-date=$(date +${HOME}/%Y%m%d.DATE)
-if [ ! -f $date ]; then
-  rm -f ~/*.DATE
-  date > $date
-fi
 
 export CVSROOT=:pserver:$USER@cvsserver.etrade.com:2401/etrade/cvsserver/cvs
 # The smart option is dumber than the dumb option.  Don' clear sreen
@@ -220,7 +209,20 @@ if [ ! "$ET_ENVIRONMENT" ]; then
   if [ -f ~/.tool/etenv-$HOST ]; then
     echo "... Switching into etenv ..."
     exec emtool etenv
+  else
+    if [ -f /etrade/tools/etc/bashswitch ]; then
+      . /etrade/tools/etc/bashswitch
+    elif [ -f etfw2/etc/bashswitch ]; then
+      . etfw2/etc/bashswitch
+    fi
   fi
 fi
 
-_cd "$PWD"
+if [ -f /usr/lib/libhoard.so ]; then
+  export LD_PRELOAD_32=/usr/lib/libhoard.so:/usr/lib/libdl.so
+fi
+if [ -f /usr/lib64/libhoard.so ]; then
+  export LD_PRELOAD_64=/usr/lib64/libhoard.so:/usr/lib64/libdl.so
+fi
+
+_cd

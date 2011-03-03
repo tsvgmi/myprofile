@@ -3,7 +3,7 @@
 # Date:        Thu Nov 22 18:45:57 -0500 2007
 # Copyright:   Mocana, 2007
 # Description: Bootstrap for MSS ruby scripts
-# $Id: toolenv.rb 6 2010-11-26 10:59:34Z tvuong $
+# $Id: toolenv.rb 56 2010-06-29 17:47:56Z tvuong $
 #---------------------------------------------------------------------------
 #+++
 if !ENV["TOOL_DEFINED"]
@@ -14,5 +14,5 @@ if !ENV["TOOL_DEFINED"]
   ENV["T_DATA_DIR"]  = ENV["T_TOOL_DIR"] + "/var"
   ENV["T_DATA_DIR0"] = ENV["T_DATA_DIR"]
   ENV["PATH"] += ":#{ENV['T_TOOL_BIN']}"
-  #T_TOOL_BASE = ENV['T_TOOL_DIR']
+  T_TOOL_BASE = ENV['T_TOOL_DIR']
 end
