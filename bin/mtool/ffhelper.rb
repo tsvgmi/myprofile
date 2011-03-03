@@ -40,8 +40,12 @@ class FirefoxHelper
   def self.get_dname(ddir, file, ftype)
     if ftype == 'mp3'
       m3info = Mp3File.new(file)
-      #p "tag = #{m3info.tag}"
-      fname  = m3info.tag['title']
+      p "tag = #{m3info.tag}"
+      fname   = m3info.tag['title']
+      artist  = m3info.tag['artist']
+      if fname && artist
+        return "#{ddir}/#{fname.strip}-#{artist.strip}.#{ftype}"
+      end
       if fname
         return "#{ddir}/#{fname.strip}.#{ftype}"
       end
@@ -131,7 +135,7 @@ class FirefoxHelper
 
   def self.growl(msg)
     if getOption(:growl)
-      Pf.system "growlnotify --appIcon Firefox --message '#{msg}' 2>/dev/null"
+      Pf.system "growlnotify --sticky --appIcon Firefox --message '#{msg}' 2>/dev/null"
     end
   end
 

@@ -36,7 +36,7 @@ class VideoFile
       if @options[:debug]
         content = `#{cmd} 2>&1 | tee /dev/tty`
       else
-        content = `#{cmd} 2>&1`
+        content = `#{cmd} 2>&1 | tee title.log`
       end
       if content == ""
         raise "Can't get content from #{@name}"
@@ -53,6 +53,9 @@ class VideoFile
         elsif line =~ /^  \+ size: (\S+),/
           size = $1
         elsif line =~ /bitrate: (\d+)/
+          bitrate = $1
+          p bitrate
+        elsif line =~ /bitrate (\d+)/
           bitrate = $1
         elsif line =~ /^    \+ (\d+): cells.*duration (\S+)/
           chapter = $1
@@ -97,7 +100,7 @@ EOI
 
   def encode_option(profile)
     config = YAML.load_file("#{ENV['HOME']}/.tool/hbrip.conf")
-    brate  = (@data[:bitrate] || 1000).to_i
+    brate  = (@data[:bitrate] || 2000).to_i
     if mrate = @options[:mrate]
       if brate > mrate.to_i
         brate = mrate.to_i
@@ -238,8 +241,9 @@ class HbRip
   end
 
   def self.to_divx(files)
+    options = getOption
     files.each do |afile|
-      VideoFile.new(afile).to_divx
+      VideoFile.new(afile, options).to_divx
     end
     true
   end
@@ -250,6 +254,7 @@ class HbRip
       `find . -name '*#{atype}'`.split("\n").each do |afile|
         cmd = "hbrip.rb #{opt} to_divx '#{afile}'"
         Pf.system(cmd, 1)
+        break
       end
     end
   end
@@ -264,17 +269,17 @@ class HbRip
     if !Pf.system("#{cmd} -i '#{sfile}' -o '#{tmp_ofile}' 2>'#{errfile}'", 1) ||
        !test(?f, "#{tmp_ofile}")
       STDERR.puts File.read(errfile)
-      growl_notify "Handbrake error for #{ofile}"
+      growl_notify "Handbrake error for #{File.basename(ofile)}"
       return false
     end
     FileUtils.move("#{tmp_ofile}", ofile, :verbose=>true, :force=>true)
-    growl_notify "Handbrake complete for #{ofile}"
+    growl_notify "Handbrake complete for #{File.basename(ofile)}"
     true
   end
 
   def self.growl_notify(msg)
     if getOption(:growl)
-      Pf.system "growlnotify --appIcon Handbrake --message '#{msg}' 2>/dev/null"
+      Pf.system "growlnotify --sticky --appIcon Handbrake --message '#{msg}' 2>/dev/null"
     end
   end
 

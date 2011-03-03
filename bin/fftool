@@ -51,6 +51,15 @@ case $oper in
     F_rbexec ffhelper $ropt harvest $bdir $*
     ;;
 
+  srt-search)
+    movie=$(echo $@ | sed 's/ /%20/g')
+    open "http://subscene.com/filmsearch.aspx?q=${movie}&exact=1"
+    exit 0
+    tmpf=$(F_tmpf 0)
+    http_proxy= curl --location-trusted "http://subscene.com/filmsearch.aspx?q=${movie}&exact=1" >$tmpf
+    [ -s $tmpf ] || F_abort "No content found"
+    ;;
+
   *)
     F_usageOper $oper
     ;;
