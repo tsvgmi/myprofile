@@ -250,11 +250,18 @@ class HbRip
 
   def self.to_divx_for_types(*types)
     opt = cliOptBuild
+    skiplist = []
+    if test(?f, "skip.txt")
+      skiplist = File.read("skip.txt").split("\n")
+    end
     types.each do |atype|
       `find . -name '*#{atype}'`.split("\n").each do |afile|
+        if skiplist.index(afile)
+          Plog.error "Skipping: #{afile}"
+          next
+        end
         cmd = "hbrip.rb #{opt} to_divx '#{afile}'"
         Pf.system(cmd, 1)
-        break
       end
     end
   end
