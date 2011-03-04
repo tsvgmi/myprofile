@@ -346,14 +346,15 @@ function _ssh {
     if ifconfig | grep -w inet | grep 10.150.175; then
       case $target in
       *m7)
-        emssh -l tvuong connect lxp6d199m0#$@
+        #emssh -l tvuong connect lxp6d199m0#$@
+        emssh connect tvuong@lxp6d199m0#$@
         ;;
       *)
-        emssh -l tvuong connect $@
+        emssh connect tvuong@$@
         ;;
       esac
     else
-      emssh -l tvuong connect $@
+      emssh connect tvuong@$@
     fi
   fi
 }

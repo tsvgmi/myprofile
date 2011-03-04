@@ -1,0 +1,151 @@
+#!/bin/bash
+. ${0%/*}/../etc/tool.env
+#######################################################################
+# File: 	admtool
+# Description:  Sysadmin tools
+# Created:	2002-06-23
+# $Id$
+#######################################################################
+
+PATH=$PATH:/sbin:/usr/sbin
+
+#==========================================================================
+# Function:    [f_killApp]
+# Description: .
+#==========================================================================
+function f_killApp {
+  typeset app pidlist
+
+  pidlist=
+  for app in $*; do
+    set -- $(ps -eauwx | egrep "Applications/.*${app}" | egrep -v egrep)
+    if [ $# -ge 2 ]; then
+      pidlist="$pidlist $2"
+    fi
+  done
+  if [ "$pidlist" ]; then
+    kill $pidlist
+    sleep 1
+  fi
+}
+
+#------------------------------------------------------ Begin of script ---
+#------------------------------------------------------ Begin of script ---
+#------------------------------------------------------ Begin of script ---
+
+F_subCommand $*
+oper=$1; shift
+case $oper in
+
+#@Use: synergy [host]
+#@Des: Running synergy
+#=begin
+# This detects where you're logged in from (using SSH) and run a client
+# connect to the server you're from.  This allow laptop to ssh connect
+# to a Unix ws and have it connected to the current ip address
+#
+# If host is specified, it ssh to host first before run.  This allows
+# running this command on the laptop and have the WS connected to it
+# w/o having to ssh in.
+#=end
+  synergy)
+    dossh= ropt= user=$LOGNAME
+    while getopts :su: i; do
+      case $i in
+      s) dossh=yes ropt="$ropt -$i" ;;
+      u) user=$OPTARG ;;
+      *) F_usageOper $oper ;;
+      esac
+    done
+    let j=$OPTIND-1; shift $j; OPTIND=0
+    rhost=$1
+    if [ "$rhost" -a "$rhost" != "$EM_HOST" ]; then
+      F_exec ssh $user@$rhost bin/mpolohook $oper $ropt -u $LOGNAME
+    else
+      set -- $SSH_CLIENT
+      [ $# -gt 0 ] || F_abort "You must logon from ssh to invoke this"
+      fromip=$1
+      pgrep -f 'X .*:0'
+      if [ $? -ne 0 ]; then
+        F_abort "X windows not started" $LINENO
+      fi
+      F_system pkill synergyc && F_wait 1
+      F_logProgress "Turn off screen saver"
+      DISPLAY=:0 F_system xset -dpms
+      if [ "$dossh" ]; then
+        F_system ssh -f -N -L localhost:24800:$fromip:24800 $user@$fromip
+        F_exec synergyc --display :0 localhost
+      else
+        F_exec synergyc --display :0 $fromip
+      fi
+    fi
+    ;;
+
+  splitvpn)
+    dest=$1
+    [ "$dest" ] || dest=etrade
+    (
+      ifconfig
+      netstat -nrf inet
+      F_rbrun vpnhelper $dest split 
+    ) 2>&1 | \
+    tee ~/$oper.log
+    ;;
+
+  cvpn-reset)
+    sudo kextunload /System/Library/Extensions/CiscoVPN.kext
+    sleep 1
+    sudo kextload /System/Library/Extensions/CiscoVPN.kext
+    ;;
+
+  rsynergy)
+    F_exec ssh tvuong@lxp6d199m0 bin/mpolohook synergy
+    ;;
+
+  connect-vpn)
+    dotunnel=yes
+    while getopts :t i; do
+      case $i in
+      t) dotunnel= ;;
+      *) F_usageOper $oper ;;
+      esac
+    done
+    let j=$OPTIND-1; shift $j; OPTIND=0
+    (
+      F_system $EM_MYPROG splitvpn
+      # Must put tunnel all in background to avoid blockage if
+      # a remote node is down
+      if [ "$dotunnel" ]; then
+        F_system emssh tunnel all &
+        sleep 3
+      fi
+      open -a iCal
+      open -a Mail
+      # These require tunnel to finish opening
+      sleep 3
+      open -a 'Google Chrome' https://citrix.etrade.com/vpn/index.html
+      open -a 'Google Chrome' https://cwa.corp.etradegrp.com/
+    ) &
+    ;;
+
+  connect-home)
+    f_killApp Microsoft.Messenger
+    open -a Chaneru
+    ;;
+
+  connect-et|connect-etwl)
+    f_killApp Chaneru Opera iTunes jDownloader
+    open -a iCal
+    open -a Mail
+    open -a "Microsoft Messenger"
+    if [ "$oper" == "connect-etrade-wl" ]; then
+      F_exec ssh tvuong@lxp6d199m0 bin/mpolohook synergy
+    fi
+    ;;
+
+  *)
+    F_usageOper $oper
+    ;;
+esac
+exit 0
+
