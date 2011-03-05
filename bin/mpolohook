@@ -18,9 +18,9 @@ function f_killApp {
 
   pidlist=
   for app in $*; do
-    set -- $(ps -eauwx | egrep "Applications/.*${app}" | egrep -v egrep)
-    if [ $# -ge 2 ]; then
-      pidlist="$pidlist $2"
+    set -- $(ps -awx | egrep "Applications/.*${app}" | egrep -v egrep | sed 's/ .*$//')
+    if [ $# -ge 0 ]; then
+      pidlist="$pidlist $*"
     fi
   done
   if [ "$pidlist" ]; then
@@ -128,7 +128,7 @@ case $oper in
     ) &
     ;;
 
-  connect-home)
+  connect-home|connect-homewl)
     f_killApp Microsoft.Messenger
     open -a Chaneru
     ;;
