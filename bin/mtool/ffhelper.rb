@@ -7,6 +7,7 @@
 #+++
 require File.dirname(__FILE__) + "/../../etc/toolenv"
 require 'yaml'
+require 'fileutils'
 require 'mtool/core'
 require 'mtool/mp3file'
 
@@ -37,6 +38,23 @@ class FirefoxHelper
     nil
   end
 
+  def self.set_dname(file, description)
+    title, artist, album = description.split(/\s*-\s*/)
+    m3info = Mp3File.new(file)
+    m3info.tag.title  = title.gsub(/\'/, '')
+    m3info.tag.artist = artist if artist
+    m3info.tag.album  = album  if album
+    m3info.close
+    if title && artist
+      dfile = "#{title}-#{artist}.mp3"
+    else
+      dfile = "#{title}.mp3"
+    end
+    if dfile != file
+      FileUtils.move(file, dfile, :verbose=>true)
+    end
+  end
+
   def self.get_dname(ddir, file, ftype)
     if ftype == 'mp3'
       m3info = Mp3File.new(file)
@@ -54,8 +72,6 @@ class FirefoxHelper
   end
 
   def self._harvest(scandir, ftypes)
-    require 'fileutils'
-
     here = Dir.pwd
     Dir.chdir(scandir) do
       fsets  = {}

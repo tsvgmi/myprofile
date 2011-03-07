@@ -191,7 +191,7 @@ class HbRip
     cmd = if (chapter != 0) && (title != 0)
       "HandBrakeCLI --title #{title} --chapter #{chapter} #{encopt}"
     elsif (title < 0)
-      "HandBrakeCLI --longest #{encopt}"
+      "HandBrakeCLI --main-feature #{encopt}"
     elsif (title != 0)
       "HandBrakeCLI --title #{title} #{encopt}"
     else

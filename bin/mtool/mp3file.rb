@@ -39,7 +39,7 @@ class Mp3File
 
     @options = options
     begin
-      @mp3info = Mp3Info.open(file)
+      @mp3info = Mp3Info.open(file, :encoding => 'utf-8')
     rescue Mp3InfoError => errmsg
       p errmsg
     end
