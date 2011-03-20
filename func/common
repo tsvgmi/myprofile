@@ -80,10 +80,8 @@ function l {
 # Description: .
 #==========================================================================
 function xtitle {
-  typeset code
-
   [ "$HOST" ] || export HOST=$(hostname)
-  echo -n "]0;$HOST-$@-$code"
+  echo -n "]0;$HOST:$@"
 }
 
 #---------------------------------------------------------- function : _cd
@@ -103,12 +101,14 @@ function _cdTitle {
     export HCD_HOST=$rhost
     ident="$ident($rhost)"
   fi
-  echo -n "]0;$ident"
-  if [ "$BASH_VERSION" ]; then
-    export PS1="[\!.$ident] \W>"
-  else
-    export PS1="[!.$ident] ${PWD##*/}>"
+  # Touch the title only when it changes.  So user could override
+  # elsewhere
+  if [ "$TERM_TITLE" != "$ident" ]; then
+    echo -n "]0;$ident"
+    TERM_TITLE=$ident
   fi
+  # Prompt have history and tail of dir
+  export PS1="[!.$ident] ${PWD##*/}>"
 }
 
 #==========================================================================
