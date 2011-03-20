@@ -5,22 +5,22 @@ dellist:
   - "'rpm --dbpath /etrade/var/lib/rpm'"
   - ""
   - 2010-04-03 21:50:07.864304 -07:00
-  cd: 
-  - "'_cd'"
-  - .alias-common
-  - 2010-07-12 20:13:30.428657 -07:00
-  grai: 
-  - "'cd2 /home/thien/etool/staf-rails'"
-  - .alias-common
-  - 2008-09-30 10:09:56.270954 -07:00
-  gvim: 
-  - "'xvim'"
-  - 
-  - 2008-05-08 00:12:39.240669 -07:00
   godsa: 
   - "'cd2 /etrade/home/tvuong'"
   - .alias-common
   - 2010-04-03 21:50:07.864336 -07:00
+  gvim: 
+  - "'xvim'"
+  - 
+  - 2008-05-08 00:12:39.240669 -07:00
+  grai: 
+  - "'cd2 /home/thien/etool/staf-rails'"
+  - .alias-common
+  - 2008-09-30 10:09:56.270954 -07:00
+  cd: 
+  - "'_cd'"
+  - .alias-common
+  - 2010-07-12 20:13:30.428657 -07:00
   sudo: 
   - "'etcmd -s'"
   - .alias-rhas3
@@ -29,14 +29,14 @@ dellist:
   - "'etoolset ed'"
   - .alias-common
   - 2011-02-08 11:32:40.084338 -08:00
-  rm: 
-  - "'_rm'"
-  - .alias-common
-  - 2009-03-06 18:29:46.695829 -08:00
   rsyncsol: 
   - "'rsync --rsync-path=/etrade/pkgs/opensrc/1.0/bin/rsync'"
   - .alias-common
   - 2010-04-03 21:50:07.864367 -07:00
+  rm: 
+  - "'_rm'"
+  - .alias-common
+  - 2009-03-06 18:29:46.695829 -08:00
   ct: 
   - "'cleartool'"
   - .alias-common
@@ -45,25 +45,29 @@ dellist:
   - "'ls --color=tty'"
   - .alias-linux
   - 2009-02-01 12:01:45.584071 -08:00
-  vi: 
-  - "'vim'"
-  - .alias-common
-  - 2008-05-28 23:13:08.268527 -07:00
   etenv: 
   - "'emtool etenv'"
   - .alias-common
   - 2010-04-03 21:50:07.864427 -07:00
+  vi: 
+  - "'vim'"
+  - .alias-common
+  - 2008-05-28 23:13:08.268527 -07:00
   setview: 
   - "'cleartool setview -login'"
   - ""
   - 2009-06-30 00:17:19.144812 -07:00
+  emgrep: 
+  - "'emtool grep'"
+  - .alias-common
+  - 2011-03-14 09:45:02.963219 -07:00
 oldlist: {}
 
 valias: 
-version: 99
+version: 100
 valias: 
   _ALIAS_VERSION:
-  - "'98'"
+  - "'99'"
   - ".alias-common"
   edemt:
   - "'emtool ed -d ~/emtools'"
@@ -79,9 +83,6 @@ valias:
   - ".alias-common"
   emed:
   - "'emtool ed'"
-  - ".alias-common"
-  emgrep:
-  - "'emtool grep'"
   - ".alias-common"
   ems:
   - "'emssh emconnect'"

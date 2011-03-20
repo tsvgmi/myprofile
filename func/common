@@ -75,15 +75,24 @@ function l {
   \ls -sFC $* | less -EX
 }
 
+#==========================================================================
+# Function:    [xtitle]
+# Description: .
+#==========================================================================
+function xtitle {
+  typeset code
+
+  [ "$HOST" ] || export HOST=$(hostname)
+  echo -n "]0;$HOST-$@-$code"
+}
+
 #---------------------------------------------------------- function : _cd
 # Purpose  : A customized 'cd' version to display essential info on the
 #	xterm title bar
 #-------------------------------------------------------------------------
 function _cdTitle {
   [ "$HOST" ] || export HOST=$(hostname)
-  if [ "$CLEARCASE_ROOT" ]; then
-    ident="$HOST(${CLEARCASE_ROOT##*/})"
-  elif [ "$ET_ENVIRONMENT" ]; then
+  if [ "$ET_ENVIRONMENT" ]; then
     ident="$HOST:$ET_ENVIRONMENT:$ET_APPLICATION:$ET_SERVER:$ET_INSTANCE"
   else
     ident=$HOST
