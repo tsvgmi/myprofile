@@ -107,7 +107,11 @@ function _cdTitle {
     TERM_TITLE=$ident
   fi
   # Prompt have history and tail of dir
-  export PS1="[!.$ident] ${PWD##*/}>"
+  if [ "$BASH_VERSION" ]; then
+    export PS1="[\!.$ident] \W>"
+  else
+    export PS1="[!.$ident] ${PWD##*/}>"
+  fi
 }
 
 #==========================================================================
