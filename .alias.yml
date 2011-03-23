@@ -1,58 +1,58 @@
 --- !ruby/object:Alias 
 cfile: /Users/thienvuong/.alias.yml
 dellist: 
-  etrpm: 
-  - "'rpm --dbpath /etrade/var/lib/rpm'"
-  - ""
-  - 2010-04-03 21:50:07.864304 -07:00
   ems: 
   - "'emssh emconnect'"
   - ""
   - 2011-03-07 13:40:09.147457 -08:00
-  cd: 
-  - "'_cd'"
-  - .alias-common
-  - 2010-07-12 20:13:30.428657 -07:00
-  grai: 
-  - "'cd2 /home/thien/etool/staf-rails'"
-  - .alias-common
-  - 2008-09-30 10:09:56.270954 -07:00
-  gvim: 
-  - "'xvim'"
-  - 
-  - 2008-05-08 00:12:39.240669 -07:00
+  etrpm: 
+  - "'rpm --dbpath /etrade/var/lib/rpm'"
+  - ""
+  - 2010-04-03 21:50:07.864304 -07:00
   godsa: 
   - "'cd2 /etrade/home/tvuong'"
   - .alias-common
   - 2010-04-03 21:50:07.864336 -07:00
+  gvim: 
+  - "'xvim'"
+  - 
+  - 2008-05-08 00:12:39.240669 -07:00
+  grai: 
+  - "'cd2 /home/thien/etool/staf-rails'"
+  - .alias-common
+  - 2008-09-30 10:09:56.270954 -07:00
+  cd: 
+  - "'_cd'"
+  - .alias-common
+  - 2010-07-12 20:13:30.428657 -07:00
   sudo: 
   - "'etcmd -s'"
   - .alias-rhas3
   - 2008-05-29 08:45:41.140384 -07:00
-  edtool: 
-  - "'etoolset ed'"
-  - .alias-common
-  - 2011-02-08 11:32:40.084338 -08:00
   firefox: 
   - "'/etrade/pkgs/linux/intel/firefox3/3.6/firefox'"
   - ""
   - 2011-03-07 13:40:09.147520 -08:00
-  rm: 
-  - "'_rm'"
+  edtool: 
+  - "'etoolset ed'"
   - .alias-common
-  - 2009-03-06 18:29:46.695829 -08:00
-  rsyncsol: 
-  - "'rsync --rsync-path=/etrade/pkgs/opensrc/1.0/bin/rsync'"
-  - .alias-common
-  - 2010-04-03 21:50:07.864367 -07:00
-  ksar: 
-  - "'/etrade/pkgs/linux/intel/kSar/5.0.6.rhas5.x86_64/run.sh &'"
-  - ""
-  - 2011-03-07 13:40:09.147550 -08:00
+  - 2011-02-08 11:32:40.084338 -08:00
   gfeed: 
   - "'cd2 /etrade/home/tvuong/etpro/MarketFeedSystem/FeedDataClient/sampleFeedDataClient'"
   - ""
   - 2011-03-07 13:40:09.147580 -08:00
+  ksar: 
+  - "'/etrade/pkgs/linux/intel/kSar/5.0.6.rhas5.x86_64/run.sh &'"
+  - ""
+  - 2011-03-07 13:40:09.147550 -08:00
+  rsyncsol: 
+  - "'rsync --rsync-path=/etrade/pkgs/opensrc/1.0/bin/rsync'"
+  - .alias-common
+  - 2010-04-03 21:50:07.864367 -07:00
+  rm: 
+  - "'_rm'"
+  - .alias-common
+  - 2009-03-06 18:29:46.695829 -08:00
   ct: 
   - "'cleartool'"
   - .alias-common
@@ -61,14 +61,14 @@ dellist:
   - "'ls --color=tty'"
   - .alias-linux
   - 2009-02-01 12:01:45.584071 -08:00
-  vi: 
-  - "'vim'"
-  - .alias-common
-  - 2008-05-28 23:13:08.268527 -07:00
   etenv: 
   - "'emtool etenv'"
   - .alias-common
   - 2010-04-03 21:50:07.864427 -07:00
+  vi: 
+  - "'vim'"
+  - .alias-common
+  - 2008-05-28 23:13:08.268527 -07:00
   setview: 
   - "'cleartool setview -login'"
   - ""
@@ -76,11 +76,17 @@ dellist:
 oldlist: {}
 
 valias: 
-version: 107
+version: 112
 valias: 
   _ALIAS_VERSION:
-  - "'106'"
+  - "'111'"
   - ".alias-common"
+  citrix:
+  - "'open -a '\''Google Chrome'\'' https://citrix.etrade.com/vpn/index.html'"
+  - ""
+  cwa:
+  - "'open -a '\''Google Chrome'\'' https://cwa.corp.etradegrp.com'"
+  - ""
   edemt:
   - "'emtool ed -d ~/emtools'"
   - ""
@@ -196,10 +202,10 @@ valias:
   - "'_ssh'"
   - ".alias-common"
   s2:
-  - "'emssh run -th tvuong@lxp6d199m0 emtools/bin/screens resume -e ^Xx'"
+  - "'emssh run -th tvuong@lxp6d199m0.etrade.com emtools/bin/screens resume -e ^Xx'"
   - ".alias-common"
   s3:
-  - "'emssh -u tvuong run -th qa63m3 emtools/bin/screens resume'"
+  - "'SSH_PORT=443 emssh run -th tvuong@lxp6d199m0 emtools/bin/screens resume -e ^Xx'"
   - ""
   sclearcase:
   - "'ssh -X dev2m12'"
