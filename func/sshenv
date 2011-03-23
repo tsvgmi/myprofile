@@ -1,0 +1,96 @@
+############################################################################
+# File:        func/common
+# Author:      tvuong
+# Created:     Thu Mar 23 22:38:28 PST 2006
+# Description:
+############################################################################
+
+#==========================================================================
+# Function:    [_ssh_setup]
+# Description: Setup required environments for SSH/tunnel
+#==========================================================================
+function _ssh_setup {
+  typeset utunip
+
+  set -- $(ifconfig utun0 | grep -w inet)
+  if [ $# -gt 1 ]; then
+    utunip=$2
+    case $utunip in
+    10.150.173.*|10.50.73.*) SSH_PORT=443 ;;
+    esac
+
+    if [ "$SSH_PORT" ]; then
+      SSH_PROXYHOST=lxp6d199m0
+    else
+      case $utunip in
+      # This one needs proxy to go to m7
+      10.150.17[345].*)
+        SSH_PROXYHOST=lxp6d199m0
+        ;;
+      esac
+    fi
+  fi
+
+  case $USER in
+  thienvuong) SSH_USER=tvuong ;;
+  *)          SSH_USER=$user  ;;
+  esac
+  export SSH_USER SSH_PORT SSH_PROXYHOST
+}
+
+_ssh_setup
+unset _ssh_setup
+
+#==========================================================================
+# Function:    [_ssh]
+# Description: SSH with proxy on demand
+#==========================================================================
+function _ssh {
+  typeset target=$1
+  typeset useproxy=
+
+  if [ "$SSH_PORT" ]; then
+    [ "$target" == "$HOST" ] || useproxy=yes
+  elif [ "$SSH_PROXYHOST" ]; then
+    case $target in
+    *m7) useproxy=yes ;;
+    esac
+  fi
+  if [ "$useproxy" ]; then
+    emssh connect ${SSH_USER}@${SSH_PROXYHOST}#$@
+  else
+    emssh connect ${SSH_USER}@$@
+  fi
+}
+alias s=_ssh
+
+function _scp {
+  src=$1
+  dest=$2
+
+  [ "$dest" ] || return 1
+  set -x
+  \scp -P $SSH_PORT $src ${SSH_USER}@$dest
+  rc=$?
+  set +x
+}
+
+#==========================================================================
+# Function:    [hcd]
+# Description: CD while under fuse dir
+#==========================================================================
+function hcd {
+  typeset path=$1 host=$2
+
+  if [ "$host" ]; then
+    if ! grep $host ~/.ssh/known_hosts >/dev/null; then
+      emssh keypush $host
+    fi
+    export HCD_HOST=$host
+  else
+    host=$HCD_HOST
+  fi
+  path=~/fuse/$host/$path
+  _cd $path
+}
+
