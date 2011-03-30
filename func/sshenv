@@ -12,7 +12,7 @@
 function _ssh_setup {
   typeset utunip
 
-  set -- $(ifconfig utun0 | grep -w inet)
+  set -- $(ifconfig utun0 2>/dev/null| grep -w inet)
   if [ $# -gt 1 ]; then
     utunip=$2
     case $utunip in

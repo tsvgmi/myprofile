@@ -8,6 +8,7 @@ case $(uname) in
 Linux)   OSTYPE=linux   ;;
 SunOS)   OSTYPE=solaris ;;
 CYGWIN*) OSTYPE=cygwin ;;
+Darwin)  OSTYPE=macos ;;
 esac
 
 #==========================================================================
