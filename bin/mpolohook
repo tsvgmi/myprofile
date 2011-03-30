@@ -9,29 +9,31 @@
 
 PATH=$PATH:/sbin:/usr/sbin
 
-#==========================================================================
+#======================================================================
 # Function:    [f_killApp]
 # Description: .
-#==========================================================================
+#======================================================================
 function f_killApp {
   typeset app pidlist
 
   pidlist=
   for app in $*; do
-    set -- $(ps -awx | egrep "Applications/.*${app}" | egrep -v egrep | sed 's/ .*$//')
-    if [ $# -ge 0 ]; then
+    set -- $(ps -awx | egrep "(Applications|PreferencePanes)/.*${app}" | egrep -v egrep | sed 's/ .*$//')
+    if [ $# -gt 0 ]; then
       pidlist="$pidlist $*"
     fi
   done
   if [ "$pidlist" ]; then
+    set -x
     kill $pidlist
+    set +x
     sleep 1
   fi
 }
 
-#------------------------------------------------------ Begin of script ---
-#------------------------------------------------------ Begin of script ---
-#------------------------------------------------------ Begin of script ---
+#------------------------------------------------ Begin of script ---
+#------------------------------------------------ Begin of script ---
+#------------------------------------------------ Begin of script ---
 
 F_subCommand $*
 oper=$1; shift
@@ -129,16 +131,16 @@ case $oper in
     ;;
 
   connect-home|connect-homewl)
-    f_killApp Microsoft.Messenger
-    open -a Chaneru
+    f_killApp Microsoft.Messenger Synergyd
     ;;
 
   connect-et|connect-etwl)
-    f_killApp Chaneru Opera iTunes jDownloader
+    f_killApp Opera iTunes jDownloader
     open -a iCal
     open -a Mail
     open -a "Microsoft Messenger"
-    if [ "$oper" == "connect-etrade-wl" ]; then
+    if [ "$oper" == "connect-et" ]; then
+      open -a "Synergyd"
       F_exec ssh tvuong@lxp6d199m0 bin/mpolohook synergy
     fi
     ;;

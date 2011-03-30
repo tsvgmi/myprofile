@@ -1,6 +1,10 @@
 --- !ruby/object:Alias 
-cfile: /etrade/home/tvuong/.alias.yml
+cfile: /Users/thienvuong/.alias.yml
 dellist: 
+  ems: 
+  - "'emssh emconnect'"
+  - ""
+  - 2011-03-07 13:40:09.147457 -08:00
   etrpm: 
   - "'rpm --dbpath /etrade/var/lib/rpm'"
   - ""
@@ -25,10 +29,22 @@ dellist:
   - "'etcmd -s'"
   - .alias-rhas3
   - 2008-05-29 08:45:41.140384 -07:00
+  firefox: 
+  - "'/etrade/pkgs/linux/intel/firefox3/3.6/firefox'"
+  - ""
+  - 2011-03-07 13:40:09.147520 -08:00
   edtool: 
   - "'etoolset ed'"
   - .alias-common
   - 2011-02-08 11:32:40.084338 -08:00
+  gfeed: 
+  - "'cd2 /etrade/home/tvuong/etpro/MarketFeedSystem/FeedDataClient/sampleFeedDataClient'"
+  - ""
+  - 2011-03-07 13:40:09.147580 -08:00
+  ksar: 
+  - "'/etrade/pkgs/linux/intel/kSar/5.0.6.rhas5.x86_64/run.sh &'"
+  - ""
+  - 2011-03-07 13:40:09.147550 -08:00
   rsyncsol: 
   - "'rsync --rsync-path=/etrade/pkgs/opensrc/1.0/bin/rsync'"
   - .alias-common
@@ -64,11 +80,17 @@ dellist:
 oldlist: {}
 
 valias: 
-version: 100
+version: 112
 valias: 
   _ALIAS_VERSION:
-  - "'99'"
+  - "'111'"
   - ".alias-common"
+  citrix:
+  - "'open -a '\''Google Chrome'\'' https://citrix.etrade.com/vpn/index.html'"
+  - ""
+  cwa:
+  - "'open -a '\''Google Chrome'\'' https://cwa.corp.etradegrp.com'"
+  - ""
   edemt:
   - "'emtool ed -d ~/emtools'"
   - ""
@@ -90,15 +112,15 @@ valias:
   firefox:
   - "'/etrade/pkgs/linux/intel/firefox3/3.6/firefox'"
   - ""
+  emgrep:
+  - "'emtool grep'"
+  - ".alias-common"
   fs:
   - "'fsh -l tvuong'"
   - ".alias-common"
   gconnect:
   - "'cd2 /etrade/home/tvuong/connect/webapp'"
   - ".alias-common"
-  gfeed:
-  - "'cd2 /etrade/home/tvuong/etpro/MarketFeedSystem/FeedDataClient/sampleFeedDataClient'"
-  - ""
   goem:
   - "'cd2 /home/tvuong/em/src'"
   - ".alias-common"
@@ -153,9 +175,6 @@ valias:
   ir:
   - "'cd $ET_INSTANCE_ROOT'"
   - ".alias-common"
-  ksar:
-  - "'/etrade/pkgs/linux/intel/kSar/5.0.6.rhas5.x86_64/run.sh &'"
-  - ""
   l.:
   - "'ls -d .* --color=tty'"
   - ".alias-common"
@@ -183,6 +202,9 @@ valias:
   rr:
   - "'emssh run'"
   - ".alias-common"
+  rsetup:
+  - "'emssh run -th tvuong@lxp6d199m0 bin/sshsetup setup'"
+  - ""
   rsync:
   - "'rsync --rsh=ssh'"
   - ".alias-common"
@@ -190,8 +212,11 @@ valias:
   - "'_ssh'"
   - ".alias-common"
   s2:
-  - "'screens resume'"
+  - "'emssh run -th tvuong@lxp6d199m0.etrade.com emtools/bin/screens resume -e ^Xx'"
   - ".alias-common"
+  s3:
+  - "'SSH_PORT=443 emssh run -th tvuong@lxp6d199m0 emtools/bin/screens resume -e ^Xx'"
+  - ""
   sclearcase:
   - "'ssh -X dev2m12'"
   - ".alias-common"

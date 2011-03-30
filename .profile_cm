@@ -85,6 +85,7 @@ if [ -f ~/func/common ]; then
   . ~/func/common
   realias
 fi
+[ -f ~/func/sshenv ] && . ~/func/sshenv
 
 export PS1='[\!.\u.\h] \W>'
 stty echoe
@@ -138,6 +139,7 @@ fi
 echo "Display is [$DISPLAY]"
 
 export http_proxy=http://lxp6d199m0:6100
+export http_proxy=http://sys6w96m6:80
 
 export CVSROOT=:pserver:$USER@cvsserver.etrade.com:2401/etrade/cvsserver/cvs
 # The smart option is dumber than the dumb option.  Don' clear sreen
