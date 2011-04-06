@@ -89,8 +89,7 @@ fi
 
 export PS1='[\!.\u.\h] \W>'
 stty echoe
-set -o emacs
-set editing-mode emacs
+set -o vi
 set -o ignoreeof
 
 if which shopt >/dev/null 2>&1; then
