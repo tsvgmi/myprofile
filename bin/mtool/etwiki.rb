@@ -5,10 +5,67 @@
 #---------------------------------------------------------------------------
 #+++
 require File.dirname(__FILE__) + "/../../etc/toolenv"
-require 'yaml'
+require 'csv'
 require 'mtool/core'
 
 # Helper for vnc script.
+class WikiTable
+  def self.trimset(clist)
+    offset = clist.size - 1
+    while (offset >= 0) && ((!clist[offset]) || clist[offset].empty?)
+      clist[offset] = nil
+      offset -= 1
+    end
+    clist = clist.compact
+    clist
+  end
+
+  def self.csv2wiki(csvfile)
+    rowdefs = nil
+    puts "{|"
+    CSV.open(csvfile, 'r', ',') do |cols|
+      cols = trimset(cols)
+      if rowdefs
+        if cols.size > 0
+          cols.each do |ahead|
+            puts "| #{ahead}"
+          end
+          puts "|-"
+        end
+      else
+        cols.each do |ahead|
+          puts "! #{ahead}"
+        end
+        puts "|-"
+        rowdefs = true
+      end
+    end
+    puts "|}"
+  end
+end
+
+class ContribFile
+  def self.get_all(file)
+    require 'hpricot'
+    require 'time'
+
+    doc = Hpricot(File.read(file))
+    urlset = {}
+    doc.search("//li").each do |alist|
+      links = alist.search("//a")
+      next unless (links.size == 4)
+      time  = links[0].inner_html
+      url   = links[3]['href']
+      next if (url =~ /redirect=no|File:|Category:/o)
+      unless urlset[url]
+        urlset[url] = Time.parse(time)
+      end
+    end
+    puts urlset.to_yaml
+    true
+  end
+end
+
 class EtWiki
   extendCli __FILE__
 
@@ -51,6 +108,14 @@ class EtWiki
       puts "|}"
     end
     true
+  end
+
+  def self.csv2wiki(csvfile)
+    WikiTable.csv2wiki(csvfile)
+  end
+
+  def self.contribfile(file)
+    ContribFile.get_all(file)
   end
 end
 

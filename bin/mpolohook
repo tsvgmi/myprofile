@@ -118,8 +118,7 @@ case $oper in
       # Must put tunnel all in background to avoid blockage if
       # a remote node is down
       if [ "$dotunnel" ]; then
-        F_system emssh tunnel all &
-        sleep 3
+        F_system $EM_MYPROG tunnel-ssh
       fi
       open -a iCal
       open -a Mail
@@ -128,6 +127,19 @@ case $oper in
       open -a 'Google Chrome' https://citrix.etrade.com/vpn/index.html
       open -a 'Google Chrome' https://cwa.corp.etradegrp.com/
     ) &
+    ;;
+
+  tunnel-ssh)
+    set -- $(ifconfig utun0 2>/dev/null | grep -w inet)
+    tset=all
+    if [ $# -gt 1 ]; then
+      utunip=$2
+      case $utunip in
+      10.150.173.*|10.50.73.*) tset=tvuong@lxp6d199m0.etrade.com ;;
+      esac
+    fi
+    F_system emssh tunnel $tset &
+    sleep 3
     ;;
 
   connect-home|connect-homewl)

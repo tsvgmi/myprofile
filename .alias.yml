@@ -80,10 +80,10 @@ dellist:
 oldlist: {}
 
 valias: 
-version: 112
+version: 114
 valias: 
   _ALIAS_VERSION:
-  - "'111'"
+  - "'113'"
   - ".alias-common"
   citrix:
   - "'open -a '\''Google Chrome'\'' https://citrix.etrade.com/vpn/index.html'"

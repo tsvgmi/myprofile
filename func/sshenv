@@ -49,6 +49,7 @@ function _ssh {
   typeset target=$1
   typeset useproxy=
 
+  [ "$target" ] || target=lxp6d199m0
   if [ "$SSH_PORT" ]; then
     [ "$target" == "$HOST" ] || useproxy=yes
   elif [ "$SSH_PROXYHOST" ]; then
@@ -57,9 +58,9 @@ function _ssh {
     esac
   fi
   if [ "$useproxy" ]; then
-    emssh connect ${SSH_USER}@${SSH_PROXYHOST}#$@
+    emssh connect ${SSH_USER}@${SSH_PROXYHOST}#$target
   else
-    emssh connect ${SSH_USER}@$@
+    emssh connect ${SSH_USER}@$target
   fi
 }
 alias s=_ssh
