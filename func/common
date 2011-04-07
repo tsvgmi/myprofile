@@ -8,6 +8,7 @@ case $(uname) in
 Linux)   OSTYPE=linux   ;;
 SunOS)   OSTYPE=solaris ;;
 CYGWIN*) OSTYPE=cygwin ;;
+Darwin)  OSTYPE=macos ;;
 esac
 
 #==========================================================================
@@ -75,15 +76,21 @@ function l {
   \ls -sFC $* | less -EX
 }
 
+#==========================================================================
+# Function:    [xtitle]
+# Description: .
+#==========================================================================
+function xtitle {
+  echo -n "]0;$@"
+}
+
 #---------------------------------------------------------- function : _cd
 # Purpose  : A customized 'cd' version to display essential info on the
 #	xterm title bar
 #-------------------------------------------------------------------------
 function _cdTitle {
   [ "$HOST" ] || export HOST=$(hostname)
-  if [ "$CLEARCASE_ROOT" ]; then
-    ident="$HOST(${CLEARCASE_ROOT##*/})"
-  elif [ "$ET_ENVIRONMENT" ]; then
+  if [ "$ET_ENVIRONMENT" ]; then
     ident="$HOST:$ET_ENVIRONMENT:$ET_APPLICATION:$ET_SERVER:$ET_INSTANCE"
   else
     ident=$HOST
@@ -94,7 +101,13 @@ function _cdTitle {
     export HCD_HOST=$rhost
     ident="$ident($rhost)"
   fi
-  echo -n "]0;$ident"
+  # Touch the title only when it changes.  So user could override
+  # elsewhere
+  if [ "$TERM_TITLE" != "$ident" ]; then
+    echo -n "]0;$ident"
+    TERM_TITLE=$ident
+  fi
+  # Prompt have history and tail of dir
   if [ "$BASH_VERSION" ]; then
     export PS1="[\!.$ident] \W>"
   else
