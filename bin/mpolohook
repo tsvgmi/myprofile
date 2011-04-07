@@ -18,7 +18,7 @@ function f_killApp {
 
   pidlist=
   for app in $*; do
-    set -- $(ps -awx | egrep "(Applications|PreferencePanes)/.*${app}" | egrep -v egrep | sed 's/ .*$//')
+    set -- $(ps -awx | egrep "(Applications|PreferencePanes)/.*${app}" | egrep -v egrep | sed -e 's/^ *//' -e 's/ .*$//')
     if [ $# -gt 0 ]; then
       pidlist="$pidlist $*"
     fi
@@ -101,6 +101,8 @@ case $oper in
     ;;
 
   rsynergy)
+    open -a "Synergyd"
+    /usr/local/bin/growlnotify --appIcon Synergyd --message 'Synergy started'
     F_exec ssh tvuong@lxp6d199m0 bin/mpolohook synergy
     ;;
 
@@ -152,8 +154,7 @@ case $oper in
     open -a Mail
     open -a "Microsoft Messenger"
     if [ "$oper" == "connect-et" ]; then
-      open -a "Synergyd"
-      F_exec ssh tvuong@lxp6d199m0 bin/mpolohook synergy
+      F_exec $EM_MYPROG rsynergy
     fi
     ;;
 
