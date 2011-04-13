@@ -102,7 +102,8 @@ case $oper in
 
   rsynergy)
     open -a "Synergyd"
-    /usr/local/bin/growlnotify --appIcon Synergyd --message 'Synergy started'
+    PATH=$PATH:/usr/local/bin
+    growlnotify --appIcon Synergyd --message 'Synergy started'
     F_exec ssh tvuong@lxp6d199m0 bin/mpolohook synergy
     ;;
 

@@ -4,7 +4,7 @@ dellist:
   ems: 
   - "'emssh emconnect'"
   - ""
-  - 2011-03-07 13:40:09.147457 -08:00
+  - 2011-04-10 21:07:54.080084 -07:00
   etrpm: 
   - "'rpm --dbpath /etrade/var/lib/rpm'"
   - ""
@@ -32,7 +32,7 @@ dellist:
   firefox: 
   - "'/etrade/pkgs/linux/intel/firefox3/3.6/firefox'"
   - ""
-  - 2011-03-07 13:40:09.147520 -08:00
+  - 2011-04-10 21:07:54.080116 -07:00
   edtool: 
   - "'etoolset ed'"
   - .alias-common
@@ -76,14 +76,14 @@ dellist:
   emgrep: 
   - "'emtool grep'"
   - .alias-common
-  - 2011-03-14 09:45:02.963219 -07:00
+  - 2011-04-10 21:07:54.080147 -07:00
 oldlist: {}
 
 valias: 
-version: 114
+version: 116
 valias: 
   _ALIAS_VERSION:
-  - "'113'"
+  - "'115'"
   - ".alias-common"
   citrix:
   - "'open -a '\''Google Chrome'\'' https://citrix.etrade.com/vpn/index.html'"
@@ -105,15 +105,6 @@ valias:
   - ".alias-common"
   emed:
   - "'emtool ed'"
-  - ".alias-common"
-  ems:
-  - "'emssh emconnect'"
-  - ""
-  firefox:
-  - "'/etrade/pkgs/linux/intel/firefox3/3.6/firefox'"
-  - ""
-  emgrep:
-  - "'emtool grep'"
   - ".alias-common"
   fs:
   - "'fsh -l tvuong'"
@@ -175,6 +166,9 @@ valias:
   ir:
   - "'cd $ET_INSTANCE_ROOT'"
   - ".alias-common"
+  katool:
+  - "'/Users/thienvuong/kamplayer/bin/katool'"
+  - ""
   l.:
   - "'ls -d .* --color=tty'"
   - ".alias-common"
@@ -184,6 +178,9 @@ valias:
   mail:
   - "'mutt'"
   - ".alias-common"
+  mpshell:
+  - "'~/kamplayer/bin/katool mpshell'"
+  - ""
   penv:
   - "'/usr/bin/env | /bin/grep ^ET_'"
   - ".alias-common"
