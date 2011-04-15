@@ -33,7 +33,7 @@ function _ssh_setup {
 
   case $USER in
   thienvuong) SSH_USER=tvuong ;;
-  *)          SSH_USER=$user  ;;
+  *)          SSH_USER=$USER  ;;
   esac
   export SSH_USER SSH_PORT SSH_PROXYHOST
 }
