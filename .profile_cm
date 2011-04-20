@@ -14,9 +14,11 @@ HOST=${HOST%%.*}
 [ "$USER" ] || USER=$LOGNAME
 
 # Keep track of where I logged on from.
-lrec=$(who am i)
-[ "$lrec" ] && echo "$HOST: $(who am i)"  >>~/lastlogin.dat
-[ -f ~/lastlogin.dat ] && tail ~/lastlogin.dat
+if false; then
+  lrec=$(who am i)
+  [ "$lrec" ] && echo "$HOST: $lrec"  >>~/lastlogin.dat
+  [ -f ~/lastlogin.dat ] && tail ~/lastlogin.dat
+fi
 
 case $(uname) in
   Linux)

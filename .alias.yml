@@ -5,6 +5,38 @@ dellist:
   - "'rpm --dbpath /etrade/var/lib/rpm'"
   - ""
   - 2010-04-03 21:50:07.864304 -07:00
+  vzyum3m: 
+  - "'sudo vzyum  -c http://lxp6d199m0/yum-repo/rhas5/i386/corp/etem.repo'"
+  - .alias-common
+  - 2011-03-10 19:40:53.641800 -08:00
+  rr: 
+  - "'emssh run'"
+  - .alias-common
+  - 2011-03-10 19:40:53.641858 -08:00
+  penv: 
+  - "'/usr/bin/env | /bin/grep ^ET_'"
+  - .alias-common
+  - 2011-03-10 19:40:53.641952 -08:00
+  ilc: 
+  - "'$ANTDEPO_BASE/depots/$ET_APPLICATION/lib/ant/modules/$ET_SERVER/commands'"
+  - .alias-common
+  - 2011-03-10 19:40:53.641994 -08:00
+  graild: 
+  - "'cd2 /etrade/home/tvuong/selaf/webapp'"
+  - .alias-common
+  - 2011-03-10 19:40:53.642035 -08:00
+  gorpm: 
+  - "'cd2 /etrade/home/tvuong/rpmbuild/RPMS/i386'"
+  - .alias-common
+  - 2011-03-10 19:40:53.642076 -08:00
+  ems: 
+  - "'emssh emconnect'"
+  - ""
+  - 2011-03-10 19:40:53.642117 -08:00
+  emed: 
+  - "'emtool ed'"
+  - .alias-common
+  - 2011-03-10 19:40:53.642158 -08:00
   cd: 
   - "'_cd'"
   - .alias-common
@@ -17,14 +49,78 @@ dellist:
   - "'xvim'"
   - 
   - 2008-05-08 00:12:39.240669 -07:00
-  godsa: 
-  - "'cd2 /etrade/home/tvuong'"
+  yumbeta: 
+  - "'sudo yum -c http://yum.etrade.com/proxy/p6.rhas3.x86/dev-main-beta/yum.conf'"
   - .alias-common
-  - 2010-04-03 21:50:07.864336 -07:00
+  - 2011-03-10 19:40:53.642198 -08:00
+  goetfw: 
+  - "'cd2 /etrade/home/tvuong/etfw/src/tools'"
+  - .alias-common
+  - 2011-03-10 19:40:53.642239 -08:00
+  emgrep: 
+  - "'emtool grep'"
+  - .alias-common
+  - 2011-03-10 19:40:53.642281 -08:00
   sudo: 
   - "'etcmd -s'"
   - .alias-rhas3
   - 2008-05-29 08:45:41.140384 -07:00
+  rsync: 
+  - "'rsync --rsh=ssh'"
+  - .alias-common
+  - 2011-03-10 19:40:53.642323 -08:00
+  goyum2: 
+  - "'cd2 /etrade/tools/yum-repo2/rhas3/i386/corp/packages'"
+  - .alias-common
+  - 2011-03-10 19:40:53.642415 -08:00
+  goyum: 
+  - "'cd2 /etrade/tools/yum-repo/rhas3/i386/corp/packages'"
+  - .alias-common
+  - 2011-03-10 19:40:53.642650 -08:00
+  fs: 
+  - "'fsh -l tvuong'"
+  - .alias-common
+  - 2011-03-10 19:40:53.642883 -08:00
+  godsa: 
+  - "'cd2 /etrade/home/tvuong'"
+  - .alias-common
+  - 2010-04-03 21:50:07.864336 -07:00
+  tgrep: 
+  - "'etoolset grep'"
+  - .alias-common
+  - 2011-03-10 19:40:53.643026 -08:00
+  seled: 
+  - "'selaf ed'"
+  - .alias-common
+  - 2011-03-10 19:40:53.643073 -08:00
+  scolinux: 
+  - "'ssh -X -l thien -p 2022 mb45-0095'"
+  - .alias-common
+  - 2011-03-10 19:40:53.643619 -08:00
+  grail: 
+  - "'cd2 /etrade/home/tvuong/etool/staf-rails'"
+  - .alias-common
+  - 2011-03-10 19:40:53.643783 -08:00
+  gconnect: 
+  - "'cd2 /etrade/home/tvuong/connect/webapp'"
+  - .alias-common
+  - 2011-03-10 19:40:53.643851 -08:00
+  firefox: 
+  - "'/etrade/pkgs/linux/intel/firefox3/3.6/firefox'"
+  - ""
+  - 2011-03-10 19:40:53.644632 -08:00
+  edx: 
+  - "'shtool edx'"
+  - .alias-common
+  - 2011-03-10 19:40:53.644796 -08:00
+  rdesk: 
+  - "'vnc rdesktop -u tvuong'"
+  - .alias-common
+  - 2011-03-10 19:40:53.644866 -08:00
+  qu: 
+  - "'qu.rb restore'"
+  - .alias-common
+  - 2011-03-10 19:40:53.645419 -08:00
   edtool: 
   - "'etoolset ed'"
   - .alias-common
@@ -33,18 +129,74 @@ dellist:
   - "'_rm'"
   - .alias-common
   - 2009-03-06 18:29:46.695829 -08:00
-  rsyncsol: 
-  - "'rsync --rsync-path=/etrade/pkgs/opensrc/1.0/bin/rsync'"
+  slinux: 
+  - "'ssh -X -ltvuong -p2222 localhost'"
   - .alias-common
-  - 2010-04-03 21:50:07.864367 -07:00
+  - 2011-03-10 19:40:53.645474 -08:00
+  mail: 
+  - "'mutt'"
+  - .alias-common
+  - 2011-03-10 19:40:53.645635 -08:00
+  goyum5: 
+  - "'cd2 /etrade/tools/yum-repo/rhas5/i386/corp/packages'"
+  - .alias-common
+  - 2011-03-10 19:40:53.645822 -08:00
+  gfeed: 
+  - "'cd2 /etrade/home/tvuong/etpro/MarketFeedSystem/FeedDataClient/sampleFeedDataClient'"
+  - ""
+  - 2011-03-10 19:40:53.645874 -08:00
   ct: 
   - "'cleartool'"
   - .alias-common
   - 2010-04-03 21:50:07.864397 -07:00
+  yumgold: 
+  - "'sudo yum -c http://yum.etrade.com/proxy/p6.rhas3.x86/dev-main-gold/yum.conf'"
+  - .alias-common
+  - 2011-03-10 19:40:53.645989 -08:00
+  ie: 
+  - "'cd $ET_INSTANCE_ROOT/etc'"
+  - .alias-common
+  - 2011-03-10 19:40:53.646043 -08:00
+  goyum6: 
+  - "'cd2 /etrade/tools/yum-repo2/rhas4/x86_64/corp/packages'"
+  - .alias-common
+  - 2011-03-10 19:40:53.646088 -08:00
+  goem2: 
+  - "'cd2 /etrade/home/tvuong/em2'"
+  - .alias-common
+  - 2011-03-10 19:40:53.646129 -08:00
+  edrail: 
+  - "'railtool ed'"
+  - .alias-common
+  - 2011-03-10 19:40:53.646171 -08:00
+  rsyncsol: 
+  - "'rsync --rsync-path=/etrade/pkgs/opensrc/1.0/bin/rsync'"
+  - .alias-common
+  - 2010-04-03 21:50:07.864367 -07:00
   ls: 
   - "'ls --color=tty'"
   - .alias-linux
   - 2009-02-01 12:01:45.584071 -08:00
+  setview: 
+  - "'cleartool setview -login'"
+  - ""
+  - 2009-06-30 00:17:19.144812 -07:00
+  yumtest: 
+  - "'sudo yum -c http://yum.etrade.com/proxy/p6.rhas3.x86/dev-main-test/yum.conf'"
+  - .alias-common
+  - 2011-03-10 19:40:53.646211 -08:00
+  yumem: 
+  - "'sudo yum -c http://lxp6d199m0/yum-repo/rhas5/i386/corp/etem.repo'"
+  - .alias-common
+  - 2011-03-10 19:40:53.646252 -08:00
+  ksar: 
+  - "'/etrade/pkgs/linux/intel/kSar/5.0.6.rhas5.x86_64/run.sh &'"
+  - ""
+  - 2011-03-10 19:40:53.646292 -08:00
+  gozip: 
+  - "'cd2 /etrade/tools/yum-repo/zip/i386'"
+  - .alias-common
+  - 2011-03-10 19:40:53.646332 -08:00
   vi: 
   - "'vim'"
   - .alias-common
@@ -53,189 +205,87 @@ dellist:
   - "'emtool etenv'"
   - .alias-common
   - 2010-04-03 21:50:07.864427 -07:00
-  setview: 
-  - "'cleartool setview -login'"
-  - ""
-  - 2009-06-30 00:17:19.144812 -07:00
+  yumem3: 
+  - "'etcmd -s yum -c http://lxp6d199m0/yum-repo/rhas3/i386/corp/etem.repo'"
+  - .alias-common
+  - 2011-03-10 19:40:53.646373 -08:00
+  h: 
+  - "'history 20'"
+  - .alias-common
+  - 2011-03-10 19:40:53.646414 -08:00
+  trace: 
+  - "'etlogger -o trace'"
+  - .alias-common
+  - 2011-03-10 19:40:53.646473 -08:00
+  sgrep: 
+  - "'selaf grep'"
+  - .alias-common
+  - 2011-03-10 19:40:53.646627 -08:00
+  s2: 
+  - "'screens resume'"
+  - .alias-common
+  - 2011-03-10 19:40:53.646788 -08:00
+  ragrep: 
+  - "'railtool grep'"
+  - .alias-common
+  - 2011-03-10 19:40:53.646844 -08:00
+  ir: 
+  - "'cd $ET_INSTANCE_ROOT'"
+  - .alias-common
+  - 2011-03-10 19:40:53.647509 -08:00
+  goem: 
+  - "'cd2 /home/tvuong/em/src'"
+  - .alias-common
+  - 2011-03-10 19:40:53.647748 -08:00
+  yumem5: 
+  - "'sudo yum -c http://lxp6d199m0/yum-repo/rhas5/i386/corp/etem.repo'"
+  - .alias-common
+  - 2011-03-10 19:40:53.647832 -08:00
+  slinux2: 
+  - "'ssh -X lxp6d199m0'"
+  - .alias-common
+  - 2011-03-10 19:40:53.647880 -08:00
+  sclearcase: 
+  - "'ssh -X dev2m12'"
+  - .alias-common
+  - 2011-03-10 19:40:53.647955 -08:00
+  perld: 
+  - "'perl -d -e 42'"
+  - .alias-common
+  - 2011-03-10 19:40:53.648006 -08:00
+  _ALIAS_VERSION: 
+  - "'98'"
+  - .alias-common
+  - 2011-03-10 19:40:53.648050 -08:00
 oldlist: {}
 
 valias: 
-version: 99
+version: 101
 valias: 
-  _ALIAS_VERSION:
-  - "'98'"
-  - ".alias-common"
   edemt:
   - "'emtool ed -d ~/emtools'"
   - ""
   edetf:
   - "'emtool ed -d ~/etfw2'"
   - ""
-  edrail:
-  - "'railtool ed'"
-  - ".alias-common"
-  edx:
-  - "'shtool edx'"
-  - ".alias-common"
-  emed:
-  - "'emtool ed'"
-  - ".alias-common"
-  emgrep:
-  - "'emtool grep'"
-  - ".alias-common"
-  ems:
-  - "'emssh emconnect'"
-  - ""
-  firefox:
-  - "'/etrade/pkgs/linux/intel/firefox3/3.6/firefox'"
-  - ""
-  fs:
-  - "'fsh -l tvuong'"
-  - ".alias-common"
-  gconnect:
-  - "'cd2 /etrade/home/tvuong/connect/webapp'"
-  - ".alias-common"
-  gfeed:
-  - "'cd2 /etrade/home/tvuong/etpro/MarketFeedSystem/FeedDataClient/sampleFeedDataClient'"
-  - ""
-  goem:
-  - "'cd2 /home/tvuong/em/src'"
-  - ".alias-common"
-  goem2:
-  - "'cd2 /etrade/home/tvuong/em2'"
-  - ".alias-common"
-  goetfw:
-  - "'cd2 /etrade/home/tvuong/etfw/src/tools'"
-  - ".alias-common"
-  gorpm:
-  - "'cd2 /etrade/home/tvuong/rpmbuild/RPMS/i386'"
-  - ".alias-common"
-  goyum:
-  - "'cd2 /etrade/tools/yum-repo/rhas3/i386/corp/packages'"
-  - ".alias-common"
-  goyum2:
-  - "'cd2 /etrade/tools/yum-repo2/rhas3/i386/corp/packages'"
-  - ".alias-common"
-  goyum5:
-  - "'cd2 /etrade/tools/yum-repo/rhas5/i386/corp/packages'"
-  - ".alias-common"
-  goyum6:
-  - "'cd2 /etrade/tools/yum-repo2/rhas4/x86_64/corp/packages'"
-  - ".alias-common"
-  gozip:
-  - "'cd2 /etrade/tools/yum-repo/zip/i386'"
-  - ".alias-common"
-  grail:
-  - "'cd2 /etrade/home/tvuong/etool/staf-rails'"
-  - ".alias-common"
-  graild:
-  - "'cd2 /etrade/home/tvuong/selaf/webapp'"
-  - ".alias-common"
-  h:
-  - "'history 20'"
-  - ".alias-common"
   ib:
   - "'cd $ET_INSTANCE_ROOT/bin'"
   - ".alias-common"
   ic:
   - "'cd $ET_INSTANCE_ROOT/config'"
   - ".alias-common"
-  ie:
-  - "'cd $ET_INSTANCE_ROOT/etc'"
-  - ".alias-common"
   il:
   - "'cd $ET_INSTANCE_ROOT/logs'"
   - ".alias-common"
-  ilc:
-  - "'$ANTDEPO_BASE/depots/$ET_APPLICATION/lib/ant/modules/$ET_SERVER/commands'"
-  - ".alias-common"
-  ir:
-  - "'cd $ET_INSTANCE_ROOT'"
-  - ".alias-common"
-  ksar:
-  - "'/etrade/pkgs/linux/intel/kSar/5.0.6.rhas5.x86_64/run.sh &'"
-  - ""
   l.:
   - "'ls -d .* --color=tty'"
   - ".alias-common"
   ll:
   - "'ls -l --color=tty'"
   - ".alias-common"
-  mail:
-  - "'mutt'"
-  - ".alias-common"
-  penv:
-  - "'/usr/bin/env | /bin/grep ^ET_'"
-  - ".alias-common"
-  perld:
-  - "'perl -d -e 42'"
-  - ".alias-common"
-  qu:
-  - "'qu.rb restore'"
-  - ".alias-common"
-  ragrep:
-  - "'railtool grep'"
-  - ".alias-common"
-  rdesk:
-  - "'vnc rdesktop -u tvuong'"
-  - ".alias-common"
-  rr:
-  - "'emssh run'"
-  - ".alias-common"
-  rsync:
-  - "'rsync --rsh=ssh'"
-  - ".alias-common"
   s:
   - "'_ssh'"
   - ".alias-common"
-  s2:
-  - "'screens resume'"
-  - ".alias-common"
-  sclearcase:
-  - "'ssh -X dev2m12'"
-  - ".alias-common"
-  scolinux:
-  - "'ssh -X -l thien -p 2022 mb45-0095'"
-  - ".alias-common"
-  seled:
-  - "'selaf ed'"
-  - ".alias-common"
-  sgrep:
-  - "'selaf grep'"
-  - ".alias-common"
-  slinux:
-  - "'ssh -X -ltvuong -p2222 localhost'"
-  - ".alias-common"
-  slinux2:
-  - "'ssh -X lxp6d199m0'"
-  - ".alias-common"
-  tgrep:
-  - "'etoolset grep'"
-  - ".alias-common"
-  trace:
-  - "'etlogger -o trace'"
-  - ".alias-common"
-  vzyum3m:
-  - "'sudo vzyum  -c http://lxp6d199m0/yum-repo/rhas5/i386/corp/etem.repo'"
-  - ".alias-common"
   which:
   - "'alias | /usr/bin/which --tty-only --read-alias --show-dot --show-tilde'"
-  - ".alias-common"
-  yumbeta:
-  - "'sudo yum -c http://yum.etrade.com/proxy/p6.rhas3.x86/dev-main-beta/yum.conf'"
-  - ".alias-common"
-  yumem:
-  - "'sudo yum -c http://lxp6d199m0/yum-repo/rhas5/i386/corp/etem.repo'"
-  - ".alias-common"
-  yumem3:
-  - "'etcmd -s yum -c http://lxp6d199m0/yum-repo/rhas3/i386/corp/etem.repo'"
-  - ".alias-common"
-  yumem5:
-  - "'sudo yum -c http://lxp6d199m0/yum-repo/rhas5/i386/corp/etem.repo'"
-  - ".alias-common"
-  yumgold:
-  - "'sudo yum -c http://yum.etrade.com/proxy/p6.rhas3.x86/dev-main-gold/yum.conf'"
-  - ".alias-common"
-  yumtest:
-  - "'sudo yum -c http://yum.etrade.com/proxy/p6.rhas3.x86/dev-main-test/yum.conf'"
   - ".alias-common"
