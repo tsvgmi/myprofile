@@ -342,3 +342,4 @@ let g:miniBufExplModSelTarget = 1
 color darkblue
 
 set ttymouse=xterm
+set vb
