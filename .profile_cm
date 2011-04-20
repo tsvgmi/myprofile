@@ -59,9 +59,6 @@ esac
 
 # Initialize LD_LIBRARY_PATH so it would not pick up the :: as component
 export LD_LIBRARY_PATH
-if [ ! "$ET_ENVIRONMENT" ]; then
-  LD_LIBRARY_PATH=/lib
-fi
 pathlist="/ /usr /usr/openwin /usr/X11R6 /usr/local /sw $HOME/tools
           $HOME/etool /usr/atria /etrade /etrade/pkgs/COMENV
           /opt/local /opt/etrade/p6 /etrade/tools /etrade/tools/jruby"
@@ -69,7 +66,13 @@ for path in $pathlist; do
   [ "$path" == "/" ] && path=
   [ -d $path/sbin ] && PATH=$PATH:$path/sbin
   [ -d $path/bin ] && PATH=$PATH:$path/bin
-  [ -d $path/lib ] && LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$path/lib
+  if [ -d $path/lib ]; then
+    if [ -d $path/lib64 ]; then
+      LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$path/lib64
+    else
+      LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$path/lib
+    fi
+  fi
   [ -d $path/man ] && MANPATH=$MANPATH:$path/man
   [ -d $path/share/man ] && MANPATH=$MANPATH:$path/share/man
 done
@@ -84,6 +87,7 @@ if [ -f ~/func/common ]; then
   . ~/func/common
   realias
 fi
+[ -f ~/func/sshenv ] && . ~/func/sshenv
 
 export PS1='[\!.\u.\h] \W>'
 stty echoe
@@ -136,6 +140,7 @@ fi
 echo "Display is [$DISPLAY]"
 
 export http_proxy=http://lxp6d199m0:6100
+export http_proxy=http://sys6w96m6:80
 
 export CVSROOT=:pserver:$USER@cvsserver.etrade.com:2401/etrade/cvsserver/cvs
 # The smart option is dumber than the dumb option.  Don' clear sreen

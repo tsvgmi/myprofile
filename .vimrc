@@ -280,10 +280,11 @@ command! FileHeader	0r!~/bin/vimfilt.rb % fileTemplate
 command! Bartedit      set guifont=Monaco:h14|color zellner
 command! Normedit      set guifont=Monaco:h12|color koehler
 command! Bigfont       set guifont=Monaco:h14
-command! Normfont       set guifont=Monaco:h12
+command! Normfont      set guifont=Monaco:h12
 
 map ,af		:AddFold<CR>
 map ,fH		:FileHeader<CR>
+map ,#          $40a 41\|C# 
 vmap ,a1c	:AlignColumn1<CR>
 vmap ,a2c	:AlignColumn2<CR>
 vmap ,a3c	:AlignColumn3<CR>
@@ -341,3 +342,4 @@ let g:miniBufExplModSelTarget = 1
 color darkblue
 
 set ttymouse=xterm
+set vb

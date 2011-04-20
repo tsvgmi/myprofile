@@ -149,7 +149,8 @@ class HbRip
   end
 
   def rip_all
-    encopt  = @video.encode_option('highdvd')
+    encode  = HbRip.getOption(:encopt) || 'highdvd'
+    encopt  = @video.encode_option(encode)
     @video.chapters.select do |title, chapter, duration|
       duration > "00:01:00"
     end.each do |title, chapter, duration|
@@ -158,7 +159,8 @@ class HbRip
   end
 
   def rip_dvd(maxtitle = -1)
-    encopt  = @video.encode_option('highdvd')
+    encode  = HbRip.getOption(:encopt) || 'highdvd'
+    encopt  = @video.encode_option(encode)
     _rip_chapter(0,  maxtitle.to_i, encopt)
   end
 
@@ -234,7 +236,8 @@ class HbRip
         rchapters << arange
       end
     end
-    encopt  = @video.encode_option('highdvd')
+    encode  = HbRip.getOption(:encopt) || 'highdvd'
+    encopt  = @video.encode_option(encode)
     rchapters.each do |achapt|
       _rip_chapter(achapt, title, encopt)
     end
@@ -307,6 +310,7 @@ if (__FILE__ == $0)
   HbRip.handleCli(
                   ['--brate',   '-b', 1],
                   ['--debug',   '-d', 0],
+                  ['--encopt',  '-e', 1],
                   ['--force',   '-f', 0],
                   ['--growl',   '-g', 0],
                   ['--input',   '-i', 1],

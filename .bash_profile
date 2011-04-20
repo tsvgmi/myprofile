@@ -17,7 +17,6 @@ if [ $? -eq 0 ]; then
   [ -f ~/.profile_priv ] && . ~/.profile_priv
 fi
 
-
 ##
 # Your previous /Users/thienvuong/.bash_profile file was backed up as /Users/thienvuong/.bash_profile.macports-saved_2010-08-22_at_16:29:23
 ##

@@ -8,6 +8,7 @@ case $(uname) in
 Linux)   OSTYPE=linux   ;;
 SunOS)   OSTYPE=solaris ;;
 CYGWIN*) OSTYPE=cygwin ;;
+Darwin)  OSTYPE=macos ;;
 esac
 
 #==========================================================================
@@ -75,15 +76,21 @@ function l {
   \ls -sFC $* | less -EX
 }
 
+#==========================================================================
+# Function:    [xtitle]
+# Description: .
+#==========================================================================
+function xtitle {
+  echo -n "]0;$@"
+}
+
 #---------------------------------------------------------- function : _cd
 # Purpose  : A customized 'cd' version to display essential info on the
 #	xterm title bar
 #-------------------------------------------------------------------------
 function _cdTitle {
   [ "$HOST" ] || export HOST=$(hostname)
-  if [ "$CLEARCASE_ROOT" ]; then
-    ident="$HOST(${CLEARCASE_ROOT##*/})"
-  elif [ "$ET_ENVIRONMENT" ]; then
+  if [ "$ET_ENVIRONMENT" ]; then
     ident="$HOST:$ET_ENVIRONMENT:$ET_APPLICATION:$ET_SERVER:$ET_INSTANCE"
   else
     ident=$HOST
@@ -94,31 +101,18 @@ function _cdTitle {
     export HCD_HOST=$rhost
     ident="$ident($rhost)"
   fi
-  echo -n "]0;$ident"
+  # Touch the title only when it changes.  So user could override
+  # elsewhere
+  if [ "$TERM_TITLE" != "$ident" ]; then
+    echo -n "]0;$ident"
+    TERM_TITLE=$ident
+  fi
+  # Prompt have history and tail of dir
   if [ "$BASH_VERSION" ]; then
     export PS1="[\!.$ident] \W>"
   else
     export PS1="[!.$ident] ${PWD##*/}>"
   fi
-}
-
-#==========================================================================
-# Function:    [hcd]
-# Description: CD while under fuse dir
-#==========================================================================
-function hcd {
-  typeset path=$1 host=$2
-
-  if [ "$host" ]; then
-    if ! grep $host ~/.ssh/known_hosts >/dev/null; then
-      emssh keypush $host
-    fi
-    export HCD_HOST=$host
-  else
-    host=$HCD_HOST
-  fi
-  path=~/fuse/$host/$path
-  _cd $path
 }
 
 #==========================================================================
@@ -277,32 +271,6 @@ function cterm {
   ' $count
 }
 
-#==========================================================================
-# Function:    [ssh2]
-# Description: Run ssh with env RDISPLAY/RHOST set to indicate the source
-#       of the ssh session.  This allows destination to communicate with
-#       the source node if needed (i.e. for remote editing support)
-#==========================================================================
-function ssh2 {
-  typeset dest=$1
-
-  set -- $(host $dest)
-  if [ $# -gt 3 ]; then
-    ip=$4
-    set -- $(ip route get $ip)
-    if [ $# -gt 4 ]; then
-      if [ "$2" == "via" ]; then
-        myip=$7
-      else
-        myip=$5
-      fi
-      export SSH_RDISPLAY=$DISPLAY
-      export SSH_RHOST=$myip
-    fi
-  fi
-  ssh $dest
-}
-
 function l {
   \ls -sFC $* | less -EX
 }
@@ -337,30 +305,6 @@ if ! /usr/bin/which pgrep >/dev/null 2>&1; then
 fi
 alias rm=_rm
 
-
-function _ssh {
-  typeset target=$1
-  if [ "$USER" == "tvuong" ]; then
-    emssh connect $@
-  else
-    if ifconfig | grep -w inet | grep 10.150.175; then
-      case $target in
-      *m7)
-        #emssh -l tvuong connect lxp6d199m0#$@
-        emssh connect tvuong@lxp6d199m0#$@
-        ;;
-      *)
-        emssh connect tvuong@$@
-        ;;
-      esac
-    else
-      emssh connect tvuong@$@
-    fi
-  fi
-}
-typeset -fx _ssh
-alias s=_ssh
-
 function setview {
   typeset view=$1
 
@@ -376,4 +320,5 @@ function setview {
   cleartool startview $view &&
   exec cleartool setview -login $view
 }
+
 

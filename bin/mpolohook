@@ -9,29 +9,31 @@
 
 PATH=$PATH:/sbin:/usr/sbin
 
-#==========================================================================
+#======================================================================
 # Function:    [f_killApp]
 # Description: .
-#==========================================================================
+#======================================================================
 function f_killApp {
   typeset app pidlist
 
   pidlist=
   for app in $*; do
-    set -- $(ps -awx | egrep "Applications/.*${app}" | egrep -v egrep | sed 's/ .*$//')
-    if [ $# -ge 0 ]; then
+    set -- $(ps -awx | egrep "(Applications|PreferencePanes)/.*${app}" | egrep -v egrep | sed -e 's/^ *//' -e 's/ .*$//')
+    if [ $# -gt 0 ]; then
       pidlist="$pidlist $*"
     fi
   done
   if [ "$pidlist" ]; then
+    set -x
     kill $pidlist
+    set +x
     sleep 1
   fi
 }
 
-#------------------------------------------------------ Begin of script ---
-#------------------------------------------------------ Begin of script ---
-#------------------------------------------------------ Begin of script ---
+#------------------------------------------------ Begin of script ---
+#------------------------------------------------ Begin of script ---
+#------------------------------------------------ Begin of script ---
 
 F_subCommand $*
 oper=$1; shift
@@ -99,6 +101,9 @@ case $oper in
     ;;
 
   rsynergy)
+    open -a "Synergyd"
+    PATH=$PATH:/usr/local/bin
+    growlnotify --appIcon Synergyd --message 'Synergy started'
     F_exec ssh tvuong@lxp6d199m0 bin/mpolohook synergy
     ;;
 
@@ -116,8 +121,7 @@ case $oper in
       # Must put tunnel all in background to avoid blockage if
       # a remote node is down
       if [ "$dotunnel" ]; then
-        F_system emssh tunnel all &
-        sleep 3
+        F_system $EM_MYPROG tunnel-ssh
       fi
       open -a iCal
       open -a Mail
@@ -128,18 +132,30 @@ case $oper in
     ) &
     ;;
 
+  tunnel-ssh)
+    set -- $(ifconfig utun0 2>/dev/null | grep -w inet)
+    tset=all
+    if [ $# -gt 1 ]; then
+      utunip=$2
+      case $utunip in
+      10.150.173.*|10.50.73.*) tset=tvuong@lxp6d199m0.etrade.com ;;
+      esac
+    fi
+    F_system emssh tunnel $tset &
+    sleep 3
+    ;;
+
   connect-home|connect-homewl)
-    f_killApp Microsoft.Messenger
-    open -a Chaneru
+    f_killApp Microsoft.Messenger Synergyd
     ;;
 
   connect-et|connect-etwl)
-    f_killApp Chaneru Opera iTunes jDownloader
+    f_killApp Opera iTunes jDownloader
     open -a iCal
     open -a Mail
     open -a "Microsoft Messenger"
-    if [ "$oper" == "connect-etrade-wl" ]; then
-      F_exec ssh tvuong@lxp6d199m0 bin/mpolohook synergy
+    if [ "$oper" == "connect-et" ]; then
+      F_exec $EM_MYPROG rsynergy
     fi
     ;;
 
