@@ -77,14 +77,18 @@ class Handler(BaseHTTPRequestHandler):
 				if url:
 					prefix += re.sub("[^.\w]", "_", re.sub("^.*?//","",url))
 				prefix += "_"
-				if temp_has_delete==True:
+				if False and temp_has_delete==True:
 					f = tempfile.NamedTemporaryFile(
 							delete=False, prefix=prefix, suffix='.txt')
 					fname = f.name
 				else:
-					tf = tempfile.mkstemp(prefix=prefix, suffix='.txt')
-					f = os.fdopen(tf[0],"w")
-					fname = tf[1]
+					if False:
+						tf = tempfile.mkstemp(prefix=prefix, suffix='.txt')
+						f = os.fdopen(tf[0],"w")
+						fname = tf[1]
+					else:
+						fname = "/tmp/" + prefix
+						f = open(fname, "w")
 				print "Opening new file ", fname
 			else:
 				existing = True
@@ -135,11 +139,12 @@ class Handler(BaseHTTPRequestHandler):
 			if saved:
 				self.send_header('x-open', "true")
 			else:
-				try:
-					os.unlink(fname)
-				except :
-					print "Unable to unlink:", fname
-					pass
+				if False:
+					try:
+						os.unlink(fname)
+					except :
+						print "Unable to unlink:", fname
+						pass
 
 			self.send_header('x-file', fname)
 			self.end_headers()
