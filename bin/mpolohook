@@ -18,7 +18,7 @@ function f_killApp {
 
   pidlist=
   for app in $*; do
-    set -- $(ps -awx | egrep "(Applications|PreferencePanes)/.*${app}" | egrep -v egrep | sed -e 's/^ *//' -e 's/ .*$//')
+    set -- $(ps -awx | egrep "(Applications|Resources|Library|PreferencePanes)/.*${app}" | egrep -v egrep | sed -e 's/^ *//' -e 's/ .*$//')
     if [ $# -gt 0 ]; then
       pidlist="$pidlist $*"
     fi
@@ -141,7 +141,7 @@ case $oper in
       10.150.173.*|10.50.73.*) tset=tvuong@lxp6d199m0.etrade.com ;;
       esac
     fi
-    F_system emssh tunnel $tset &
+    F_system emssh tunnel -r $tset &
     sleep 3
     ;;
 
@@ -157,6 +157,13 @@ case $oper in
     if [ "$oper" == "connect-et" ]; then
       F_exec $EM_MYPROG rsynergy
     fi
+    ;;
+
+  #------------------ Kill off all non-essential app to preserve battery ---
+  lowpower)
+    f_killApp MicrosoftKeyboardHelper Microsoft.Database.Daemon \
+	EyeTV.Helper Glims.Agent Little.Snitch.UIAgent QuickSilver \
+	MarcoPolo Synergyd
     ;;
 
   *)
