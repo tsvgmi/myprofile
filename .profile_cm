@@ -13,43 +13,43 @@ HOST=$(hostname)
 HOST=${HOST%%.*}
 [ "$USER" ] || USER=$LOGNAME
 
-# Keep track of where I logged on from.
-if false; then
-  lrec=$(who am i)
-  [ "$lrec" ] && echo "$HOST: $lrec"  >>~/lastlogin.dat
-  [ -f ~/lastlogin.dat ] && tail ~/lastlogin.dat
+if [ "$WINDIR" ]; then
+  OSTYPE=cygwin
+else
+  case $(uname) in
+    Linux)
+      CPU=$(uname -m)
+      case $CPU in
+      ppc)   OSTYPE=linux-ppc   ;;
+      ppc64) OSTYPE=linux-ppc64 ;;
+      mips)  OSTYPE=linux-mips  ;;
+      *)     OSTYPE=linux       ;;
+      esac
+      ;;
+    SunOS)
+      OSTYPE=solaris ;;
+    CYGWIN*)
+      OSTYPE=cygwin
+      ;;
+    OpenBSD) OSTYPE=openbsd ;;
+  esac
 fi
-
-case $(uname) in
-  Linux)
-    CPU=$(uname -m)
-    case $CPU in
-    ppc)   OSTYPE=linux-ppc   ;;
-    ppc64) OSTYPE=linux-ppc64 ;;
-    mips)  OSTYPE=linux-mips  ;;
-    *)     OSTYPE=linux       ;;
-    esac
-    ;;
-  SunOS)
-    OSTYPE=solaris ;;
-  CYGWIN*)
-    OSTYPE=cygwin
-    ;;
-  OpenBSD) OSTYPE=openbsd ;;
-esac
 
 case $OSTYPE in
   cygwin)
-    PATH=$PATH:/bin:/usr/bin
+    [ "$WINPATH" ] || export WINPATH=$PATH
+    PATH=/bin:/usr/bin
     # Windows box ip address and name is a mess
-    set -- $(ipconfig | egrep "(IP|IPv4) Address" | sed 's/^.* //')
-    address=$1
-    set -- $(nslookup $address 2>/dev/null| sed 's/^.* //')
-    if [ $# -gt 2 ]; then
-      export EM_HOST=${3%%.*}
-      export EM_IPADDR=$4
-      echo "Cygwin: name=$T_HOST, ip=$T_IPADDR"
-      HOST=$T_HOST
+    if false; then
+      set -- $(ipconfig | egrep "(IP|IPv4) Address" | sed 's/^.* //')
+      address=$1
+      set -- $(nslookup $address 2>/dev/null| sed 's/^.* //')
+      if [ $# -gt 2 ]; then
+        export EM_HOST=${3%%.*}
+        export EM_IPADDR=$4
+        echo "Cygwin: name=$EM_HOST, ip=$EM_IPADDR"
+        HOST=$EM_HOST
+      fi
     fi
     ;;
   *)
@@ -87,7 +87,9 @@ if [ -f ~/func/common ]; then
   . ~/func/common
   realias
 fi
-[ -f ~/func/sshenv ] && . ~/func/sshenv
+if [ "$OSTYPE" != cygwin ]; then
+  [ -f ~/func/sshenv ] && . ~/func/sshenv
+fi
 
 export PS1='[\!.\u.\h] \W>'
 stty echoe
@@ -131,21 +133,11 @@ if [ ! "$netlan" ]; then
   fi
 fi
 
-if [ "$DISPLAY" ]; then
-  echo "DISPLAY=$DISPLAY" >~/.tool/display.last
-else
-  rm -f ~/.tool/display.last
-  if [ "$SSH_RDISPLAY" ]; then
-    export XEDITOR="sshedit.rb edit"
-  fi
-fi
-
 echo "Display is [$DISPLAY]"
 
 export http_proxy=http://lxp6d199m0:6100
 #export http_proxy=http://sys6w96m6:80
 
-export CVSROOT=:pserver:$USER@cvsserver.etrade.com:2401/etrade/cvsserver/cvs
 # The smart option is dumber than the dumb option.  Don' clear sreen
 export LESS=X
 
@@ -186,11 +178,6 @@ fi
 export RUBYLIB=~/etfw2/lib
 if [ -x /etrade/tools/bin/ruby ]; then
   export RUBYLIB=$RUBYLIB:/etrade/tools/lib
-  #set -- $(rpm -ql selaf-gempak 2>/dev/null | head -1)
-  #if [ $# -gt 0 ]; then
-    #export GEM_HOME=$1
-    #export PATH=$PATH:$GEM_HOME/bin
-  #fi
 elif [ -x ~/tools/bin/ruby ]; then
   export RUBYLIB=$RUBYLIB:~/tools/lib:~/tools/lib/ruby/1.8:~/tools/lib/ruby/site_ruby/1.8
   case $OSTYPE in
@@ -206,8 +193,10 @@ if ! /usr/bin/which ruby >/dev/null 2>&1; then
   done
 fi
 
-eval $(ruby -S shhelper.rb vimFont)
-echo VIMFONT=$VIMFONT
+if [ "$OSTYPE" != cygwin ]; then
+  eval $(ruby -S shhelper.rb vimFont)
+  echo VIMFONT=$VIMFONT
+fi
 
 tty=$(tty)
 export HISTFILE=~/.tool/bhist${tty##*/}

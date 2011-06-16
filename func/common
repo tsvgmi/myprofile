@@ -4,12 +4,14 @@
 # Created:     Thu Mar 23 22:38:28 PST 2006
 # Description:
 ############################################################################
-case $(uname) in
-Linux)   OSTYPE=linux   ;;
-SunOS)   OSTYPE=solaris ;;
-CYGWIN*) OSTYPE=cygwin ;;
-Darwin)  OSTYPE=macos ;;
-esac
+if [ ! "$OSTYPE" ]; then
+  case $(uname) in
+  Linux)   OSTYPE=linux   ;;
+  SunOS)   OSTYPE=solaris ;;
+  CYGWIN*) OSTYPE=cygwin ;;
+  Darwin)  OSTYPE=macos ;;
+  esac
+fi
 
 #==========================================================================
 # Function:    [cd2]
