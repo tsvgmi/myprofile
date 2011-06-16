@@ -143,6 +143,7 @@ case $oper in
 
   cntlm)
     user=$LOGNAME nopass=
+    copt="-g -P $HOME/.ssh/cntlm.pid -l 6100"
     while getopts :u:P i; do
       case $i in
       P) nopass=yes ;;
@@ -151,21 +152,25 @@ case $oper in
       esac
     done
     let j=$OPTIND-1; shift $j; OPTIND=0    
-    F_system pkill cntlm
+    if pgrep -lf cntlm; then
+      F_system pkill cntlm
+      sleep 1
+    fi
     domain=CORP
     if [ ! "$nopass" ]; then
       passwd=$(F_passwdGetNew $domain) || exit 1
     fi
-    if [ -f ~/.tool/cntlm.conf ]; then
-      cfile=~/.tool/cntlm.conf
+    if [ -f ~/.ssh/cntlm.conf ]; then
+      cfile=~/.ssh/cntlm.conf
     else
       cfile=$(F_tmpf 0)
       touch $cfile
     fi
+    copt="$copt -c $cfile"
     if [ "$nopass" ]; then
-      F_exec cntlm -g -c $cfile -l 6100 -u $user@$domain 10.50.79.250:8080
+      F_exec cntlm $copt -u $user@$domain 10.50.79.250:8080
     else
-      exec cntlm -g -c $cfile -l 6100 -u $user@$domain -p $passwd 10.50.79.250:8080
+      exec cntlm $copt -u $user@$domain -p $passwd 10.50.79.250:8080
     fi    
     ;;
 

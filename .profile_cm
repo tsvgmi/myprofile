@@ -125,13 +125,16 @@ fi
 
 if [ ! "$netlan" ]; then
   if [ "$DISPLAY" ]; then
-    echo "Clear display from $DISPLAY"
+    echo "Clear display from $DISPLAY - myip=$myip, remip=$remip"
     export ODISPLAY=$DISPLAY
     unset DISPLAY
   fi
 fi
 
-if [ ! "$DISPLAY" ]; then
+if [ "$DISPLAY" ]; then
+  echo "DISPLAY=$DISPLAY" >~/.tool/display.last
+else
+  rm -f ~/.tool/display.last
   if [ "$SSH_RDISPLAY" ]; then
     export XEDITOR="sshedit.rb edit"
   fi
@@ -140,7 +143,7 @@ fi
 echo "Display is [$DISPLAY]"
 
 export http_proxy=http://lxp6d199m0:6100
-export http_proxy=http://sys6w96m6:80
+#export http_proxy=http://sys6w96m6:80
 
 export CVSROOT=:pserver:$USER@cvsserver.etrade.com:2401/etrade/cvsserver/cvs
 # The smart option is dumber than the dumb option.  Don' clear sreen
@@ -167,9 +170,6 @@ export ODBCINI=/etrade/tools/etc/odbc.ini
 export ODBCSYSINI=/etrade/tools/etc
 export FREETDSCONF=/etrade/tools/etc/freetds.conf
 
-#
-#
-#
 [ -f ~/.ctierrc ] && . ~/.ctierrc
 [ -f ~/etc/profile ] && . ~/etc/profile
 
