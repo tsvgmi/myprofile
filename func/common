@@ -270,7 +270,7 @@ function cterm {
         ENV["MRXVT_OPT"] = bg
         cmd = "mrxvt #{bg} -ls &"
       else
-        cmd = "rxvt #{bg} -fn \"Lucida Console-13\" -ls &"
+        cmd = "rxvt #{bg} -fn \"Lucida Console-13\" -e bash -login &"
       end
       STDERR.puts "+ #{cmd}"
       system cmd
