@@ -262,11 +262,16 @@ function cterm {
   typeset count=${1:-1}
 
   ruby -e '
-    1.upto(ARGV.shift.to_i) {|count|
+    rcount = ARGV.shift.to_i
+    1.upto(rcount) {|count|
       value = "%02x%02x%02x" % [16+rand(80), 16+rand(80), 16+rand(80)]
       bg = "-bg \\##{value}"
-      ENV["MRXVT_OPT"] = bg
-      cmd = "mrxvt #{bg} -ls &"
+      if ENV["DISPLAY"]
+        ENV["MRXVT_OPT"] = bg
+        cmd = "mrxvt #{bg} -ls &"
+      else
+        cmd = "rxvt #{bg} -fn \"Lucida Console-13\" -ls &"
+      end
       STDERR.puts "+ #{cmd}"
       system cmd
     }
