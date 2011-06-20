@@ -260,22 +260,27 @@ function terminal {
 
 function cterm {
   typeset count=${1:-1}
+  typeset value wfont
 
-  ruby -e '
+  set -- $(ruby -e '
     rcount = ARGV.shift.to_i
     1.upto(rcount) {|count|
-      value = "%02x%02x%02x" % [16+rand(80), 16+rand(80), 16+rand(80)]
-      bg = "-bg \\##{value}"
-      if ENV["DISPLAY"]
-        ENV["MRXVT_OPT"] = bg
-        cmd = "mrxvt #{bg} -ls &"
-      else
-        cmd = "rxvt #{bg} -fn \"Lucida Console-13\" -e bash -login &"
-      end
-      STDERR.puts "+ #{cmd}"
-      system cmd
+      puts "%02x%02x%02x" % [16+rand(80), 16+rand(80), 16+rand(80)]
     }
-  ' $count
+    ' $count)
+  wfont=$RXVT_FONT
+  [ "$wfont" ] || wfont="Lucida Console-12"
+  for value in $*; do
+    if [ "$DISPLAY" ]; then
+      export MRXVT_OPT=$bg
+      set -x
+      mrxvt -bg "#$value" -ls &
+      set +x
+    else
+      set -x
+      rxvt -bg "#$value" -fn "$wfont" -e bash -login &
+    fi
+  done
 }
 
 function l {
