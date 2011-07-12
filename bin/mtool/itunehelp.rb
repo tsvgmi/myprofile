@@ -216,6 +216,25 @@ class ITuneHelper
     true
   end
 
+  def self.rm_empty_dirs(*dirs)
+    require 'find'
+
+    dirs.each do |adir|
+      protect = false
+      Find.find(adir) do |afile|
+        next unless test(?f, afile)
+        if afile !~ /\.(ini|jpg|DS_Store)$/
+          protect = true
+          puts "#{afile} should be protected from #{adir}"
+          break
+        end
+      end
+      unless protect
+        FileUtils.rm_rf(adir, :verbose=>true)
+      end
+    end
+  end
+
   def self.cliNew
     new
   end

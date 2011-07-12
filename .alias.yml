@@ -80,10 +80,10 @@ dellist:
 oldlist: {}
 
 valias: 
-version: 117
+version: 121
 valias: 
   _ALIAS_VERSION:
-  - "'116'"
+  - "'120'"
   - ".alias-common"
   citrix:
   - "'open -a '\''Google Chrome'\'' https://citrix.etrade.com/vpn/index.html'"
@@ -199,6 +199,9 @@ valias:
   rdesk:
   - "'vnc rdesktop -u tvuong'"
   - ".alias-common"
+  remote:
+  - "'open -a '\''Google Chrome'\'' https://remote.etrade.com'"
+  - ""
   rr:
   - "'emssh run'"
   - ".alias-common"
@@ -215,7 +218,10 @@ valias:
   - "'emssh run -th tvuong@lxp6d199m0.etrade.com emtools/bin/screens resume -e ^Xx'"
   - ".alias-common"
   s3:
-  - "'SSH_PORT=443 emssh run -th tvuong@lxp6d199m0 emtools/bin/screens resume -e ^Xx'"
+  - "'emssh run -th tvuong@qa63m3  emtools/bin/screens resume -e ^Xx'"
+  - ""
+  s4:
+  - "'emssh run -th tvuong@lxp6d174m0 emtools/bin/screens resume -e ^Xx'"
   - ""
   sclearcase:
   - "'ssh -X dev2m12'"
@@ -241,6 +247,9 @@ valias:
   trace:
   - "'etlogger -o trace'"
   - ".alias-common"
+  unrar:
+  - "'/Applications/jDownloader.app/Contents/Resources/Java/tools/mac/unrar2/unrar'"
+  - ""
   vzyum3m:
   - "'sudo vzyum  -c http://lxp6d199m0/yum-repo/rhas5/i386/corp/etem.repo'"
   - ".alias-common"

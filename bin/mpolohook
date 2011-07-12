@@ -123,12 +123,13 @@ case $oper in
       if [ "$dotunnel" ]; then
         F_system $EM_MYPROG tunnel-ssh
       fi
-      open -a iCal
-      open -a Mail
+      #open -a iCal
+      open -a "Microsoft Communicator"
+      open -a 'Microsoft Outloook'
       # These require tunnel to finish opening
       sleep 3
       open -a 'Google Chrome' https://citrix.etrade.com/vpn/index.html
-      open -a 'Google Chrome' https://cwa.corp.etradegrp.com/
+      #open -a 'Google Chrome' https://cwa.corp.etradegrp.com/
     ) &
     ;;
 
@@ -142,18 +143,20 @@ case $oper in
       esac
     fi
     F_system emssh tunnel -r $tset &
+    date > ~/.tool/tunnel.utun0
     sleep 3
     ;;
 
   connect-home|connect-homewl)
-    f_killApp Microsoft.Messenger Synergyd
+    f_killApp Microsoft.Messenger Microsoft.Communicator Microsoft.Outlook Synergyd
     ;;
 
   connect-et|connect-etwl)
     f_killApp Opera iTunes jDownloader
-    open -a iCal
-    open -a Mail
-    open -a "Microsoft Messenger"
+    #open -a iCal
+    #open -a Mail
+    open -a "Microsoft Communicator"
+    open -a "Microsoft Outlook"
     if [ "$oper" == "connect-et" ]; then
       F_exec $EM_MYPROG rsynergy
     fi

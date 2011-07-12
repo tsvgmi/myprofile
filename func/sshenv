@@ -11,6 +11,7 @@
 #==========================================================================
 function _ssh_setup {
   typeset utunip
+  typeset tun0file=$HOME/.tool/tunnel.utun0
 
   set -- $(ifconfig utun0 2>/dev/null| grep -w inet)
   if [ $# -gt 1 ]; then
@@ -39,7 +40,7 @@ function _ssh_setup {
 }
 
 _ssh_setup
-unset _ssh_setup
+#unset _ssh_setup
 
 #==========================================================================
 # Function:    [_ssh]
@@ -49,6 +50,7 @@ function _ssh {
   typeset target=$1
   typeset useproxy=
 
+  _ssh_setup
   [ "$target" ] || target=lxp6d199m0
   if [ "$SSH_PORT" ]; then
     [ "$target" == "$HOST" ] || useproxy=yes
@@ -69,6 +71,7 @@ function _scp {
   src=$1
   dest=$2
 
+  _ssh_setup
   [ "$dest" ] || return 1
   set -x
   \scp -P $SSH_PORT $src ${SSH_USER}@$dest
