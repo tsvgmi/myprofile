@@ -63,6 +63,29 @@ class NYBook
     end
     true
   end
+
+  def self.rename_dirs(*folders)
+    folders.each do |folder|
+      artist, title = folder.split(/\s+-\s+/, 2)
+      next unless title
+      next if artist =~ /(,|\&)/
+      f = artist.split
+      lname = f.last
+      fname = f[0..-2].join(' ')
+      ntitle = "#{lname}, #{fname} - #{title}"
+      #puts "Moving '#{folder}' to '#{ntitle}'"
+      if test(?d, ntitle)
+        Plog.warn "#{ntitle} already exist, remove it ***"
+        if Cli.confirm "OK to remove #{folder}"
+          FileUtils.rm_rf(folder)
+        end
+      else
+        FileUtils.move(folder, ntitle, :verbose=>true)
+        #break
+      end
+    end
+    true
+  end
 end
 
 if (__FILE__ == $0)
