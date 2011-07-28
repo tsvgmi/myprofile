@@ -15,9 +15,9 @@ function f_setProxy {
     passwd=$(F_passwdGet)
     #export GIT_CURL_VERBOSE=1
     export GIT_SSL_NO_VERIFY=true
-    export GIT_PROXY=http://$user:$passwd@10.55.79.200:9090/
-    export http_proxy=$GIT_PROXY
-    export https_proxy=$GIT_PROXY
+    export EGIT_PROXY=http://$user:$passwd@10.55.79.200:9090/
+    export http_proxy=$EGIT_PROXY
+    export https_proxy=$EGIT_PROXY
   fi
 }
 
