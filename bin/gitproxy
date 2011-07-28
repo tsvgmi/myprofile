@@ -1,0 +1,61 @@
+#!/bin/env bash
+. ${0%/*}/../etc/tool.env
+######################################################################
+# File: 	shtool
+# Description:  Simple addition to support using using shell
+# Author:	Thien Vuong
+#######################################################################
+
+function f_setProxy {
+  user=$1
+  typeset passwd
+
+  [ "$user" ] || user=$USER
+  if [ ! "$GIT_PROXY" ]; then
+    passwd=$(F_passwdGet)
+    #export GIT_CURL_VERBOSE=1
+    export GIT_SSL_NO_VERIFY=true
+    export GIT_PROXY=http://$user:$passwd@10.55.79.200:9090/
+    export http_proxy=$GIT_PROXY
+    export https_proxy=$GIT_PROXY
+  fi
+}
+
+#---------------------------------------------------- Begin of script ---
+#---------------------------------------------------- Begin of script ---
+#---------------------------------------------------- Begin of script ---
+F_subCommand $*
+oper=$1; shift
+
+case $oper in
+  clone|push)
+    f_setProxy $USER
+    git $oper $@
+    ;;
+
+  *)                                                                   #{{{2
+    F_usageOper $oper
+    ;;
+esac
+exit 0                                                                 #{{{1
+
+=begin
+=NAME
+cygtool - Utilities to support cygwin use.  Non-X environment
+
+=SYNOPSIS
+  * cygtool collect_winexe
+  * cygtool explorer:multimon:vpngui
+  * cygtool gvim
+  * cygtool install_pkg bz2_package
+  * cygtool reboot
+  * cygtool rxvt [-s size] [host]
+  * cygtool services
+  * cygtool startx
+  * cygtool stopx
+  * cygtool sync-citrix
+  * cygtool sync-cygwin
+
+=DESCRIPTION
+
+=end

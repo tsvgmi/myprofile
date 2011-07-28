@@ -8,4 +8,7 @@ date
 [ -f ~/.profile_cm   ] && . ~/.profile_cm
 [ -r ~/.alias.man ] && . ~/.alias.man
 [ -f ~/.profile_priv ] && . ~/.profile_priv
+case $DISPLAY in
+:0*) xset -r ;;
+esac
 date

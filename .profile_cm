@@ -198,8 +198,11 @@ if [ "$OSTYPE" != cygwin ]; then
   echo VIMFONT=$VIMFONT
 fi
 
+# Maintain seoarate history so multiple shells don't clobber one another
+# Als put time marker in there
 tty=$(tty)
 export HISTFILE=~/.tool/bhist${tty##*/}
+date >>$HISTFILE
 
 if [ ! "$ET_ENVIRONMENT" ]; then
   if [ -f ~/.tool/etenv-$HOST ]; then

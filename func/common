@@ -278,6 +278,32 @@ function cterm {
   ' $count
 }
 
+# The new cterm.  Shell is much easier
+function cterm {
+  typeset count=${1:-1}
+  typeset value wfont
+
+  set -- $(ruby -e '
+    rcount = ARGV.shift.to_i
+    1.upto(rcount) {|count|
+      puts "%02x%02x%02x" % [16+rand(80), 16+rand(80), 16+rand(80)]
+    }
+    ' $count)
+  wfont=$RXVT_FONT
+  [ "$wfont" ] || wfont="Lucida Console-12"
+  for value in $*; do
+    if [ "$DISPLAY" ]; then
+      set -x
+      mrxvt -bg "#$value" -ls &
+      set +x
+    else
+      set -x
+      rxvt -bg "#$value" -fn "$wfont" -e bash -login &
+      set +x
+    fi
+  done
+}
+
 function l {
   \ls -sFC $* | less -EX
 }

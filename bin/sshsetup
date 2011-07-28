@@ -143,17 +143,22 @@ case $oper in
 
   cntlm)
     user=$LOGNAME nopass=
+    proxy=10.50.79.250:8080
     copt="-g -P $HOME/.ssh/cntlm.pid -l 6100"
-    while getopts :u:P i; do
+    while getopts :Psu: i; do
       case $i in
       P) nopass=yes ;;
+      s)
+         proxy=10.55.79.200:9090
+         copt="-g -P $HOME/.ssh/cntlm2.pid -l 6101"
+         ;;
       u) user=$OPTARG ;;
       *) F_usageOper $oper ;;
       esac
     done
     let j=$OPTIND-1; shift $j; OPTIND=0    
-    if pgrep -lf cntlm; then
-      F_system pkill cntlm
+    if pgrep -lf cntlm.*$proxy; then
+      F_system pkill -f cntlm.*$proxy
       sleep 1
     fi
     domain=CORP
@@ -168,9 +173,9 @@ case $oper in
     fi
     copt="$copt -c $cfile"
     if [ "$nopass" ]; then
-      F_exec cntlm $copt -u $user@$domain 10.50.79.250:8080
+      F_exec cntlm $copt -u $user@$domain $proxy
     else
-      exec cntlm $copt -u $user@$domain -p $passwd 10.50.79.250:8080
+      exec cntlm $copt -u $user@$domain -p $passwd $proxy
     fi    
     ;;
 

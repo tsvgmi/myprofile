@@ -339,7 +339,7 @@ let g:miniBufExplMapCTabSwitchWindows = 1
 let g:miniBufExplUseSingleClick = 1
 let g:miniBufExplModSelTarget = 1
 
-color darkblue
+color evening
 
 set ttymouse=xterm
 set vb
