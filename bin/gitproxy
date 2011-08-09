@@ -13,7 +13,6 @@ function f_setProxy {
   [ "$user" ] || user=$USER
   if [ ! "$GIT_PROXY" ]; then
     passwd=$(F_passwdGet)
-    #export GIT_CURL_VERBOSE=1
     export GIT_SSL_NO_VERIFY=true
     export EGIT_PROXY=http://$user:$passwd@10.55.79.200:9090/
     export http_proxy=$EGIT_PROXY
@@ -33,6 +32,11 @@ case $oper in
     git $oper $@
     ;;
 
+  svn)
+    f_setProxy $USER
+    svn $@
+    ;;
+
   *)                                                                   #{{{2
     F_usageOper $oper
     ;;
@@ -41,20 +45,11 @@ exit 0                                                                 #{{{1
 
 =begin
 =NAME
-cygtool - Utilities to support cygwin use.  Non-X environment
+gitproxy - Front end for proxy access of SCM
 
 =SYNOPSIS
-  * cygtool collect_winexe
-  * cygtool explorer:multimon:vpngui
-  * cygtool gvim
-  * cygtool install_pkg bz2_package
-  * cygtool reboot
-  * cygtool rxvt [-s size] [host]
-  * cygtool services
-  * cygtool startx
-  * cygtool stopx
-  * cygtool sync-citrix
-  * cygtool sync-cygwin
+  * gitproxy clone:push
+  * gitproxy svn
 
 =DESCRIPTION
 

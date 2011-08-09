@@ -206,14 +206,15 @@ date >>$HISTFILE
 
 if [ ! "$ET_ENVIRONMENT" ]; then
   if [ -f ~/.tool/etenv-$HOST ]; then
-    echo "... Switching into etenv ..."
-    exec emtool etenv
-  else
-    if [ -f /etrade/tools/etc/bashswitch ]; then
-      . /etrade/tools/etc/bashswitch
-    elif [ -f etfw2/etc/bashswitch ]; then
-      . etfw2/etc/bashswitch
+    if whence emtool; then
+      echo "... Switching into etenv ..."
+      exec emtool etenv
     fi
+  fi
+  if [ -f /etrade/tools/etc/bashswitch ]; then
+    . /etrade/tools/etc/bashswitch
+  elif [ -f etfw2/etc/bashswitch ]; then
+    . etfw2/etc/bashswitch
   fi
 fi
 
