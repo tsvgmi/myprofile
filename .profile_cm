@@ -9,6 +9,20 @@
 ############################################################################
 unset EM_TOOL_DEFINED EM_TOOL_DIR
 
+if [ ! "$ET_ENVIRONMENT" ]; then
+  if [ -f ~/.tool/etenv-$HOST ]; then
+    if whence emtool; then
+      echo "... Switching into etenv ..."
+      exec emtool etenv
+    fi
+  fi
+  if [ -f /etrade/tools/etc/bashswitch ]; then
+    . /etrade/tools/etc/bashswitch
+  elif [ -f etfw2/etc/bashswitch ]; then
+    . etfw2/etc/bashswitch
+  fi
+fi
+
 HOST=$(hostname)
 HOST=${HOST%%.*}
 [ "$USER" ] || USER=$LOGNAME
@@ -61,7 +75,7 @@ esac
 export LD_LIBRARY_PATH
 pathlist="/ /usr /usr/openwin /usr/X11R6 /usr/local /sw $HOME/tools
           $HOME/etool /usr/atria /etrade /etrade/pkgs/COMENV
-          /opt/local /opt/etrade/p6 /etrade/tools /etrade/tools/jruby"
+          /opt/local /etrade/tools /etrade/tools/jruby"
 for path in $pathlist; do
   [ "$path" == "/" ] && path=
   [ -d $path/sbin ] && PATH=$PATH:$path/sbin
@@ -203,20 +217,6 @@ fi
 tty=$(tty)
 export HISTFILE=~/.tool/bhist${tty##*/}
 date >>$HISTFILE
-
-if [ ! "$ET_ENVIRONMENT" ]; then
-  if [ -f ~/.tool/etenv-$HOST ]; then
-    if whence emtool; then
-      echo "... Switching into etenv ..."
-      exec emtool etenv
-    fi
-  fi
-  if [ -f /etrade/tools/etc/bashswitch ]; then
-    . /etrade/tools/etc/bashswitch
-  elif [ -f etfw2/etc/bashswitch ]; then
-    . etfw2/etc/bashswitch
-  fi
-fi
 
 if [ -f /usr/lib/libhoard.so ]; then
   export LD_PRELOAD_32=/usr/lib/libhoard.so:/usr/lib/libdl.so

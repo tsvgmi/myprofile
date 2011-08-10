@@ -32,14 +32,11 @@ case $oper in
     git $oper $@
     ;;
 
-  svn)
+  *)
     f_setProxy $USER
-    svn $@
+    F_exec $oper $@
     ;;
 
-  *)                                                                   #{{{2
-    F_usageOper $oper
-    ;;
 esac
 exit 0                                                                 #{{{1
 
