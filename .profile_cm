@@ -113,6 +113,7 @@ set -o ignoreeof
 if which shopt >/dev/null 2>&1; then
   shopt -s cdspell
   shopt -s cmdhist
+  shopt -s checkwinsize
 fi
 
 export PAGER=less
