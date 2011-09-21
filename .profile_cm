@@ -110,7 +110,7 @@ stty echoe
 set -o vi
 set -o ignoreeof
 
-if which shopt >/dev/null 2>&1; then
+if shopt -s >/dev/null 2>&1; then
   shopt -s cdspell
   shopt -s cmdhist
   shopt -s checkwinsize
