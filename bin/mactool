@@ -48,6 +48,12 @@ case $oper in
     F_exec hdiutil makehybrid $ifile -o $ofile
     ;;
 
+  itune-*)
+    plist=$1
+    roper=$(echo ${oper#itune-} | sed 's/-/_/g')
+    F_rbexec itunehelp $roper $@
+    ;;
+
   sync-media)
     mediav="/Volumes/THIENMUSIC/MUSIC:3950 /Volumes/SANSA_E200/MUSIC:1800"
     #mediav="/Volumes/THIENMUSIC/MUSIC:100 /Volumes/SANSA_E200/MUSIC:100"
