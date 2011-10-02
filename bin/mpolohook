@@ -123,13 +123,11 @@ case $oper in
       if [ "$dotunnel" ]; then
         F_system $EM_MYPROG tunnel-ssh
       fi
-      #open -a iCal
       open -a "Microsoft Communicator"
       open -a 'Microsoft Outloook'
       # These require tunnel to finish opening
       sleep 3
       open -a 'Google Chrome' https://citrix.etrade.com/vpn/index.html
-      #open -a 'Google Chrome' https://cwa.corp.etradegrp.com/
     ) &
     ;;
 

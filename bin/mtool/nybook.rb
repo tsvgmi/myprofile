@@ -31,8 +31,39 @@ class NYBook
     FileUtils.move(Dir.glob("#{sdir}/*"), ddir, :verbose=>true)
   end
 
+  # Transfer either epub or mob files in a subdir to a destination flat dir
+  # Example
+  # nybook.rb xfer_flat '/Volumes/Kindle/documents/newdir' [pattern]
+  def self.xfer_flat(ddir, pattern = nil)
+    wset = {}
+    fset = `find . -name '*.mobi'`.split("\n")
+    fset.concat `find . -name '*.epub'`.split("\n")
+    fset.each do |f|
+      if pattern
+        next unless f =~ /#{pattern}/
+      end
+      bname = f.sub(/\.(mobi|epub)$/, '')
+      if !wset[bname]
+        wset[bname] = f
+      end
+    end
+    files = []
+    wset.each {|k, v| files << v}
+    unless test(?d, ddir)
+      FileUtils.mkpath(ddir, :verbose=>true)
+    end
+    files.each do |file|
+      file  = file.first
+      dfile = ddir + "/" + File.basename(file).sub(/^\d+\s+-\s+/, '')
+      unless test(?f, dfile)
+        FileUtils.copy(file, dfile, :verbose=>true)
+      end
+    end
+    true
+  end
+
   def self.merge_dirs(*dirs)
-    odir = getOption(:outdir) || "./MergeList2"
+    odir = getOption(:outdir) || "./MergeList"
     if !test(?d, odir)
       FileUtils.mkpath(odir, :verbose=>true)
     end

@@ -5,8 +5,6 @@
 -nbs
 -ncdb
 -ci2
--ncs
 -i4
 -npcs
--nprs
 -sob

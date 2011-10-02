@@ -80,10 +80,10 @@ dellist:
 oldlist: {}
 
 valias: 
-version: 121
+version: 125
 valias: 
   _ALIAS_VERSION:
-  - "'120'"
+  - "'124'"
   - ".alias-common"
   citrix:
   - "'open -a '\''Google Chrome'\'' https://citrix.etrade.com/vpn/index.html'"
@@ -235,6 +235,9 @@ valias:
   sgrep:
   - "'selaf grep'"
   - ".alias-common"
+  sl:
+  - "'SSH_PORT=2022 emssh connect tvuong@localhost'"
+  - ""
   slinux:
   - "'ssh -X -ltvuong -p2222 localhost'"
   - ".alias-common"
