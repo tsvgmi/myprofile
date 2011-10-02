@@ -39,6 +39,7 @@ class ITuneApp
     unless @@app
       Plog.info "Connect to iTunes"
       @@app = Appscript::app('iTunes')
+      #@@app.activate
     end
     @@app
   end
@@ -188,7 +189,7 @@ class DeviceDir
   end
 end
 
-class ItTrack
+class ITuneTrack
   attr_accessor :track
 
   def initialize(track)
@@ -197,7 +198,7 @@ class ItTrack
   end
 
   def name_clean
-    @track.name.get.sub(/\s*[\-\(].*$/, '')
+    @track.name.get.sub(/\s*[\-\(\[].*$/, '')
   end
 
   def name_key
@@ -210,7 +211,8 @@ class ItTrack
       rescue Iconv::IllegalSequence => errmsg
         name.gsub(/[^&a-z._0-9 -]/i, "").tr(".", "_")
       end
-      @kname = name.downcase.gsub(/['`\.\?~^aeiou]/, '')
+      @kname = name.downcase.gsub(/['`\.\?~^aeiou]/, '').
+        sub(/\s*[\-\(\[].*$/, '')
     end
     @kname
   end
@@ -259,36 +261,26 @@ end
 
 class ITuneFolder
   def initialize(name, options={})
-    require 'appscript'
-
-    @app     = Appscript::app('iTunes')
+    @app     = ITuneApp.app
     @ifolder = nil
     @options = options
-    [@app.folder_playlists, @app.playlists].each do |alist|
-      alist.get.each do |afolder|
-        #puts afolder.name.get
-        if afolder.name.get == name
-          @ifolder = afolder
-          break
+    if name == "current"
+      @ifolder = @app.browser_windows[1].view
+    else
+      [@app.folder_playlists, @app.playlists].each do |alist|
+        alist.get.each do |afolder|
+          #puts afolder.name.get
+          if afolder.name.get == name
+            @ifolder = afolder
+            break
+          end
         end
+        break if @ifolder
       end
-      break if @ifolder
     end
     unless @ifolder
       raise "Folder #{name} not found"
     end
-  end
-
-  def each
-    result = []
-    if @ifolder
-      @ifolder.file_tracks.get.each do |atrack|
-        if yield(atrack)
-          result << atrack
-        end
-      end
-    end
-    result
   end
 
   def filter_list
@@ -299,11 +291,13 @@ class ITuneFolder
     else
       ptn = Regexp.new('.')
     end
-    self.each do |atrack|
-      atrack2  = ItTrack.new(atrack)
-      name_key = atrack2.name_key
-      if ptn.match(name_key)
-        yield atrack2, name_key
+    if @ifolder
+      @ifolder.file_tracks.get.each do |atrack|
+        atrack2  = ITuneTrack.new(atrack)
+        name_key = atrack2.name_key
+        if ptn.match(name_key)
+          yield atrack2, name_key
+        end
       end
     end
   end
@@ -372,6 +366,16 @@ class ITuneFolder
         fod.close
       end
     end
+  end
+
+  def showtracks
+    self.filter_list do |atrack, iname|
+      composer = atrack.composer.get
+      name     = atrack.name_clean
+      lyrics   = atrack.lyrics.get
+      puts "N: #{name}, C: #{composer}, L: #{lyrics}"
+    end
+    true
   end
 
   def clone_composer(dbfile=nil)
@@ -508,23 +512,8 @@ class ITuneHelper
     end
   end
   
-  def self.add_composer(playlist, *icomposer)
-    composer = icomposer.join(' ')
-    ITuneFolder.new(playlist, getOption).filter_list do |atrack, iname|
-      puts "#{iname} => #{composer}"
-      if icomposer.size > 0
-        atrack.composer.set(composer)
-      end
-    end
-  end
-
   def self.showtracks(playlist)
-    ITuneFolder.new(playlist, getOption).filter_list do |atrack, iname|
-      composer = atrack.composer.get
-      name     = atrack.name_clean
-      lyrics   = atrack.lyrics.get
-      puts "N: #{name}, C: #{composer}, L: #{lyrics}"
-    end
+    ITuneFolder.new(playlist, getOption).showtracks
   end
 
   def self.clone_composer(playlist, dbfile=nil)
