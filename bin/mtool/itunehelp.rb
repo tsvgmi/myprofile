@@ -260,45 +260,47 @@ class ITuneTrack
 end
 
 class ITuneFolder
+  attr_reader :tracks
+
   def initialize(name, options={})
+    @name    = name
     @app     = ITuneApp.app
     @ifolder = nil
     @options = options
-    if name == "current"
+    @tracks  = []
+    case @name
+    when "current"
       @ifolder = @app.browser_windows[1].view
+    when "select"
+      @ifolder = @app.selection
     else
-      [@app.folder_playlists, @app.playlists].each do |alist|
-        alist.get.each do |afolder|
-          #puts afolder.name.get
-          if afolder.name.get == name
-            @ifolder = afolder
-            break
-          end
-        end
-        break if @ifolder
-      end
+      @ifolder = @app.sources[1].playlists.name.get.zip(
+        @app.sources[1].playlists.get).find {|lname, list|
+          lname == name}[1]
     end
     unless @ifolder
       raise "Folder #{name} not found"
     end
+    get_tracks(@options[:pattern])
+  end
+
+  def get_tracks(ptn = nil)
+    if ptn
+      Plog.info "Search for #{ptn}"
+      @tracks = @ifolder.search :for=>ptn.gsub(/\./, ' ')
+    elsif @name == "select"
+      @tracks = @ifolder.get
+    else
+      @tracks = @ifolder.tracks.get
+    end
+    @tracks
   end
 
   def filter_list
-    ptn = @options[:pattern]
-    if ptn
-      ptn = ptn.gsbu(/[aeiou]/i, '')
-      ptn = Regexp.new(/^#{ptn}$/i)
-    else
-      ptn = Regexp.new('.')
-    end
-    if @ifolder
-      @ifolder.file_tracks.get.each do |atrack|
-        atrack2  = ITuneTrack.new(atrack)
-        name_key = atrack2.name_key
-        if ptn.match(name_key)
-          yield atrack2, name_key
-        end
-      end
+    @tracks.each do |atrack|
+      atrack2  = ITuneTrack.new(atrack)
+      name_key = atrack2.name_key
+      yield atrack2, name_key
     end
   end
 
@@ -372,8 +374,20 @@ class ITuneFolder
     self.filter_list do |atrack, iname|
       composer = atrack.composer.get
       name     = atrack.name_clean
-      lyrics   = atrack.lyrics.get
-      puts "N: #{name}, C: #{composer}, L: #{lyrics}"
+      artist   = atrack.artist.get
+      puts "N: #{name}, C: #{composer}, A: #{artist}"
+    end
+    true
+  end
+
+  def cap_names
+    self.filter_list do |atrack, iname|
+      name    = atrack.name_clean
+      capname = name.split(/[ _]+/).map {|w| w.capitalize}.join(' ')
+      if capname != name
+        puts "N: #{name} => CN: #{capname}"
+        atrack.name.set(capname)
+      end
     end
     true
   end
@@ -410,7 +424,7 @@ class ITuneHelper
 
   def self.sync_media(folder, *ddirs)
     icount  = (getOption(:incr) || 0).to_i
-    fset    = ITuneFolder.new(folder).each do |atrack|
+    fset    = ITuneFolder.new(folder).get_tracks.each do |atrack|
       atrack.enabled.get
     end
     Plog.info "Source list contains #{fset.size} files"
@@ -500,20 +514,30 @@ class ITuneHelper
   end
 
   def self.num2track(playlist)
-    ITuneFolder.new(playlist, getOption).filter_list do |atrack, iname|
+    ifolder = ITuneFolder.new(playlist, getOption)
+    ntracks = ifolder.tracks.size
+    Plog.info "Process #{ntracks} tracks"
+    ifolder.filter_list do |atrack, iname|
       name = atrack.name.get
       if name =~ /^(\d+)\.?\s*/
         rname = $'
         track = $1.to_i
         puts "#{name} => T: #{track}. #{rname}"
+
         atrack.track_number.set(track)
+        atrack.track_count.set(ntracks)
         atrack.name.set(rname)
       end
     end
+    true
   end
   
   def self.showtracks(playlist)
     ITuneFolder.new(playlist, getOption).showtracks
+  end
+
+  def self.cap_names(playlist)
+    ITuneFolder.new(playlist, getOption).cap_names
   end
 
   def self.clone_composer(playlist, dbfile=nil)
