@@ -240,7 +240,6 @@ class ITuneTrack
     wfile  = "#{exdir}/#{self.name_clean}.txt"
     unless test(?f, wfile)
       #Plog.info "Skip #{wfile}. Not found"
-      STDERR.print "."; STDERR.flush
       return false
     end
 
@@ -301,6 +300,7 @@ class ITuneFolder
       atrack2  = ITuneTrack.new(atrack)
       name_key = atrack2.name_key
       yield atrack2, name_key
+      STDERR.print('.'); STDERR.flush
     end
   end
 
@@ -380,18 +380,6 @@ class ITuneFolder
     true
   end
 
-  def cap_names
-    self.filter_list do |atrack, iname|
-      name    = atrack.name_clean
-      capname = name.split(/[ _]+/).map {|w| w.capitalize}.join(' ')
-      if capname != name
-        puts "N: #{name} => CN: #{capname}"
-        atrack.name.set(capname)
-      end
-    end
-    true
-  end
-
   def clone_composer(dbfile=nil)
     compname = {}
     if dbfile && !@options[:init] && test(?f, dbfile)
@@ -406,8 +394,6 @@ class ITuneFolder
           atrack.composer.set(composer)
         end
       else
-        #puts "#{composer}: #{iname}"
-        STDERR.print('.'); STDERR.flush
         compname[iname] ||= composer
       end
     end
@@ -416,6 +402,55 @@ class ITuneFolder
       fod.puts compname.to_yaml
       fod.close
     end
+  end
+  
+  def parse_name(instruction)
+    self.filter_list do |atrack, iname|
+      name = atrack.name.get
+      case instruction
+      when 'e.comp'
+        composer = nil
+        if name =~ /^(.*)\s*\((.*)\)/
+          tname, composer = $1, $2
+        elsif name =~ /^(.*)\s*-\s*(.*)$/
+          tname, composer = $1, $2
+        end
+        if composer
+          puts "N: #{name} => Comp: #{composer}"
+          if !atrack.composer.get || atrack.composer.get.empty?
+            atrack.composer.set(composer)
+          end
+          atrack.name.set(tname)
+        end
+      when 'cap'
+        cname = atrack.name_clean
+        tname = cname.split(/[ _]+/).map {|w| w.capitalize}.join(' ')
+        if tname != cname
+          puts "N: #{cname} => CN: #{tname}"
+          atrack.name.set(tname)
+        end
+      when 'nopar'
+        if atrack.name.get =~ /^(.*)\s*\(.*$/
+          tname = $1
+          puts "N: #{name} => CN: #{tname}"
+          atrack.name.set(tname)
+        end
+      when 'numtrack'
+        if name =~ /^(\d+)\.?\s*/
+          rname = $'.sub(/\s*-\s*/, '')
+          track = $1.to_i
+          puts "#{name} => T: #{track}. #{rname}"
+
+          atrack.track_number.set(track)
+          atrack.name.set(rname)
+        elsif name =~ /^\s*-\s*/
+          rname = $'
+          puts "#{name} => #{rname}"
+          atrack.name.set(rname)
+        end
+      end
+    end
+    true
   end
 end
 
@@ -520,12 +555,15 @@ class ITuneHelper
     ifolder.filter_list do |atrack, iname|
       name = atrack.name.get
       if name =~ /^(\d+)\.?\s*/
-        rname = $'
+        rname = $'.sub(/\s*-\s*/, '')
         track = $1.to_i
         puts "#{name} => T: #{track}. #{rname}"
 
         atrack.track_number.set(track)
-        atrack.track_count.set(ntracks)
+        atrack.name.set(rname)
+      elsif name =~ /^\s*-\s*/
+        rname = $'
+        puts "#{name} => #{rname}"
         atrack.name.set(rname)
       end
     end
@@ -536,12 +574,15 @@ class ITuneHelper
     ITuneFolder.new(playlist, getOption).showtracks
   end
 
-  def self.cap_names(playlist)
-    ITuneFolder.new(playlist, getOption).cap_names
-  end
-
   def self.clone_composer(playlist, dbfile=nil)
     ITuneFolder.new(playlist, getOption).clone_composer(dbfile)
+  end
+
+  def self.parse_name(playlist, *instructions)
+    folder = ITuneFolder.new(playlist, getOption)
+    instructions.each do |instruction|
+      folder.parse_name(instruction)
+    end
   end
 
   def self.add_lyrics(playlist, skipfile=nil, exdir="./lyrics")
