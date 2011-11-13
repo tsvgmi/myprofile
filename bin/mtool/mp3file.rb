@@ -104,6 +104,32 @@ class Mp3Shell
     FileUtils.remove(dfile, :verbose=>true)
     true
   end
+
+  def self.set_properties(*files)
+    files.each do |afile|
+      bname = File.basename(afile).sub(/\..mp3$/, '')
+      track, title, artist = bname.split(/\s*[-\.]\s*/)
+      next unless artist
+      if title =~ /\s*\(/
+        title = $`
+        composer = $'.sub(/\).*$/, '')
+      else
+        composer = nil
+      end
+      Plog.info "#{title} - #{artist} - #{composer} - #{track}"
+      mp3file = Mp3File.new(afile)
+      if mp3file.tag.title != title
+        mp3file.tag.title    = title
+        mp3file.tag.artist   = artist
+        mp3file.tag.track    = track.to_i
+        if composer
+          mp3file.tag.composer   = composer
+        end
+      end
+      mp3file.close
+    end
+    true
+  end
 end
 
 if (__FILE__ == $0)

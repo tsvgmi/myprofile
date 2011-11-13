@@ -51,7 +51,7 @@ case $oper in
   itune-*)
     plist=$1
     roper=$(echo ${oper#itune-} | sed 's/-/_/g')
-    F_rbexec itunehelp $roper $@
+    F_rbexec itunehelp $roper "$@"
     ;;
 
   sync-media)

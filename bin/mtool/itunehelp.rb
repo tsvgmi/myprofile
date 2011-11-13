@@ -174,6 +174,8 @@ class DeviceDir
   end
 
   def rm_empty_dirs
+    require 'find'
+
     protect = false
     Find.find(@dir) do |afile|
       next unless test(?f, afile)
@@ -236,9 +238,18 @@ class ITuneTrack
     true
   end
 
-  def clone_lyrics(exdir)
+  def stored_lyrics(exdir)
     wfile  = "#{exdir}/#{self.name_clean}.txt"
-    unless test(?f, wfile)
+    if test(?f, wfile)
+      File.read(wfile)
+    else
+      nil
+    end
+  end
+
+  def clone_lyrics(exdir)
+    clyrics = stored_lyrics(exdir)
+    unless clyrics
       #Plog.info "Skip #{wfile}. Not found"
       return false
     end
@@ -249,8 +260,25 @@ class ITuneTrack
     end
 
     Plog.info "Setting lyrics from #{wfile}"
-    @track.lyrics.set(File.read(wfile))
+    @track.lyrics.set(clyrics)
     true
+  end
+
+  def update(prop, newval)
+    curval = @track.send(prop).get
+    if curval != newval
+      Plog.info "N: #{@track.name.get} => #{prop}: '#{curval}' => '#{newval}'"
+      unless ITuneHelper.getOption(:dryrun)
+        begin
+          @track.send(prop).set(newval)
+          return true
+        rescue => errmsg
+          p errmsg
+        end
+        #exit(1)
+      end
+    end
+    false
   end
 
   def method_missing(*args)
@@ -273,13 +301,16 @@ class ITuneFolder
     when "select"
       @ifolder = @app.selection
     else
-      @ifolder = @app.sources[1].playlists.name.get.zip(
-        @app.sources[1].playlists.get).find {|lname, list|
-          lname == name}[1]
+      if sources = @app.sources[1]
+        @ifolder = sources.playlists.name.get.zip(
+          sources.playlists.get).find {|lname, list|
+            lname == name}[1]
+      end
     end
     unless @ifolder
       raise "Folder #{name} not found"
     end
+    Plog.info "Using folder #{@name}"
     get_tracks(@options[:pattern])
   end
 
@@ -296,12 +327,17 @@ class ITuneFolder
   end
 
   def filter_list
+    limit = (@options[:limit] || 100000).to_i
     @tracks.each do |atrack|
       atrack2  = ITuneTrack.new(atrack)
       name_key = atrack2.name_key
-      yield atrack2, name_key
+      if yield atrack2, name_key
+        limit -= 1
+      end
       STDERR.print('.'); STDERR.flush
+      break if (limit <= 0)
     end
+    STDERR.puts
   end
 
   def get_lyrics(track)
@@ -349,9 +385,12 @@ class ITuneFolder
     self.filter_list do |atrack, iname|
       name     = atrack.name_clean
       next if skiplist[name]
+
+      next if atrack.clone_lyrics(exdir)
+
       composer = atrack.composer.get
       lyrics   = atrack.lyrics.get
-      puts "N: #{name}, C: #{composer}"
+      Plog.info "N: #{name}, C: #{composer}"
       if lyrics.empty?
         content = get_lyrics(atrack)
         if content.empty?
@@ -366,18 +405,11 @@ class ITuneFolder
         fod = File.open(skipfile, "w")
         fod.puts skiplist.to_yaml
         fod.close
+        true
+      else
+        false
       end
     end
-  end
-
-  def showtracks
-    self.filter_list do |atrack, iname|
-      composer = atrack.composer.get
-      name     = atrack.name_clean
-      artist   = atrack.artist.get
-      puts "N: #{name}, C: #{composer}, A: #{artist}"
-    end
-    true
   end
 
   def clone_composer(dbfile=nil)
@@ -388,14 +420,15 @@ class ITuneFolder
 
     self.filter_list do |atrack, iname|
       composer = atrack.composer.get
+      changed  = false
       if composer.empty?
         if composer = compname[iname]
-          puts ">>#{composer}: #{iname}"
-          atrack.composer.set(composer)
+          changed |= atrack.update(:composer, composer)
         end
       else
         compname[iname] ||= composer
       end
+      changed
     end
     if dbfile
       fod = File.open(dbfile, "w")
@@ -404,11 +437,28 @@ class ITuneFolder
     end
   end
   
-  def parse_name(instruction)
+  def capitalize(string)
+    result = if string =~ /\s*\((.*)\)(.*)$/
+      p1, p2, p3 = $`, $1, $2
+      capitalize(p1) + ' (' + capitalize(p2) + ') ' + capitalize(p3)
+    else
+      string.split(/[ _]+/).map {|w| w.capitalize}.join(' ')
+    end
+    result.strip
+  end
+
+  SpecialName = {
+    'Abba'  => 'ABBA',
+    'Ac, M' => 'AC&M',
+    'Maya'  => 'MayA'
+  }
+
+  def track_run(instruction)
     self.filter_list do |atrack, iname|
-      name = atrack.name.get
+      changed = false
+      name    = atrack.name.get
       case instruction
-      when 'e.comp'
+      when 'e.composer'
         composer = nil
         if name =~ /^(.*)\s*\((.*)\)/
           tname, composer = $1, $2
@@ -416,39 +466,101 @@ class ITuneFolder
           tname, composer = $1, $2
         end
         if composer
-          puts "N: #{name} => Comp: #{composer}"
           if !atrack.composer.get || atrack.composer.get.empty?
-            atrack.composer.set(composer)
+            changed |= atrack.update(:composer, composer)
           end
-          atrack.name.set(tname)
+          changed |= atrack.update(:name, tname)
         end
+      when 'b.artist'
+        artist, title = atrack.name.get.split(/\s*-\s*/)
+        next unless title
+        atrack.update(:name, title)
+        atrack.update(:artist, artist)
+      # Capitalize name
       when 'cap'
-        cname = atrack.name_clean
-        tname = cname.split(/[ _]+/).map {|w| w.capitalize}.join(' ')
-        if tname != cname
-          puts "N: #{cname} => CN: #{tname}"
-          atrack.name.set(tname)
+        ['name', 'artist', 'album_artist'].each do |prop|
+          value  = atrack.send(prop).get
+          nvalue = capitalize(value)
+          unless SpecialName[nvalue]
+            changed |= atrack.update(prop, nvalue)
+          end
         end
-      when 'nopar'
+      # To undo changes to artist name with special spelling
+      when 'fix_artist'
+        ['artist', 'album_artist'].each do |prop|
+          value = atrack.send(prop).get
+          if nvalue = SpecialName[value]
+            changed |= atrack.update(prop, nvalue)
+          end
+        end
+      # General fix
+      # Update Lien Kuch
+      when 'fix_name'
+        fixname = atrack.name.get.sub(/^Lien Khuc/i, 'LK').
+                sub(/^:/, '')
+        atrack.update(:name, fixname)
+      # Remove anything after ( in name
+      when 'no_parens'
         if atrack.name.get =~ /^(.*)\s*\(.*$/
           tname = $1
-          puts "N: #{name} => CN: #{tname}"
-          atrack.name.set(tname)
+          changed |= atrack.update(:name, tname)
         end
-      when 'numtrack'
-        if name =~ /^(\d+)\.?\s*/
+      # Remove the track info in front of name and move to track
+      when 'number_track'
+        if name =~ /^(\d+)[-\.]?\s*/
+          trackno = $1.to_i
           rname = $'.sub(/\s*-\s*/, '')
-          track = $1.to_i
-          puts "#{name} => T: #{track}. #{rname}"
-
-          atrack.track_number.set(track)
-          atrack.name.set(rname)
+          atrack.update(:track_number, trackno)
+          changed ||= atrack.update(:name, rname)
         elsif name =~ /^\s*-\s*/
-          rname = $'
-          puts "#{name} => #{rname}"
-          atrack.name.set(rname)
+          changed ||= atrack.update(:name, $')
         end
+      when 'number_track2'
+        trackno, artist, title = name.split(/ - /)
+        next unless title
+        composer = nil
+        if title =~ /\s*\(/
+          title = $`
+          composer = $'.sub(/\).*$/, '').sub(/^lv\s+/i, '')
+        end
+        atrack.update(:track_number, trackno)
+        atrack.update(:name, title)
+        atrack.update(:artist, artist)
+        atrack.update(:composer, composer)
+      when 'show'
+        composer = atrack.composer.get
+        name     = atrack.name_clean
+        artist   = atrack.artist.get
+        comp     = atrack.compilation.get
+        puts "N:#{name}, C:#{composer}, A:#{artist}, CO:#{comp}"
+      when 'setcomp'
+        atrack.update(:compilation, true)
+        album = atrack.album.get
+        name     = atrack.name_clean
+        artist   = atrack.artist.get
+        puts "N:#{name}, L:#{album}, A:#{artist}, CO:#{comp}"
+      when 'clearcomp'
+        atrack.update(:compilation, false)
+        album  = atrack.album.get
+        name   = atrack.name_clean
+        artist = atrack.artist.get
+        puts "N:#{name}, L:#{album}, A:#{artist}, CO:#{comp}"
+      # Resplit the artist field
+      when 'split_artist'
+        ['artist', 'album_artist'].each do |prop|
+          value = atrack.send(prop).get
+          if value && !value.empty? && (value !~ /AC\&M/i)
+            values = value.strip.split(/\s*[-,\&]\s*/)
+            p values
+            next unless (values.size > 1)
+            nvalue = values.sort.join(', ')
+            changed ||= atrack.update(prop, nvalue)
+          end
+        end
+      else
+        Plog.error "Unsupported operation: #{instruction}"
       end
+      changed
     end
     true
   end
@@ -542,47 +654,39 @@ class ITuneHelper
     DeviceDir.new(dir, getOption).add_images
   end
 
-  def self.rm_empty_dirs(*dirs)
-    dirs.each do |adir|
-      DeviceDir.new(adir).rm_empty_dirs
-    end
-  end
-
-  def self.num2track(playlist)
-    ifolder = ITuneFolder.new(playlist, getOption)
-    ntracks = ifolder.tracks.size
-    Plog.info "Process #{ntracks} tracks"
-    ifolder.filter_list do |atrack, iname|
-      name = atrack.name.get
-      if name =~ /^(\d+)\.?\s*/
-        rname = $'.sub(/\s*-\s*/, '')
-        track = $1.to_i
-        puts "#{name} => T: #{track}. #{rname}"
-
-        atrack.track_number.set(track)
-        atrack.name.set(rname)
-      elsif name =~ /^\s*-\s*/
-        rname = $'
-        puts "#{name} => #{rname}"
-        atrack.name.set(rname)
+  def self.rm_empty_dirs(dir = ".", level = 0)
+    #Plog.info "[#{level}] Scanning #{dir}"
+    rmit = true
+    Dir.glob("#{dir}/*").sort.each do |afile|
+      bfile = File.basename(afile)
+      next if ['.', '..'].include?(bfile)
+      if test(?d, afile)
+        rm_empty_dirs("#{afile}", level+1)
+      end
+      if bfile !~ /\.jpg$/
+        #Plog.info "Found #{bfile}.  Protect "#{dir}"
+        rmit = false
       end
     end
+    if rmit
+      FileUtils.rm_rf(dir, :verbose=>true)
+    else
+      STDERR.print "."
+      STDERR.flush
+    end
     true
-  end
-  
-  def self.showtracks(playlist)
-    ITuneFolder.new(playlist, getOption).showtracks
   end
 
   def self.clone_composer(playlist, dbfile=nil)
     ITuneFolder.new(playlist, getOption).clone_composer(dbfile)
   end
 
-  def self.parse_name(playlist, *instructions)
+  def self.track_run(playlist, *instructions)
     folder = ITuneFolder.new(playlist, getOption)
     instructions.each do |instruction|
-      folder.parse_name(instruction)
+      folder.track_run(instruction)
     end
+    true
   end
 
   def self.add_lyrics(playlist, skipfile=nil, exdir="./lyrics")
@@ -634,6 +738,17 @@ class ITuneHelper
     end
     nil
   end
+
+  def self.check_missing_files(dir = ".")
+    require 'find'
+
+    skptn = Regexp.new(/.jpg$|.DS_Store$/)
+    Find.find(dir) do |afile|
+      next unless test(?f, afile)
+      next if skptn.match(afile)
+      p afile
+    end
+  end
 end
 
 if (__FILE__ == $0)
@@ -641,6 +756,8 @@ if (__FILE__ == $0)
         ['--cdir',    '-C', 1],
         ['--incr',    '-i', 1],
         ['--init',    '-I', 0],
+        ['--limit',   '-l', 1],
+        ['--dryrun',  '-n', 0],
         ['--ofile',   '-o', 1],
         ['--purge',   '-p', 0],
         ['--pattern', '-P', 1],
