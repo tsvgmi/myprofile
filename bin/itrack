@@ -1,0 +1,65 @@
+#!/bin/bash
+. ${0%/*}/../etc/tool.env
+#######################################################################
+# File: 	admtool
+# Description:  Sysadmin tools
+# Created:	2002-06-23
+# $Id$
+#######################################################################
+
+PATH=$PATH:/sw/sbin:/opt/local/bin
+
+#------------------------------------------------------ Begin of script ---
+#------------------------------------------------------ Begin of script ---
+#------------------------------------------------------ Begin of script ---
+
+F_subCommand $*
+oper=$1; shift
+case $oper in
+  sync-media)
+    mediav="/Volumes/THIENMUSIC/MUSIC:3950 /Volumes/SANSA_E200/MUSIC:1800"
+    #mediav="/Volumes/THIENMUSIC/MUSIC:100 /Volumes/SANSA_E200/MUSIC:100"
+    #mediav="/Users/thienvuong/tmp2:50"
+    #plists=HighRate,NewMusic,Instruments,SoundTracks,Yanni
+    plists=iTuneMyWalkMan
+
+    ftypes= countatsync=yes ropt= imgonly= 
+    while getopts :iIm:p:v i; do
+      case $i in
+      p) plists=$OPTARG ;;
+      i) countatsync= ;;
+      I) imgonly=yes ;;
+      m) mediav=$OPTARG ;;
+      v) ropt="$ropt -$i" ;;
+      *) F_usageOper $oper ;;
+      esac
+    done
+    let j=$OPTIND-1; shift $j; OPTIND=0
+
+    for vol in $mediav; do
+      bdir=${vol%:*}
+      [ -d $bdir ] || F_abort "$bdir not found.  Please connect device"
+    done
+    tmpf=$(F_tmpf 0)
+    tmpf=test.yml
+    [ "$countatsync" ] && ropt="$ropt -i1"
+    if [ ! "$imgonly" ]; then
+      F_rbrun itunehelp $ropt sync_media -o $tmpf \
+        $plists $mediav || exit 1
+      F_rbrun itunehelp -v copy_media $tmpf
+    fi
+    cdir=~/.tool/images
+    [ -d $cdir ] || mkdir -p $cdir
+    cd ~/.tool
+    for vol in $mediav; do
+      F_rbrun itunehelp -vC $cdir add_images ${vol%:*}
+    done
+    ;;
+
+  *)
+    F_rbexec itunehelp $oper "$@"
+    ;;
+
+esac
+exit 0
+
