@@ -16,7 +16,7 @@ class PhotoInfo
     require 'find'
 
     @images = []
-    Find.find("#{ENV['HOME']}/dump/images") do |afile|
+    Find.find("#{ENV['HOME']}/itune-dump/images") do |afile|
       if afile =~ /\.jpg$/
         @images << afile
       end
@@ -25,8 +25,13 @@ class PhotoInfo
 
   def mk_thumbnail(ofile, size)
     rndfile = @images[rand(@images.size)]
-    Pf.system("convert '#{rndfile}' -adaptive-resize #{size} '#{ofile}'", 1)
-    test(?f, ofile)
+    if rndfile
+      Pf.system("convert '#{rndfile}' -adaptive-resize #{size} '#{ofile}'", 1)
+      test(?f, ofile)
+    else
+      EmLog.error("No stock image file found")
+      false
+    end
   end
 end
 
@@ -264,27 +269,31 @@ class ITuneTrack
     true
   end
 
-  def update(prop, newval, options = {})
-    curval = @track.send(prop).get
-    unless options[:overwrite]
-      if options[:newonly] && curval && (curval.to_s != "0")
-        return false
+  def updates(props, options = {})
+    changed = false
+    props.each do |prop, newval|
+      curval = @track.send(prop).get
+      unless options[:overwrite]
+        if curval && (curval.to_s != "0")
+          next
+        end
       end
-    end
-    if curval == newval
-      return true
-    end
-    Plog.info "N: #{@track.name.get} => #{prop}: '#{curval}' => '#{newval}'"
-    unless ITuneHelper.getOption(:dryrun)
-      begin
-        @track.send(prop).set(newval)
-        return true
-      rescue => errmsg
-        p errmsg
+      if curval == newval
+        changed = true
+        next
       end
-      #exit(1)
+      Plog.info "N: #{@track.name.get}/#{@track.album.get} => #{prop}: '#{curval}' => '#{newval}'"
+      unless ITuneHelper.getOption(:dryrun)
+        begin
+          @track.send(prop).set(newval)
+          return true
+        rescue => errmsg
+          p errmsg
+        end
+      end
+      changed = true
     end
-    true
+    changed
   end
 
   def show
@@ -437,7 +446,7 @@ class ITuneFolder
       changed  = false
       if composer.empty?
         if composer = compname[iname]
-          changed |= atrack.update(:composer, composer)
+          changed |= atrack.updates(:composer => composer)
         end
       else
         compname[iname] ||= composer
@@ -480,6 +489,28 @@ class ITuneFolder
     true
   end
 
+  def sub_artist(subfile)
+    subdefs = YAML.load_file(subfile)
+    self.filter_list do |atrack, iname|
+      updset = {}
+      ['artist', 'album_artist'].each do |prop|
+        value  = atrack.send(prop).get
+        nvalue = value.split(/\s*,\s*/).sort.map do |avalue|
+          subdefs.each do |k, v|
+            avalue = avalue.sub(/#{k}/i, v)
+          end
+          avalue
+        end.join(', ')
+        updset[prop] = nvalue
+      end
+      STDERR.print "."
+      STDERR.flush
+      atrack.updates(updset)
+    end
+    STDERR.puts
+    true
+  end
+
   def track_run(instruction)
     ntracks  = @options[:tracks] || @tracks.size
     curtrack = 0
@@ -487,7 +518,6 @@ class ITuneFolder
       :overwrite => @options[:overwrite]
     }
     self.filter_list do |atrack, iname|
-      changed = false
       name    = atrack.name.get
       case instruction
 
@@ -499,34 +529,43 @@ class ITuneFolder
         elsif name =~ /^(.*)\s*-\s*(.*)$/
           tname, composer = $1, $2
         end
+        updset = {}
         if composer
           if !atrack.composer.get || atrack.composer.get.empty?
-            changed |= atrack.update(:composer, composer)
+            updset[:composer] = composer
           end
-          changed |= atrack.update(:name, tname)
+          updset[:name] = tname
         end
+        atrack.updates(updset)
       when 'b.artist'
         artist, title = atrack.name.get.split(/\s*-\s*/)
         next unless title
-        atrack.update(:name, title)
-        atrack.update(:artist, artist)
+        atrack.updates(:name => title, :artist => artist)
+      when 'a.artist'
+        title, artist = atrack.name.get.split(/\s*-\s*/)
+        next unless artist
+        atrack.updates(:name => title, :artist => artist)
       # Capitalize name
       when 'cap'
+        updset = {}
         ['name', 'artist', 'album_artist'].each do |prop|
           value  = atrack.send(prop).get
           nvalue = capitalize(value)
           unless SpecialName[nvalue]
-            changed |= atrack.update(prop, nvalue)
+            updset[prop] = nvalue
           end
         end
+        atrack.updates(updset)
       # To undo changes to artist name with special spelling
       when 'fix_artist'
+        updset = {}
         ['artist', 'album_artist'].each do |prop|
           value = atrack.send(prop).get
           if nvalue = SpecialName[value]
-            changed |= atrack.update(prop, nvalue)
+            updset[prop] = nvalue
           end
         end
+        atrack.updates(updset)
       # General fix
       # Update Lien Khuc to LK
       # Remove all after -
@@ -537,49 +576,50 @@ class ITuneFolder
         if fixname =~ /^(.*)\s*\(.*$/
           fixname = $1
         end
-        changed = atrack.update(:name, fixname)
+        atrack.updates(:name => fixname)
       when 'fix_title'
         album, title = atrack.name.get.split(/\s*:\s*/, 2)
-        atrack.update(:name, title)
-        atrack.update(:album, album)
+        atrack.updates(:name => title, :album => album)
 
       # Remove the track info in front of name and move to track
       when 'number_track'
+        updset = {}
         if name =~ /^(\d+)[-\.]?\s*/
           trackno = $1.to_i
-          rname = $'.sub(/\s*-\s*/, '')
-          atrack.update(:track_number, trackno)
-          changed ||= atrack.update(:name, rname)
+          rname   = $'
+          updset[:track_number] = trackno
+          updset[:name]         = rname
         elsif name =~ /^\s*-\s*/
-          changed ||= atrack.update(:name, $')
+          updset[:name]         = $'
         end
+        atrack.updates(updset)
       when 'renumber_track'
         curtrack += 1
-        tnopts = updopts.clone
-        tnopts[:newonly] = true
-        atrack.update(:track_number, curtrack, tnopts)
-        atrack.update(:track_count, ntracks, updopts)
+        atrack.updates({:track_number => curtrack,
+                        :track_count => ntracks}, updopts)
       when 'show'
         atrack.show
       when 'setcomp'
-        atrack.update(:compilation, true)
+        atrack.updates(:compilation => true)
       when 'clearcomp'
-        atrack.update(:compilation, false)
+        atrack.updates(:compilation => false)
       # Resplit the artist field
       when 'split_artist'
+        updset = {}
         ['artist', 'album_artist'].each do |prop|
           value = atrack.send(prop).get
           if value && !value.empty? && (value !~ /AC\&M/i)
             values = value.strip.split(/\s*[-,\&]\s*/)
             next unless (values.size > 1)
             nvalue = values.sort.join(', ')
-            changed ||= atrack.update(prop, nvalue)
+            updset[prop] = nvalue
           end
         end
+        atrack.updates(updset)
       else
         Plog.error "Unsupported operation: #{instruction}"
+        false
       end
-      changed
     end
     true
   end
@@ -706,6 +746,10 @@ class ITuneHelper
       folder.track_run(instruction)
     end
     true
+  end
+
+  def self.sub_artist(playlist, def_file = "artsub.yml")
+    ITuneFolder.new(playlist, getOption).sub_artist(def_file)
   end
 
   def self.find_match(playlist)

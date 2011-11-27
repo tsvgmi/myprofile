@@ -57,7 +57,8 @@ case $oper in
     ;;
 
   *)
-    F_rbexec itunehelp $oper "$@"
+    ioper=$(echo $oper | sed 's/-/_/g')
+    F_rbexec itunehelp $ioper "$@"
     ;;
 
 esac

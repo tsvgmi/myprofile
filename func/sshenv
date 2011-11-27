@@ -10,6 +10,7 @@
 # Description: Setup required environments for SSH/tunnel
 #==========================================================================
 function _ssh_setup {
+  typeset target=$1
   typeset utunip
   typeset tun0file=$HOME/.tool/tunnel.utun0
 
@@ -36,7 +37,11 @@ function _ssh_setup {
   thienvuong) SSH_USER=tvuong ;;
   *)          SSH_USER=$user  ;;
   esac
+  case ${target%%:*} in
+  tvmac*) SSH_USER=thien ;;
+  esac
   export SSH_USER SSH_PORT SSH_PROXYHOST
+
 }
 
 _ssh_setup
@@ -50,7 +55,7 @@ function _ssh {
   typeset target=$1
   typeset useproxy=
 
-  _ssh_setup
+  _ssh_setup $target
   [ "$target" ] || target=lxp6d199m0
   if [ "$SSH_PORT" ]; then
     [ "$target" == "$HOST" ] || useproxy=yes
@@ -71,7 +76,7 @@ function _scp {
   src=$1
   dest=$2
 
-  _ssh_setup
+  _ssh_setup $dest
   [ "$dest" ] || return 1
   set -x
   \scp -P $SSH_PORT $src ${SSH_USER}@$dest
