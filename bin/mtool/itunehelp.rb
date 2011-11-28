@@ -307,6 +307,8 @@ module ITune
 # into the tracks, b/c many tracks are of the same song, and it is
 # too time consuming to get for each one.
   class LyricStore
+    MIN_SIZE = 100
+
     # @param [String]     store Directory to store
     # @param [ITuneTrack] track iTune track
     def initialize(store, track)
@@ -318,41 +320,39 @@ module ITune
       @track = track
 
       name   = @track.name.get
-      @kname = VnMap.to_ascii(name).sub(/\s*[-\(].*$/, '')
+      @kname = VnMap.to_ascii(name).sub(/\s*[-\(].*$/, '').strip
     end
 
-    def track_to_store
+    def value
       wfile  = "#{@store}/#{@kname}.txt"
       if test(?f, wfile)
-        Plog.info "#{wfile} found. Skip"
-        return false
+        File.read wfile
+      else
+        ""
       end
+    end
 
-      lyrics = @track.lyrics.get
-      if (lyrics == :missing_value) || lyrics.empty?
-        return false
-      end
-
+    def value=(content)
+      wfile  = "#{@store}/#{@kname}.txt"
       Plog.info "Writing to #{wfile}"
       fod = File.open(wfile, "w")
-      fod.puts lyrics
+      fod.puts content
       fod.close
-      true
     end
 
     def store_to_track
-      wfile  = "#{@store}/#{@kname}.txt"
-      unless test(?f, wfile)
+      clyrics = self.value
+      if clyrics.size < MIN_SIZE
+        Plog.info "No stored lyrics"
         return false
       end
-      clyrics = File.read(wfile)
-
-      lyrics = @track.lyrics.get
-      unless (lyrics == :missing_value) || lyrics.empty?
-        return false
+      current = @track.lyrics.get
+      if current.size >= MIN_SIZE
+        Plog.info "#{@kname} already has lyrics.  Skip"
+        return true
       end
 
-      Plog.info "Setting lyrics for #{@track.name.get}/#{@track.album.get}"
+      Plog.info "Setting lyrics for #{@kname}"
       @track.lyrics.set(clyrics)
       true
     end
@@ -378,10 +378,8 @@ module ITune
     # Set the lyrics content from web or store
     # @param [String] skipfile File containing list of name to skip.
     #   If we could not find in lyrics, it's no use keep repeating
-    def set_from_web(skipfile=nil)
-      if skipfile
-        skiplist = HashYaml.new(skipfile)
-      end
+    def set_from_web(skipfile)
+      skiplist = HashYaml.new(skipfile)
       name     = @kname
       return if skiplist[name]
       return if store_to_track
@@ -390,21 +388,22 @@ module ITune
       lyrics   = @track.lyrics.get
       album    = @track.album.get
       Plog.info "N: #{name}/#{album}, C: #{composer}"
-      if lyrics.empty? || (lyrics.size < 100)
+      changed  = false
+      if lyrics.empty? || (lyrics.size < MIN_SIZE)
         @track.reveal
         @track.play
         content = get_from_web
         if content.empty?
           skiplist[name] = true
+          skiplist.save
         else
+          Plog.info "Set webcontent to #{@track.name_clean}"
           @track.lyrics.set(content)
-          track_to_store
+          self.value = content
+          changed = true
         end
       end
       # Do it inside the look cause we use 'ctrl-c' to break out
-      if skipfile
-        skiplist.save
-      end
       true
     end
   end
@@ -458,10 +457,12 @@ module ITune
         if yield atrack2, atrack2.name_clean.downcase
           limit -= 1
         end
-        STDERR.print('.'); STDERR.flush
+        if @options[:verbose]
+          STDERR.print('.'); STDERR.flush
+        end
         break if (limit <= 0)
       end
-      STDERR.puts
+      STDERR.puts if @options[:verbose]
     end
 
     # Clone and extract composer field
@@ -530,6 +531,29 @@ module ITune
       true
     end
 
+    def stats(dbfile)
+      counters = Hash.new(0)
+      self.filter_list do |atrack, iname|
+        if !atrack.lyrics.get.empty?
+          counters['has_lyrics'] += 1
+        end
+        if !atrack.composer.get.empty?
+          counters['has_composer'] += 1
+        end
+        [:artist, :composer, :album_artist].each do |f|
+          v = VnMap.to_ascii(atrack.send(f).get)
+          if !v.empty?
+            cname = "#{f}_#{v.gsub(/[ ,\/]+/, '_')}"
+            counters[cname] += 1
+          end
+        end
+      end
+      fod = File.open(dbfile, "w")
+      fod.puts counters.to_yaml
+      fod.close
+      true
+    end
+
     def track_run(instruction)
       ntracks  = @options[:tracks] || @tracks.size
       curtrack = 0
@@ -539,7 +563,6 @@ module ITune
       self.filter_list do |atrack, iname|
         name    = atrack.name.get
         case instruction
-
         # Track in the form: title(composer)
         when 'e.composer'
           composer = nil
@@ -763,6 +786,10 @@ module ITune
       true
     end
 
+    def self.stats(playlist, def_file = "stats.yml")
+      ITuneFolder.new(playlist, getOption).stats(def_file)
+    end
+
     def self.sub_artist(playlist, def_file = "artsub.yml")
       ITuneFolder.new(playlist, getOption).sub_artist(def_file)
     end
@@ -771,7 +798,7 @@ module ITune
       ITuneFolder.new(playlist, getOption).find_match
     end
 
-    def self.add_lyrics(playlist, skipfile=nil, exdir="./lyrics")
+    def self.add_lyrics(playlist, skipfile="./skip.yml", exdir="./lyrics")
       ITuneFolder.new(playlist, getOption).filter_list do |atrack, iname|
         LyricStore.new(exdir, atrack).set_from_web(skipfile)
       end
