@@ -56,6 +56,10 @@ case $oper in
     done
     ;;
 
+  irb)
+    F_exec irb $@
+    ;;
+
   *)
     ioper=$(echo $oper | sed 's/-/_/g')
     F_rbexec itunehelp $ioper "$@"
