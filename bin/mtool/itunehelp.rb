@@ -10,6 +10,55 @@ require 'yaml'
 require 'fileutils'
 require 'mtool/core'
 require 'mtool/mp3file'
+require 'mtool/lyricsource'
+
+# Mapping of Viet UTF-8 string to ASCII
+class VnMap
+  require 'utfstring'
+
+  @@fmap, @@rmap = nil, nil
+
+  def self.load_map(mfile)
+    @@fmap = YAML.load_file(mfile)
+    @@rmap = {}
+    @@fmap.each do |mc, mapset|
+      mapset.each do |seq|
+        @@rmap[seq] = mc
+      end
+    end
+  end
+
+  def self.to_ascii(string)
+    unless @@rmap
+      load_map("#{ENV['EM_HOME_DIR']}/etc/vnmap.yml")
+    end
+    result = ""
+    string.each_utf8_char do |achar|
+      if mchar = @@rmap[achar]
+        result << mchar
+      elsif achar =~ /^[\w\s]+$/
+        result << achar
+      end
+    end
+    result
+  end
+end
+
+class String
+  def cap_words
+    result = if self =~ /\s*\((.*)\)(.*)$/
+      p1, p2, p3 = $`, $1, $2
+      p1.cap_words + ' (' + p2.cap_words + ') ' + p3.cap_words
+    else
+      string.split(/[ _]+/).map {|w| w.capitalize}.join(' ')
+    end
+    result.strip
+  end
+
+  def vnto_ascii
+    VnMap.to_ascii(self)
+  end
+end
 
 class HashYaml
   def initialize(yfile)
@@ -56,38 +105,6 @@ class PhotoInfo
       EmLog.error("No stock image file found")
       false
     end
-  end
-end
-
-# Mapping of Viet UTF-8 string to ASCII
-class VnMap
-  require 'utfstring'
-
-  @@fmap, @@rmap = nil, nil
-
-  def self.load_map(mfile)
-    @@fmap = YAML.load_file(mfile)
-    @@rmap = {}
-    @@fmap.each do |mc, mapset|
-      mapset.each do |seq|
-        @@rmap[seq] = mc
-      end
-    end
-  end
-
-  def self.to_ascii(string)
-    unless @@rmap
-      load_map("#{ENV['EM_HOME_DIR']}/etc/vnmap.yml")
-    end
-    result = ""
-    string.each_utf8_char do |achar|
-      if mchar = @@rmap[achar]
-        result << mchar
-      elsif achar =~ /^[\w\s]+$/
-        result << achar
-      end
-    end
-    result
   end
 end
 
@@ -253,23 +270,31 @@ module ITune
     end
   end
 
-# Manage iTune tracks and update access via iTune app interface
+# Manage iTune tracks and update access via iTune app interface.
+# Wrapper so accessor would be more ruby like
   class ITuneTrack
     attr_accessor :track
 
+    # @param track The Itune track object
     def initialize(track)
       @track = track
       @kname = nil
     end
 
+    # Return the clean name. (Remove VN accent and modifier)
     def name_clean
       unless @kname
         name   = @track.name.get
-        @kname = VnMap.to_ascii(name).sub(/\s*[-\(].*$/, '').strip
+        @kname = name.vnto_ascii.sub(/\s*[-\(].*$/, '').strip
       end
       @kname
     end
 
+    # Updating one or more track properties.
+    # Only update if there is change
+    # @param [Hash] props Properties to update
+    # @param [Hash] options Updating options
+    # @option options :dryrun Print only but no change
     def updates(props, options = {})
       changed = false
       props.each do |prop, newval|
@@ -284,7 +309,7 @@ module ITune
         end
         changed = true
         puts "  %-10s: %-30s => %-30s" % [prop, curval, newval]
-        unless ITuneHelper.getOption(:dryrun)
+        unless options[:dryrun]
           begin
             @track.send(prop).set(newval.strip)
           rescue => errmsg
@@ -295,13 +320,16 @@ module ITune
       changed
     end
 
+    # Printing track info to stdout
     def show
       composer = @track.composer.get
       artist   = @track.artist.get
-      comp     = @track.compilation.get
-      Plog.info "N:#{name_clean}, C:#{composer}, A:#{artist}, CO:#{comp}"
+      album    = @track.album.get
+      Plog.info "N:#{name_clean}/#{album}, C:#{composer}, A:#{artist}"
     end
 
+    # @param [Symbol] property Track property name
+    # @return [String] Value of the specified property
     def [](property)
       result = @track.send(property).get
       if result == :missing_value
@@ -310,10 +338,14 @@ module ITune
       result
     end
 
+    # @param [Symbol] property Track property name
+    # @param [String] value New value to set to track property
     def []=(property, value)
       @track.send(property).set(value.strip)
     end
 
+    # Map the applescript set/get to ruby attribute reference and assign.
+    # Simpler to use.
     def method_missing(method, *args)
       case method
       when :reveal, :play
@@ -334,160 +366,6 @@ module ITune
     end
   end
 
-  class LyricSource
-    LySource = {
-      'video4viet' => {
-        :base => "http://www.video4viet.com",
-        :src  => "http://www.video4viet.com/lyrics.html?act=search&q=%TITLE%&type=title"
-      },
-      'yeucahat' => {
-        :base => "http://search.yeucahat.com",
-        :src  => "http://search.yeucahat.com/search.php?s=%TITLE%&mode=title"
-      }
-    }
-
-    def initialize(src)
-      @source = src
-      @config = LySource[src]
-      raise "Lyrics source #{@source} not found" unless @config
-    end
-
-    private
-    def to_clean_ascii(string)
-      VnMap.to_ascii(string).sub(/\s*[\-\(].*$/, '').
-                         gsub(/\'/, " ").downcase
-    end
-
-    public
-    def page_url(name)
-      require 'uri'
-
-      @config[:src].sub(/%TITLE%/, URI.escape(to_clean_ascii(name)))
-    end
-
-    # Get and parse manually
-    # @param [ITuneTrack] track
-    def manual_get(track)
-      Pf.system("open --background '#{self.page_url(track.name)}'", 1)
-      STDOUT.puts "Enter content for lyrics [ = to end]: "
-      content = []
-      while line = STDIN.gets.chomp
-        break if line =~ /^=/
-        content << line
-      end
-      result = content.join("\n").strip
-    end
-
-    def extract_from_yeucahat(href)
-      require 'hpricot'
-      require 'open-uri'
-
-      wurl  = @config[:base] + "/#{href}"
-      Plog.info "Found match in #{wurl}"
-      fid   = open(wurl)
-      pg    = Hpricot(fid.read)
-      fid.close
-      title = pg.search("//span.maintitle").inner_text
-      meta  = pg.search("//span.genmed")[1].inner_text.strip
-      lyric = pg.search("//span.lyric").inner_text.strip
-      if title.empty?
-        ""
-      else
-        title + "\n" + meta + "\n" + lyric + "\n" + wurl
-      end
-    end
-
-    # Get and parse automatically
-    # @param [ITuneTrack] track
-    def auto_get(track)
-      require 'hpricot'
-      require 'open-uri'
-
-      case @source
-      when "yeucahat"
-        url = self.page_url(track.name)
-        Plog.info "Fetching from #{url}"
-        fid = open(url)
-        pg  = Hpricot(fid.read)
-        fid.close
-
-        cname   = to_clean_ascii(track.name)
-        cartist = to_clean_ascii(track.artist)
-        if true
-          tb0 = pg.search("//table.forumline")[0]
-          (tb0.search("//tr.row1") + tb0.search("//tr.row2")).each do |arow|
-            aref  = arow.at("//a.topictitle")
-            href  = aref['href']
-            wname = to_clean_ascii(aref.inner_text)
-            next unless (wname == cname)
-            wartist = to_clean_ascii(File.basename(href).sub(/^.*~/, '').
-                    sub(/\.html$/, '').gsub(/-/, ' '))
-            if (wartist == cartist)
-              return extract_from_yeucahat(href)
-            else
-              ccomposer = to_clean_ascii(track.composer)
-              cref      = arow.search("//span.gensmall")[1]
-              wcomposer = to_clean_ascii(cref.children[3])
-              Plog.info "Found composer #{wcomposer}"
-              if (wcomposer == ccomposer)
-                return extract_from_yeucahat(href)
-              end
-            end
-          end
-        else
-          pg.search("//a.topictitle").each do |aref|
-            href    = aref['href']
-            wname   = to_clean_ascii(aref.inner_text)
-            wartist = to_clean_ascii(File.basename(href).sub(/^.*~/, '').
-                    sub(/\.html$/, '').gsub(/-/, ' '))
-            if (wname == cname) && (wartist == cartist)
-              wurl = @config[:base] + "/#{href}"
-              Plog.info "Found match in #{wurl}"
-              fid = open(wurl)
-              pg  = Hpricot(fid.read)
-              fid.close
-              title = pg.search("//span.maintitle").inner_text
-              meta  = pg.search("//span.genmed")[1].inner_text.strip
-              lyric = pg.search("//span.lyric").inner_text.strip
-              unless title.empty?
-                return title + "\n" + meta + "\n" + lyric + "\n" + wurl
-              end
-            end
-          end
-        end
-      end
-      ""
-    end
-
-    def sync_meta_to_itune(lyrics)
-      cn    = lyrics.split(/[\r\n]+/)
-      chset = {}
-      title = cn[0].strip
-      case @source
-      when 'video4viet'
-        if (cn[1] =~ /:\s*/)
-          chset[:name]     = title unless title.empty?
-          chset[:composer] = $'.sub(/\s*[-\(;].*$/, '')
-        else
-          Plog.error "#{@kname}. Lyrics not in valid form"
-        end
-      when 'yeucahat'
-        1.upto(2) do |idx|
-          next if cn[idx] =~ /^Ca /
-          if (cn[idx] =~ /:\s*/)
-            chset[:name]     = title unless title.empty?
-            value = $'.sub(/\s*[-\(;].*$/, '')
-            if value !~ /^Album/
-              chset[:composer] = value
-            end
-            break
-          end
-        end
-      end
-      chset
-    end
-  end
-
 # Manage the external lyric store.  This is kept outside and clone
 # into the tracks, b/c many tracks are of the same song, and it is
 # too time consuming to get for each one.
@@ -504,9 +382,10 @@ module ITune
       @track = track
 
       name      = @track.name
-      @kname    = VnMap.to_ascii(name).sub(/\s*[-\(].*$/, '').strip
+      @kname    = name.vnto_ascii.sub(/\s*[-\(].*$/, '').strip
       @source   = src
-      @lysource = LyricSource.new(src)
+      @lysource = LyricSource.get(src)
+      @options  = ITuneHelper.getOption
     end
 
 # @return [String] Content of lyric in store.  Text format
@@ -553,12 +432,17 @@ module ITune
             return true
           end
         end
-        chset = @lysource.sync_meta_to_itune(clyrics)
+        chset = @lysource.extract_metadata(clyrics)
         if chset.size > 0
           Plog.info "Setting lyric for #{@kname}"
           @track.updates(chset)
         end
-        @track.lyrics  = clyrics
+        # Protect since web may send down bad encoded string?
+        begin
+          @track.lyrics  = clyrics
+        rescue => errmsg
+          Plog.error errmsg
+        end
         @track.comment = Time.now.strftime("%y.%m.%d.%H.%M.%S")
         return true
       else
@@ -581,6 +465,10 @@ module ITune
       return true
     end
 
+    def auto_get
+      @lysource.auto_get(@track)
+    end
+
     # Set the lyrics content from web or store.
     #
     # If lyrics is not found in local store, we'll point to remote URL
@@ -593,21 +481,23 @@ module ITune
       skipfile = @source + ".yml"
       skiplist = HashYaml.new(skipfile)
       name     = @kname
-      return if skiplist[name]
-      return if store_to_track
+      unless @options[:force]
+        return if skiplist[name]
+        return if store_to_track
+      end
 
       composer = @track.composer
       lyrics   = @track[:lyrics]
       album    = @track.album
-      Plog.info "N: #{name}/#{album}, C: #{composer}"
       changed  = false
-      if lyrics.empty? || (lyrics.size < MIN_SIZE)
-        @track.reveal
+      @track.show
+      if @options[:force] || lyrics.empty? || (lyrics.size < MIN_SIZE)
         if auto
           content = @lysource.auto_get(@track)
         else
+          @track.reveal
           @track.play
-          content = @lysource.manual_get(@track.name)
+          content = @lysource.manual_get(@track)
         end
         if content.empty?
           skiplist[name] = true
@@ -632,7 +522,7 @@ module ITune
         artist = $'.strip
         index[fname] = {
           :file       => afile,
-          :artist     => VnMap.to_ascii(artist).sub(/\s*\(.*$/, ''),
+          :artist     => artist.vnto_ascii.sub(/\s*\(.*$/, ''),
           :raw_artist => artist
         }
       end
@@ -640,9 +530,22 @@ module ITune
     end
   end
 
+  # Manage itune collections.  Collection could be a playlist, a playlist
+  # folder, current set, selection, or a searched list.
   class ITuneFolder
-    attr_reader :tracks
+    attr_reader :tracks         # List of selected tracks
 
+    # Create a new collection
+    #
+    # @param [String] name Collection name.  It could be 'current' for
+    #   current view, 'select' for the currently selected items.  Otherwise,
+    #   it is a playlist name.
+    # @param [Hash] options Extra options
+    # @option options [String] :pattern Specify a pattern to select a subset of
+    #   the collection.
+    # @option options [Integer] :limit (100000) Max number of matching tracks
+    # @option options [Boolean] :verbose Verbose log
+    # @option options [Boolean] :force
     def initialize(name, options={})
       @name    = name
       @app     = ITuneApp.app
@@ -670,6 +573,7 @@ module ITune
       get_tracks(@options[:pattern])
     end
 
+    # Collect the list of matching tracks
     def get_tracks(ptn = nil)
       if ptn
         Plog.info "Search for #{ptn}"
@@ -682,7 +586,8 @@ module ITune
       @tracks
     end
 
-    def filter_list
+    # Iterator though each matching track
+    def each_track
       limit = (@options[:limit] || 100000).to_i
       @tracks.each do |atrack|
         atrack2  = ITuneTrack.new(atrack)
@@ -700,7 +605,7 @@ module ITune
     # Clone and extract composer field
     def clone_composer(dbfile)
       wset = HashYaml.new(dbfile)
-      self.filter_list do |atrack, iname|
+      self.each_track do |atrack, iname|
         composer = atrack.composer
         changed  = false
         if composer.empty?
@@ -708,21 +613,11 @@ module ITune
             changed |= atrack.updates(:composer => wset[iname].first)
           end
         else
-          wset[iname] ||= VnMap.to_ascii(composer)
+          wset[iname] ||= composer.vnto_ascii
         end
         changed
       end
       wset.save
-    end
-
-    def capitalize(string)
-      result = if string =~ /\s*\((.*)\)(.*)$/
-        p1, p2, p3 = $`, $1, $2
-        capitalize(p1) + ' (' + capitalize(p2) + ') ' + capitalize(p3)
-      else
-        string.split(/[ _]+/).map {|w| w.capitalize}.join(' ')
-      end
-      result.strip
     end
 
     SpecialName = {
@@ -733,11 +628,11 @@ module ITune
 
     def find_match
       mainFolder = ITuneFolder.new('Music')
-      self.filter_list do |atrack, iname|
+      self.each_track do |atrack, iname|
         atrack.show
         pattern = "#{atrack.name} #{atrack.artist}"
         mainFolder.get_tracks(pattern)
-        mainFolder.filter_list do |mtrack, mname|
+        mainFolder.each_track do |mtrack, mname|
           mtrack.show
         end
       end
@@ -746,7 +641,7 @@ module ITune
 
     def sub_artist(subfile)
       subdefs = YAML.load_file(subfile)
-      self.filter_list do |atrack, iname|
+      self.each_track do |atrack, iname|
         updset = {}
         ['artist', 'album_artist'].each do |prop|
           value  = atrack[prop]
@@ -765,12 +660,12 @@ module ITune
 
     def stats(dbfile)
       counters = Hash.new(0)
-      self.filter_list do |atrack, iname|
+      self.each_track do |atrack, iname|
         if !atrack.composer.empty?
           counters['has_composer'] += 1
         end
         [:artist, :composer, :album_artist].each do |f|
-          v = VnMap.to_ascii(atrack[f])
+          v = atrack[f].vnto_ascii
           if !v.empty?
             cname = "#{f}_#{v.gsub(/[ ,\/]+/, '_')}"
             counters[cname] += 1
@@ -785,8 +680,8 @@ module ITune
 
     def update_if_changed(dir)
       index = HashYaml.new("#{dir}/index.yml")
-      self.filter_list do |atrack, iname|
-        tname   = VnMap.to_ascii(atrack.name).sub(/\s*\(.*$/, '')
+      self.each_track do |atrack, iname|
+        tname   = atrack.name.vnto_ascii.sub(/\s*\(.*$/, '')
         identry = index[tname]
         next unless identry
 
@@ -813,7 +708,7 @@ module ITune
       updopts  = {
         :overwrite => @options[:overwrite]
       }
-      self.filter_list do |atrack, iname|
+      self.each_track do |atrack, iname|
         name    = atrack.name
         case instruction
         # Track in the form: title(composer)
@@ -850,7 +745,7 @@ module ITune
           updset = {}
           ['name', 'artist', 'album_artist'].each do |prop|
             value  = atrack[prop]
-            nvalue = capitalize(value)
+            nvalue = value.cap_words
             unless SpecialName[nvalue]
               updset[prop] = nvalue
             end
@@ -1072,23 +967,31 @@ module ITune
       ITuneFolder.new(playlist, getOption).find_match
     end
 
+    def self.auto_get(playlist, src="yeucahat", exdir="./lyrics")
+      options = getOption
+      ITuneFolder.new(playlist, options).each_track do |atrack, iname|
+        LyricStore.new(src, exdir, atrack).auto_get
+      end
+      true
+    end
+
     def self.add_lyrics(playlist, src="yeucahat", exdir="./lyrics")
       options = getOption
-      ITuneFolder.new(playlist, options).filter_list do |atrack, iname|
+      ITuneFolder.new(playlist, options).each_track do |atrack, iname|
         LyricStore.new(src, exdir, atrack).set_track_lyric(options[:auto])
       end
       true
     end
 
     def self.clone_lyrics(playlist, src="yeucahat", exdir="./lyrics")
-      ITuneFolder.new(playlist, getOption).filter_list do |atrack, iname|
+      ITuneFolder.new(playlist, getOption).each_track do |atrack, iname|
         LyricStore.new(src, exdir, atrack).store_to_track
       end
       true
     end
 
     def self.clear_lyrics(playlist, src="yeucahat", exdir="./lyrics")
-      ITuneFolder.new(playlist, getOption).filter_list do |atrack, iname|
+      ITuneFolder.new(playlist, getOption).each_track do |atrack, iname|
         LyricStore.new(src, exdir, atrack).clear_track
       end
       true
@@ -1102,7 +1005,7 @@ module ITune
       wset = {}
       nset = {}
       pattern = getOption[:pattern]
-      ITuneFolder.new(playlist).filter_list(pattern) do |atrack, iname|
+      ITuneFolder.new(playlist).each_track(pattern) do |atrack, iname|
         wset[iname] ||= 0
         wset[iname] += 1
         nset[iname] = atrack.name_clean
@@ -1116,7 +1019,7 @@ module ITune
       wset     = nwset
       count    = 0
       size     = wset.size
-      lysource = LyricSource.new("yeucahat")
+      lysource = LyricSource.get("yeucahat")
       wset.keys.sort.each do |k|
         count += 1
         v = wset[k]

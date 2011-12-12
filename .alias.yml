@@ -76,10 +76,10 @@ dellist:
 oldlist: {}
 
 valias: 
-version: 133
+version: 135
 valias: 
   _ALIAS_VERSION:
-  - "'132'"
+  - "'134'"
   - ".alias-common"
   citrix:
   - "'open -a '\''Google Chrome'\'' https://citrix.etrade.com/vpn/index.html'"
@@ -160,7 +160,7 @@ valias:
   - "'/Users/thienvuong/kamplayer/bin/katool'"
   - ".alias-common"
   l:
-  - "'ls -CF'"
+  - "'ls -sFC'"
   - ".alias-common"
   l.:
   - "'ls -d .* --color=tty'"
@@ -193,7 +193,7 @@ valias:
   - "'vnc rdesktop -u tvuong'"
   - ".alias-common"
   remote:
-  - "'open -a '\''Google Chrome'\'' https://remote.etrade.com'"
+  - "'open https://remote.etrade.com'"
   - ".alias-common"
   rr:
   - "'emssh run'"
