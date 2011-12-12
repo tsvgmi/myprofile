@@ -33,24 +33,25 @@ class LyricSource
     'console' => {}
   }
 
-  def self.get(src)
+  def self.get(src, options = {})
     case src
     when 'video4viet'
-      LyVideo4Viet.new(src)
+      LyVideo4Viet.new(src, options)
     when 'yeucahat'
-      LyYeuCaHat.new(src)
+      LyYeuCaHat.new(src, options)
     when 'zing'
-      LyZing.new(src)
+      LyZing.new(src, options)
     when 'justsome'
-      LyJustSome.new(src)
+      LyJustSome.new(src, options)
     else
-      LyricSource.new(src)
+      LyricSource.new(src, options)
     end
   end
 
-  def initialize(src)
-    @source = src
-    @config = LySource[src]
+  def initialize(src, options = {})
+    @source  = src
+    @options = options
+    @config  = LySource[src]
     raise "Lyrics source #{@source} not found" unless @config
   end
 
@@ -156,7 +157,7 @@ class LyYeuCaHat < LyricSource
         ccomposer = to_clean_ascii(track.composer)
         cref      = arow.search("//span.gensmall")[1]
         wcomposer = to_clean_ascii(cref.children[3])
-        Plog.info "Found composer #{wcomposer}"
+        Plog.info "Found composer #{wcomposer}" if @options[:verbose]
         if (wcomposer == ccomposer)
           return extract_text(track.name, aref['href'])
         end
@@ -247,9 +248,12 @@ class LyJustSome < LyricSource
     cartist = to_clean_ascii(track.artist)
     pg      = fetch_hpricot(self.page_url(track.name))
     pg.search("//div/a").each do |ele|
-      href = ele['href']
-      checklink = File.basename(href).sub(/-lyrics$/, '').downcase.
-        gsub(/-/, ' ')
+      href      = ele['href']
+      bname     = URI.unescape(File.basename(href))
+      checklink = bname.sub(/-lyrics$/i, '').vnto_ascii.downcase.gsub(/-/, ' ')
+      if @options[:verbose]
+        Plog.info "Check for [#{bname}] #{checklink}/#{cname}/#{cartist}"
+      end
       if (checklink =~ /#{cname}/) && (checklink =~ /#{cartist}/)
         return extract_text(track.name, ele['href'])
       end

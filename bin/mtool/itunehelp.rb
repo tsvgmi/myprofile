@@ -36,8 +36,10 @@ class VnMap
     string.each_utf8_char do |achar|
       if mchar = @@rmap[achar]
         result << mchar
-      elsif achar =~ /^[\w\s]+$/
+      elsif achar < 127.chr
         result << achar
+      else
+        p achar
       end
     end
     result
@@ -84,30 +86,6 @@ class HashYaml
   end
 end
 
-class PhotoInfo
-  def initialize
-    require 'find'
-
-    @images = []
-    Find.find("#{ENV['HOME']}/itune-dump/images") do |afile|
-      if afile =~ /\.jpg$/
-        @images << afile
-      end
-    end
-  end
-
-  def mk_thumbnail(ofile, size)
-    rndfile = @images[rand(@images.size)]
-    if rndfile
-      Pf.system("convert '#{rndfile}' -adaptive-resize #{size} '#{ofile}'", 1)
-      test(?f, ofile)
-    else
-      EmLog.error("No stock image file found")
-      false
-    end
-  end
-end
-
 module ITune
   class ITuneApp
     @@app = nil
@@ -121,152 +99,6 @@ module ITune
         #@@app.activate
       end
       @@app
-    end
-  end
-
-  class DeviceDir
-    attr_reader :dir, :full, :tracks, :wlist
-
-    def initialize(devspec, options={})
-      @app        = ITuneApp.app
-      @options    = options
-      @dir, dsize = devspec.split(/:/)
-      @maxsize    = dsize ? dsize.to_i*10 : 1_000_000_000
-      @cursize    = 0
-      @tracks     = []
-      @full       = false
-      @wlist      = []
-    end
-
-    def try_add(atrack)
-      file  = atrack.location.to_s
-      album = atrack.album.gsub(/\//, '_')
-      dfile = "#{@dir}/#{album}/#{File.basename(file)}"
-       
-      # File is not accessible ?
-      unless test(?f, file)
-        Plog.error "#{file} not accessible"
-        return false
-      end
-
-      fsize   = (File.size(file)+99999)/100000
-      newsize = @cursize + fsize
-      if newsize > @maxsize
-        @full = true
-        false
-      else
-        @cursize = newsize
-        @tracks << atrack
-        @wlist << [file, dfile, album]
-      end
-    end
-
-    # Put a thumbnail on each dir
-    def add_images
-      require 'find'
-
-      size      = @options[:size] || "100x100"
-      cache_dir = @options[:cdir] || "./images"
-      cvname    = @options[:dvname] || "cover.jpg"
-      verbose   = @options[:verbose]
-      
-      unless test(?d, cache_dir)
-        FileUtil.mkpath(cache_dir, :verbose=>verbose)
-      end
-      dircount  = {}
-
-      photoinfo = PhotoInfo.new
-      `find #{@dir}`.split("\n").each do |afile|
-
-        next if afile =~ /.(bmp|jpg)$/o
-        next if afile =~ /#{@dir}$/o
-
-        if test(?d, afile)
-          dircount[afile] ||= 0
-          dircount[afile] += 1
-          next
-        end
-
-        wdir = File.dirname(afile)
-        dircount[wdir] ||= 0
-        dircount[wdir] += 1
-        album  = File.split(wdir).last.gsub(/\'/, '')
-        cvfile = "#{wdir}/#{cvname}"
-
-        unless test(?f, cvfile)
-          m3info = Mp3Shell.new(afile, @options)
-          cafile = "#{cache_dir}/#{album}-#{size}.jpg"
-          cache  = true
-          unless test(?f, cafile)
-            unless m3info.mk_thumbnail(cafile, size)
-              unless photoinfo.mk_thumbnail(cafile, size)
-                next
-              end
-              cache = false
-            end
-          end
-          if test(?f, cafile)
-            FileUtils.cp(cafile, cvfile, :verbose=>verbose)
-            unless cache
-              FileUtils.remove(cafile, :verbose=>verbose)
-            end
-          else
-            Plog.error "#{cafile} not created?"
-          end
-        end
-      end
-
-      # Dir count contain count of non-image files
-      dircount.keys.sort.each do |k|
-        v = dircount[k]
-        next if k == dir
-        if v <= 1
-          FileUtils.rm_rf(k, :verbose=>true)
-        end
-      end
-      true
-    end
-
-    def copyfiles(content)
-      cfiles = []
-      fcount = content.size
-      counter = 0
-      content.each do |sfile, dfile|
-        counter += 1
-        if test(?f, dfile)
-          Plog.info "Destination #{dfile} exists - skip"
-          next
-        end
-        if !test(?f, sfile)
-          Plog.info "Source #{sfile} does not exist - skip"
-          next
-        end
-        ddir = File.dirname(dfile)
-        unless test(?d, ddir)
-          FileUtils.mkpath(ddir, :verbose=>@options[:verbose])
-        end
-        Plog.info "#{counter}/#{fcount} - #{sfile}"
-        FileUtils.cp(sfile, dfile)
-        cfiles << dfile
-      end
-      cfiles
-    end
-
-    def rm_empty_dirs
-      require 'find'
-
-      protect = false
-      Find.find(@dir) do |afile|
-        next unless test(?f, afile)
-        if afile !~ /\.(ini|jpg|DS_Store)$/
-          protect = true
-          puts "#{afile} should be protected from #{@dir}"
-          break
-        end
-      end
-      unless protect
-        FileUtils.rm_rf(@dir, :verbose=>true)
-      end
     end
   end
 
@@ -370,12 +202,13 @@ module ITune
 # into the tracks, b/c many tracks are of the same song, and it is
 # too time consuming to get for each one.
   class LyricStore
-    MIN_SIZE = 100
+    MIN_SIZE = 400
 
     # @param [String]     store Directory to store
     # @param [ITuneTrack] track iTune track
-    def initialize(src, store, track)
-      @store = store
+    def initialize(src, store, track, options = {})
+      @store   = store
+      @options = options
       unless test(?d, store)
         FileUtils.mkdir_p(store, :verbose=>true)
       end
@@ -384,8 +217,7 @@ module ITune
       name      = @track.name
       @kname    = name.vnto_ascii.sub(/\s*[-\(].*$/, '').strip
       @source   = src
-      @lysource = LyricSource.get(src)
-      @options  = ITuneHelper.getOption
+      @lysource = LyricSource.get(src, @options)
     end
 
 # @return [String] Content of lyric in store.  Text format
@@ -441,7 +273,11 @@ module ITune
         begin
           @track.lyrics  = clyrics
         rescue => errmsg
-          Plog.error errmsg
+          begin
+            @track.lyrics = clyrics.vnto_ascii
+          rescue => errmsg
+            Plog.error errmsg
+          end
         end
         @track.comment = Time.now.strftime("%y.%m.%d.%H.%M.%S")
         return true
@@ -697,7 +533,8 @@ module ITune
         file = identry[:file]
         if @options[:force] || (updtime < File.mtime(file))
           Plog.info "Updating #{tname} from #{file}"
-          LyricStore.new("video4viet", dir, atrack).store_to_track(true)
+          LyricStore.new("video4viet", dir, atrack, @options).
+                store_to_track(true)
         end
       end
     end
@@ -835,91 +672,6 @@ module ITune
       end
     end
 
-    def self.sync_media(folder, *ddirs)
-      icount  = (getOption(:incr) || 0).to_i
-      fset    = ITuneFolder.new(folder).get_tracks.each do |atrack|
-        atrack.enabled
-      end
-      Plog.info "Source list contains #{fset.size} files"
-
-      csize   = 0
-      outlist = {}
-      Plog.info "Record to iTunes ..."
-      ddirs.each do |dentry|
-        dlist = []
-        devdir = DeviceDir.new(dentry)
-        while atrack = fset.shift
-          unless devdir.try_add(atrack)
-            next unless devdir.full
-            fset.unshift(atrack)
-            break
-          end
-        end
-
-        outlist[devdir.dir] = devdir.wlist
-
-        # Once we do this, track ref is changed by iTune, so no more track op
-        if icount > 0
-          devdir.tracks.each do |atrack|
-            pcount = atrack.played_count || 0
-            atrack.played_date.set(Time.now)
-            atrack.played_count.set(pcount+1)
-            STDERR.print "."
-            STDERR.flush
-          end
-          STDERR.puts
-        end
-      end
-
-      if ofile = getOption(:ofile)
-        fod = File.open(ofile, "w")
-      else
-        fod = STDOUT
-      end
-      fod.puts outlist.to_yaml
-      fod.close
-      true
-    end
-
-    def self.copy_media(ymlfile)
-      require 'find'
-
-      config  = YAML.load_file(ymlfile)
-      options = getOption
-
-      if options[:purge]
-        Pf.system "rm -rf #{config.keys.join(' ')}"
-      else
-        cflist = {}
-        config.each do |ddir, content|
-          # Scan all destination dirs for files
-          Find.find(ddir) do |afile|
-            next unless test(?f, afile)
-            next if afile =~ /.(bmp|jpg)$/
-            cflist[afile] = true
-          end
-          # Remove any files in the to updated list
-          content.each do |sfile, dfile|
-            cflist.delete(dfile)
-          end
-        end
-
-        #---------------------- So whatever in the cflist is to be deleted ---
-        if cflist.size > 0
-          FileUtils.remove(cflist.keys, :verbose=>options[:verbose])
-        end
-      end
-
-      config.each do |ddir, content|
-        DeviceDir.new(ddir, options).copyfiles(content)
-      end
-      true
-    end
-
-    def self.add_images(dir)
-      DeviceDir.new(dir, getOption).add_images
-    end
-
     def self.rm_empty_dirs(dir = ".", level = 0)
       #Plog.info "[#{level}] Scanning #{dir}"
       rmit = true
@@ -970,7 +722,7 @@ module ITune
     def self.auto_get(playlist, src="yeucahat", exdir="./lyrics")
       options = getOption
       ITuneFolder.new(playlist, options).each_track do |atrack, iname|
-        LyricStore.new(src, exdir, atrack).auto_get
+        LyricStore.new(src, exdir, atrack, options).auto_get
       end
       true
     end
@@ -978,21 +730,24 @@ module ITune
     def self.add_lyrics(playlist, src="yeucahat", exdir="./lyrics")
       options = getOption
       ITuneFolder.new(playlist, options).each_track do |atrack, iname|
-        LyricStore.new(src, exdir, atrack).set_track_lyric(options[:auto])
+        LyricStore.new(src, exdir, atrack, options).
+                set_track_lyric(options[:auto])
       end
       true
     end
 
     def self.clone_lyrics(playlist, src="yeucahat", exdir="./lyrics")
-      ITuneFolder.new(playlist, getOption).each_track do |atrack, iname|
-        LyricStore.new(src, exdir, atrack).store_to_track
+      options = getOption
+      ITuneFolder.new(playlist, options).each_track do |atrack, iname|
+        LyricStore.new(src, exdir, atrack, options).store_to_track
       end
       true
     end
 
     def self.clear_lyrics(playlist, src="yeucahat", exdir="./lyrics")
-      ITuneFolder.new(playlist, getOption).each_track do |atrack, iname|
-        LyricStore.new(src, exdir, atrack).clear_track
+      options = getOption
+      ITuneFolder.new(playlist, options).each_track do |atrack, iname|
+        LyricStore.new(src, exdir, atrack, options).clear_track
       end
       true
     end
