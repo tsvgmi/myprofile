@@ -19,7 +19,7 @@ case $oper in
   sync-media)
     mediav="/Volumes/THIENMUSIC/MUSIC:3950 /Volumes/SANSA_E200/MUSIC:1800"
     #mediav="/Volumes/THIENMUSIC/MUSIC:100 /Volumes/SANSA_E200/MUSIC:100"
-    mediav="/Users/thienvuong/tmp2:50"
+    #mediav="/Users/thienvuong/tmp2:50"
     #plists=HighRate,NewMusic,Instruments,SoundTracks,Yanni
     plists=iTuneMyWalkMan
 

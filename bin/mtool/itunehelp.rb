@@ -10,57 +10,7 @@ require 'yaml'
 require 'fileutils'
 require 'mtool/core'
 require 'mtool/mp3file'
-require 'mtool/lyricsource'
-
-# Mapping of Viet UTF-8 string to ASCII
-class VnMap
-  require 'utfstring'
-
-  @@fmap, @@rmap = nil, nil
-
-  def self.load_map(mfile)
-    @@fmap = YAML.load_file(mfile)
-    @@rmap = {}
-    @@fmap.each do |mc, mapset|
-      mapset.each do |seq|
-        @@rmap[seq] = mc
-      end
-    end
-  end
-
-  def self.to_ascii(string)
-    unless @@rmap
-      load_map("#{ENV['EM_HOME_DIR']}/etc/vnmap.yml")
-    end
-    result = ""
-    string.each_utf8_char do |achar|
-      if mchar = @@rmap[achar]
-        result << mchar
-      elsif achar < 127.chr
-        result << achar
-      else
-        p achar
-      end
-    end
-    result
-  end
-end
-
-class String
-  def cap_words
-    result = if self =~ /\s*\((.*)\)(.*)$/
-      p1, p2, p3 = $`, $1, $2
-      p1.cap_words + ' (' + p2.cap_words + ') ' + p3.cap_words
-    else
-      string.split(/[ _]+/).map {|w| w.capitalize}.join(' ')
-    end
-    result.strip
-  end
-
-  def vnto_ascii
-    VnMap.to_ascii(self)
-  end
-end
+require 'mtool/vnmap'
 
 class HashYaml
   def initialize(yfile)
@@ -142,11 +92,7 @@ module ITune
         changed = true
         puts "  %-10s: %-30s => %-30s" % [prop, curval, newval]
         unless options[:dryrun]
-          begin
-            @track.send(prop).set(newval.strip)
-          rescue => errmsg
-            p errmsg
-          end
+          self[prop] = newval
         end
       end
       changed
@@ -173,7 +119,14 @@ module ITune
     # @param [Symbol] property Track property name
     # @param [String] value New value to set to track property
     def []=(property, value)
-      @track.send(property).set(value.strip)
+      if value.is_a?(String)
+        value = value.strip
+      end
+      begin
+        @track.send(property).set(value)
+      rescue => errmsg
+        p errmsg
+      end
     end
 
     # Map the applescript set/get to ruby attribute reference and assign.
@@ -207,6 +160,9 @@ module ITune
     # @param [String]     store Directory to store
     # @param [ITuneTrack] track iTune track
     def initialize(src, store, track, options = {})
+      require 'mtool/lyricsource'
+
+      @app     = ITuneApp.app
       @store   = store
       @options = options
       unless test(?d, store)
@@ -218,13 +174,13 @@ module ITune
       @kname    = name.vnto_ascii.sub(/\s*[-\(].*$/, '').strip
       @source   = src
       @lysource = LyricSource.get(src, @options)
+      @wfile    = "#{@store}/#{@kname}.2txt"
     end
 
 # @return [String] Content of lyric in store.  Text format
     def value
-      wfile    = "#{@store}/#{@kname}.2txt"
-      if test(?f, wfile)
-        YAML.load_file(wfile)[:content]
+      if test(?f, @wfile)
+        YAML.load_file(@wfile)[:content]
       else
         wfile  = "#{@store}/#{@kname}.txt"
         if test(?f, wfile)
@@ -237,18 +193,17 @@ module ITune
 
 # @param [String] content Content to set to lyric text in store
     def value=(content)
-      wfile    = "#{@store}/#{@kname}.2txt"
       if content
-        Plog.info "Writing to #{wfile}"
-        fod = File.open(wfile, "w")
+        Plog.info "Writing to #{@wfile}"
+        fod = File.open(@wfile, "w")
         fod.puts({
           :source  => @source,
           :content => content
         }.to_yaml)
         fod.close
       else
-        if test(?f, wfile)
-          FileUtils.remove(wfile, :verbose=>true)
+        if test(?f, @wfile)
+          FileUtils.remove(@wfile, :verbose=>true)
         end
       end
     end
@@ -341,10 +296,66 @@ module ITune
         else
           Plog.info "Set webcontent to #{@track.name_clean}"
           self.value = content
-          changed = store_to_track
+          changed    = store_to_track
         end
       end
       # Do it inside the look cause we use 'ctrl-c' to break out
+      true
+    end
+
+    def edit
+      require 'tempfile'
+
+      if @options[:store]
+        wset = [self.value, @track.lyrics]
+      else
+        wset = [@track.lyrics, self.value]
+      end
+
+      lyrics = nil
+      wset.each do |alyrics|
+        unless alyrics.strip.empty?
+          lyrics = alyrics.strip
+          break
+        end
+      end
+
+      unless lyrics
+        Plog.info "No lyrics found for #{@track.name} to edit"
+        return false
+      end
+
+      # Cache it
+      if self.value.empty?
+        self.value = lyrics
+      end
+
+      fod = Tempfile.new("it")
+      fod.puts lyrics
+      fod.close
+
+      start_time = Time.now
+      cmd        = "open -F -nWa TextWrangler #{fod.path}"
+      cmd        = "open -FnWt #{fod.path}"
+      #cmd        = "gvim -f #{fod.path}"
+      Plog.info "Editing lyrics for #{@track.name}"
+
+      Pf.system(cmd, 1)
+
+      curtrack  = @app.current_track.get
+      stopfirst = (@track.track == curtrack)
+
+      if File.mtime(fod.path) > start_time
+        @app.pause if stopfirst
+        content = File.read(fod.path)
+        Plog.info "Setting lyrics for #{@track.name} back to track"
+        self.value = content
+        @track.updates(
+          :comment => Time.now.strftime("%y.%m.%d.%H.%M.%S"),
+          :lyrics  => content
+        )
+        @app.play if stopfirst
+      end
       true
     end
 
@@ -393,6 +404,8 @@ module ITune
         @ifolder = @app.browser_windows[1].view
       when "select"
         @ifolder = @app.selection
+      when "play"
+        @ifolder = @app.current_track
       else
         if sources = @app.sources[1]
           if wset = sources.playlists.name.get.zip(
@@ -416,6 +429,8 @@ module ITune
         @tracks = @ifolder.search :for=>ptn.gsub(/\./, ' ')
       elsif @name == "select"
         @tracks = @ifolder.get
+      elsif @name == "play"
+        @tracks = [@ifolder.get]
       else
         @tracks = @ifolder.tracks.get
       end
@@ -736,6 +751,15 @@ module ITune
       true
     end
 
+    def self.edit_lyrics(playlist = "play", exdir="./lyrics")
+      options = getOption
+      ITuneFolder.new(playlist, options).each_track do |atrack, iname|
+        LyricStore.new("console", exdir, atrack, options).edit
+      end
+      true
+    end
+
+
     def self.clone_lyrics(playlist, src="yeucahat", exdir="./lyrics")
       options = getOption
       ITuneFolder.new(playlist, options).each_track do |atrack, iname|
@@ -757,6 +781,8 @@ module ITune
     end
 
     def self.nocomposer(playlist, startat=nil)
+      require 'mtool/lyricsource'
+
       wset = {}
       nset = {}
       pattern = getOption[:pattern]
@@ -799,6 +825,11 @@ module ITune
         next if skptn.match(afile)
       end
     end
+
+    def self.run(*args)
+      app = ITuneApp.app
+      app.send(*args)
+    end
   end
 end
 
@@ -811,9 +842,11 @@ if (__FILE__ == $0)
         ['--init',      '-I', 0],
         ['--limit',     '-l', 1],
         ['--dryrun',    '-n', 0],
+        ['--new',       '-N', 0],
         ['--ofile',     '-o', 1],
         ['--purge',     '-p', 0],
         ['--pattern',   '-P', 1],
+        ['--store',     '-s', 0],
         ['--size',      '-S', 1],
         ['--tracks',    '-t', 1],
         ['--verbose',   '-v', 0]

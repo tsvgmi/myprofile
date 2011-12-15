@@ -9,6 +9,7 @@ require File.dirname(__FILE__) + "/../../etc/toolenv"
 require 'yaml'
 require 'fileutils'
 require 'mtool/core'
+require 'mtool/vnmap'
 
 class LyricSource
   extendCli __FILE__
@@ -120,9 +121,7 @@ end
 
 class LyVideo4Viet < LyricSource
   def auto_get(track)
-    cname   = to_clean_ascii(track.name)
-    cartist = to_clean_ascii(track.artist)
-    pg      = fetch_hpricot(self.page_url(track.name))
+    manual_get(track)
   end
 
   def extract_metadata(lyrics)
@@ -144,22 +143,23 @@ class LyYeuCaHat < LyricSource
     cname   = to_clean_ascii(track.name)
     cartist = to_clean_ascii(track.artist)
     pg      = fetch_hpricot(self.page_url(track.name))
-    tb0 = pg.search("//table.forumline")[0]
+    tb0     = pg.at("//table.forumline")
     (tb0.search("//tr.row1") + tb0.search("//tr.row2")).each do |arow|
       aref  = arow.at("//a.topictitle")
+      href  = aref['href']
       wname = to_clean_ascii(aref.inner_text)
       next unless (wname == cname)
       wartist = to_clean_ascii(File.basename(href).sub(/^.*~/, '').
               sub(/\.html$/, '').gsub(/-/, ' '))
       if (wartist == cartist)
-        return extract_text(track.name, aref['href'])
+        return extract_text(track.name, href)
       else
         ccomposer = to_clean_ascii(track.composer)
         cref      = arow.search("//span.gensmall")[1]
-        wcomposer = to_clean_ascii(cref.children[3])
+        wcomposer = to_clean_ascii(cref.children[3].to_s)
         Plog.info "Found composer #{wcomposer}" if @options[:verbose]
         if (wcomposer == ccomposer)
-          return extract_text(track.name, aref['href'])
+          return extract_text(track.name, href)
         end
       end
     end

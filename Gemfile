@@ -1,0 +1,7 @@
+source "http://rubygems.org"
+gem "activerecord"
+gem "rb-appscript"
+gem "hpricot"
+gem "iconv"
+gem "ruby-mp3info"
+gem "mp4info", :git => "git://github.com/arbarlow/ruby-mp4info.git"
