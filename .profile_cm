@@ -18,6 +18,7 @@ lrec=$(who am i)
 [ "$lrec" ] && echo "$HOST: $(who am i)"  >>~/lastlogin.dat
 [ -f ~/lastlogin.dat ] && tail ~/lastlogin.dat
 
+# Setting OSTYPE based on current OS
 case $(uname) in
   Linux)
     CPU=$(uname -m)

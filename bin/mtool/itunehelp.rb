@@ -58,9 +58,10 @@ module ITune
     attr_accessor :track
 
     # @param track The Itune track object
-    def initialize(track)
-      @track = track
-      @kname = nil
+    def initialize(track, options = {})
+      @track   = track
+      @options = options
+      @kname   = nil
     end
 
     # Return the clean name. (Remove VN accent and modifier)
@@ -77,7 +78,7 @@ module ITune
     # @param [Hash] props Properties to update
     # @param [Hash] options Updating options
     # @option options :dryrun Print only but no change
-    def updates(props, options = {})
+    def updates(props)
       changed = false
       props.each do |prop, newval|
         curval = @track.send(prop).get
@@ -91,7 +92,7 @@ module ITune
         end
         changed = true
         puts "  %-10s: %-30s => %-30s" % [prop, curval, newval]
-        unless options[:dryrun]
+        unless @options[:dryrun]
           self[prop] = newval
         end
       end
@@ -303,7 +304,7 @@ module ITune
       true
     end
 
-    def edit
+    def edit(rw = true)
       require 'tempfile'
 
       if @options[:store]
@@ -330,30 +331,38 @@ module ITune
         self.value = lyrics
       end
 
-      fod = Tempfile.new("it")
-      fod.puts lyrics
-      fod.close
+      @fod = Tempfile.new("it")
+      @fod.puts lyrics
+      @fod.close
+      @song_path = @fod.path
 
-      start_time = Time.now
-      cmd        = "open -F -nWa TextWrangler #{fod.path}"
-      cmd        = "open -FnWt #{fod.path}"
-      #cmd        = "gvim -f #{fod.path}"
+      @start_time = Time.now
       Plog.info "Editing lyrics for #{@track.name}"
+      if rw
+        cmd = "open -FnWt #{@song_path}"
+        Pf.system(cmd, 1)
+        check_and_update
+      else
+        cmd = "open -a TextMate #{@song_path}"
+        Pf.system(cmd, 1)
+      end
+      true
+    end
 
-      Pf.system(cmd, 1)
+    def check_and_update
+      if File.mtime(@song_path) > @start_time
+        curtrack  = @app.current_track.get
+        stopfirst = (@track.track == curtrack)
 
-      curtrack  = @app.current_track.get
-      stopfirst = (@track.track == curtrack)
-
-      if File.mtime(fod.path) > start_time
         @app.pause if stopfirst
-        content = File.read(fod.path)
+        content = File.read(@song_path)
         Plog.info "Setting lyrics for #{@track.name} back to track"
         self.value = content
         @track.updates(
           :comment => Time.now.strftime("%y.%m.%d.%H.%M.%S"),
           :lyrics  => content
         )
+        @start_time = Time.now
         @app.play if stopfirst
       end
       true
@@ -375,6 +384,37 @@ module ITune
       end
       index.save
     end
+  end
+
+  class EditServer
+    def initialize(exdir = "./lyrics", options = {})
+      @exdir   = exdir
+      @options = {}
+    end
+
+    def monitor
+      curtrack = nil
+      folder = ITuneFolder.new("play", @options)
+      edsongs = []
+      while true
+        atrack = folder.get_tracks(true).first
+        btrack = ITuneTrack.new(atrack, @options)
+        if !curtrack || (btrack.name != curtrack.name)
+          curtrack = btrack
+          edsong = LyricStore.new("console", @exdir, btrack, @options)
+          if edsong.edit(false)
+            edsongs << edsong
+          end
+        end
+        Plog.info("Waiting for #{edsongs.size} edits ...")
+        sleep(5)
+        edsongs.each do |asong|
+          asong.check_and_update
+        end
+      end
+      true
+    end
+
   end
 
   # Manage itune collections.  Collection could be a playlist, a playlist
@@ -399,31 +439,33 @@ module ITune
       @ifolder = nil
       @options = options
       @tracks  = []
-      case @name
-      when "current"
-        @ifolder = @app.browser_windows[1].view
-      when "select"
-        @ifolder = @app.selection
-      when "play"
-        @ifolder = @app.current_track
-      else
-        if sources = @app.sources[1]
-          if wset = sources.playlists.name.get.zip(
-            sources.playlists.get).find {|lname, list|
-              lname == name}
-            @ifolder = wset[1]
-          end
-        end
-      end
-      unless @ifolder
-        raise "Folder #{name} not found"
-      end
       Plog.info "Using folder #{@name}"
-      get_tracks(@options[:pattern])
+      get_tracks(true, @options[:pattern])
     end
 
     # Collect the list of matching tracks
-    def get_tracks(ptn = nil)
+    def get_tracks(reset = false, ptn = nil)
+      if reset
+        case @name
+        when "current"
+          @ifolder = @app.browser_windows[1].view
+        when "select"
+          @ifolder = @app.selection
+        when "play"
+          @ifolder = @app.current_track
+        else
+          if sources = @app.sources[1]
+            if wset = sources.playlists.name.get.zip(
+              sources.playlists.get).find {|lname, list|
+                lname == name}
+              @ifolder = wset[1]
+            end
+          end
+        end
+        unless @ifolder
+          raise "Folder #{name} not found"
+        end
+      end
       if ptn
         Plog.info "Search for #{ptn}"
         @tracks = @ifolder.search :for=>ptn.gsub(/\./, ' ')
@@ -441,8 +483,8 @@ module ITune
     def each_track
       limit = (@options[:limit] || 100000).to_i
       @tracks.each do |atrack|
-        atrack2  = ITuneTrack.new(atrack)
-        if yield atrack2, atrack2.name_clean.downcase
+        atrack = ITuneTrack.new(atrack, @options)
+        if yield atrack, atrack.name_clean.downcase
           limit -= 1
         end
         if @options[:verbose]
@@ -478,11 +520,11 @@ module ITune
     }
 
     def find_match
-      mainFolder = ITuneFolder.new('Music')
+      mainFolder = ITuneFolder.new('Music', @options)
       self.each_track do |atrack, iname|
         atrack.show
         pattern = "#{atrack.name} #{atrack.artist}"
-        mainFolder.get_tracks(pattern)
+        mainFolder.get_tracks(false, pattern)
         mainFolder.each_track do |mtrack, mname|
           mtrack.show
         end
@@ -619,10 +661,7 @@ module ITune
         when 'clean_name'
           fixname = atrack.name.sub(/^Lien Khuc/i, 'LK').
                   sub(/^:/, '').
-                  sub(/\s*-.*$/, '')
-          if fixname =~ /^(.*)\s*\(.*$/
-            fixname = $1
-          end
+                  sub(/\s*[-\(].*$/, '')
           atrack.updates(:name => fixname)
 
         # Remove the track info in front of name and move to track
@@ -663,6 +702,8 @@ module ITune
         when 'clean.composer'
           atrack.composer = atrack.composer.sub(/^.*:\s*/, '').
                 sub(/\s*[\(\[].*$/, '')
+        when 'clean.name'
+          atrack.name = atrack.name.split(/\s*-\s*/, 2)[1]
         else
           Plog.error "Unsupported operation: #{instruction}"
           false
@@ -759,6 +800,9 @@ module ITune
       true
     end
 
+    def self.monitor_lyrics(exdir = "./lyrics")
+      EditServer.new(exdir).monitor
+    end
 
     def self.clone_lyrics(playlist, src="yeucahat", exdir="./lyrics")
       options = getOption
