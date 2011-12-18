@@ -8,6 +8,7 @@
 require File.dirname(__FILE__) + "/../../etc/toolenv"
 require 'yaml'
 require 'fileutils'
+require 'tempfile'
 require 'mtool/core'
 require 'mtool/mp3file'
 require 'mtool/vnmap'
@@ -304,9 +305,7 @@ module ITune
       true
     end
 
-    def edit(rw = true)
-      require 'tempfile'
-
+    def edit(edfile = nil, wait = true)
       if @options[:store]
         wset = [self.value, @track.lyrics]
       else
@@ -331,20 +330,27 @@ module ITune
         self.value = lyrics
       end
 
-      @fod = Tempfile.new("it")
-      @fod.puts lyrics
-      @fod.close
-      @song_path = @fod.path
+      unless edfile
+        # Need to keep the tmp file around, or it get wiped
+        @fod = Tempfile.new("it")
+        @fod.puts lyrics
+        @fod.close
+        @song_path = @fod.path
+      else
+        fod = File.open(edfile, "w")
+        fod.puts lyrics
+        fod.close
+        @song_path = edfile
+      end
 
       @start_time = Time.now
       Plog.info "Editing lyrics for #{@track.name}"
-      if rw
-        cmd = "open -FnWt #{@song_path}"
-        Pf.system(cmd, 1)
-        check_and_update
+      cmd = @options[:editor] ? "open -a #{@options[:editor]}" : "open"
+      unless wait
+        Pf.system("#{cmd} #{@song_path}", 1)
       else
-        cmd = "open -a TextMate #{@song_path}"
-        Pf.system(cmd, 1)
+        Pf.system("#{cmd} -FnWt #{@song_path}", 1)
+        check_and_update
       end
       true
     end
@@ -384,37 +390,50 @@ module ITune
       end
       index.save
     end
-  end
 
-  class EditServer
-    def initialize(exdir = "./lyrics", options = {})
-      @exdir   = exdir
-      @options = {}
-    end
-
-    def monitor
-      curtrack = nil
-      folder = ITuneFolder.new("play", @options)
+    def self.edit_all(playlist = "play", exdir="./lyrics", options = {})
       edsongs = []
-      while true
-        atrack = folder.get_tracks(true).first
-        btrack = ITuneTrack.new(atrack, @options)
-        if !curtrack || (btrack.name != curtrack.name)
-          curtrack = btrack
-          edsong = LyricStore.new("console", @exdir, btrack, @options)
-          if edsong.edit(false)
-            edsongs << edsong
-          end
+      options[:limit] ||= 10
+      ITuneFolder.new(playlist, options).each_track do |atrack, iname|
+        edsong = LyricStore.new("console", exdir, atrack, options)
+        if edsong.edit(nil, false)
+          edsongs << edsong
         end
-        Plog.info("Waiting for #{edsongs.size} edits ...")
+      end
+      unless edsongs.size > 0
+        return false
+      end
+      while true
+        Plog.info("Waiting for edit ...")
         sleep(5)
-        edsongs.each do |asong|
-          asong.check_and_update
+        edsongs.each do |edsong|
+          edsong.check_and_update if edsong
         end
       end
       true
     end
 
+    # Just wait around for track change and
+    def self.edit_server(exdir = "./lyrics", options = {})
+      curtrack, edsong = nil, nil
+      folder           = ITuneFolder.new("play", options)
+      tmpfile          = Tempfile.new("it")
+      while true
+        atrack = folder.get_tracks(true).first
+        btrack = ITuneTrack.new(atrack, options)
+        if !curtrack || (btrack.name != curtrack.name)
+          curtrack = btrack
+          chksong  = LyricStore.new("console", exdir, btrack, options)
+          if chksong.edit(tmpfile.path, false)
+            edsong = chksong
+          end
+        end
+        Plog.info("Waiting for edit ...")
+        sleep(5)
+        edsong.check_and_update if edsong
+      end
+      true
+    end
   end
 
   # Manage itune collections.  Collection could be a playlist, a playlist
@@ -793,15 +812,11 @@ module ITune
     end
 
     def self.edit_lyrics(playlist = "play", exdir="./lyrics")
-      options = getOption
-      ITuneFolder.new(playlist, options).each_track do |atrack, iname|
-        LyricStore.new("console", exdir, atrack, options).edit
-      end
-      true
+      LyricStore.edit_all(playlist, exdir, getOption)
     end
 
     def self.monitor_lyrics(exdir = "./lyrics")
-      EditServer.new(exdir).monitor
+      LyricStore.edit_server(exdir, getOption)
     end
 
     def self.clone_lyrics(playlist, src="yeucahat", exdir="./lyrics")
@@ -881,6 +896,7 @@ if (__FILE__ == $0)
   ITune::ITuneHelper.handleCli(
         ['--auto',      '-a', 0],
         ['--cdir',      '-C', 1],
+        ['--editor',    '-E', 1],
         ['--force',     '-f', 0],
         ['--incr',      '-i', 1],
         ['--init',      '-I', 0],
