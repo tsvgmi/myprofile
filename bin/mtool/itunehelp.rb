@@ -24,12 +24,13 @@ class HashYaml
   end
 
   def save
+    tmpf = Tempfile.new("hy")
+    tmpf.puts(@content.to_yaml)
+    tmpf.close
     if test(?f, @yfile)
       FileUtils.move(@yfile, "#{@yfile}.bak", :force=>true, :verbose=>true)
     end
-    fod = File.open(@yfile, "w")
-    fod.puts(@content.to_yaml)
-    fod.close
+    FileUtils.move(tmpf.path, @yfile, :force=>true, :verbose=>true)
   end
 
   def method_missing(meth, *args)
@@ -50,6 +51,25 @@ module ITune
         #@@app.activate
       end
       @@app
+    end
+
+    # Prepare for updating the specified track
+    #
+    # Some parameters will not update unless the currently played song is
+    # stopped.
+    # @param track ITune Track to check for
+    def self.prepare_track_update(track)
+      itune    = self.app
+      curtrack = itune.current_track.get
+      if (track == curtrack)
+        Plog.info "Pausing play"
+        itune.pause
+        yield
+        Plog.info "Resuming play"
+        itune.play
+      else
+        yield
+      end
     end
   end
 
@@ -174,28 +194,36 @@ module ITune
 
       name      = @track.name
       @kname    = name.vnto_ascii.sub(/\s*[-\(].*$/, '').strip
-      @source   = src
-      @lysource = LyricSource.get(src, @options)
       @wfile    = "#{@store}/#{@kname}.2txt"
+
+      if src
+        @source = src
+      else
+        self.value
+        @source = @fsrc || src
+      end
+      @lysource = LyricSource.get(@source, @options)
     end
 
 # @return [String] Content of lyric in store.  Text format
     def value
+      result = ""
       if test(?f, @wfile)
-        YAML.load_file(@wfile)[:content]
+        data   = YAML.load_file(@wfile)
+        @fsrc  = data[:source]
+        result = data[:content]
       else
         wfile  = "#{@store}/#{@kname}.txt"
         if test(?f, wfile)
-          File.read wfile
-        else
-          ""
+          result = File.read wfile
         end
       end
+      result
     end
 
 # @param [String] content Content to set to lyric text in store
     def value=(content)
-      if content
+      if content && !content.empty?
         Plog.info "Writing to #{@wfile}"
         fod = File.open(@wfile, "w")
         fod.puts({
@@ -227,16 +255,19 @@ module ITune
           @track.updates(chset)
         end
         # Protect since web may send down bad encoded string?
-        begin
-          @track.lyrics  = clyrics
-        rescue => errmsg
+        Plog.info "Updating track lyrics"
+        ITuneApp.prepare_track_update(@track.track) do
           begin
-            @track.lyrics = clyrics.vnto_ascii
+            @track.lyrics  = clyrics
           rescue => errmsg
-            Plog.error errmsg
+            begin
+              @track.lyrics = clyrics.vnto_ascii
+            rescue => errmsg
+              Plog.error errmsg
+            end
           end
+          @track.comment = Time.now.strftime("%y.%m.%d.%H.%M.%S")
         end
-        @track.comment = Time.now.strftime("%y.%m.%d.%H.%M.%S")
         return true
       else
         clyrics = @track[:lyrics]
@@ -272,37 +303,37 @@ module ITune
     # @param [Boolean] auto Auto extract and
     def set_track_lyric(auto)
       skipfile = @source + ".yml"
-      skiplist = HashYaml.new(skipfile)
+      skiplist = @lysource.skiplist
       name     = @kname
       unless @options[:force]
         return if skiplist[name]
-        return if store_to_track
+        return if store_to_track(true)
       end
 
       composer = @track.composer
       lyrics   = @track[:lyrics]
       album    = @track.album
       changed  = false
-      @track.show
+      @track.reveal
+      #@track.show
       if @options[:force] || lyrics.empty? || (lyrics.size < MIN_SIZE)
         if auto
           content = @lysource.auto_get(@track)
+          #sleep(3)
         else
-          @track.reveal
+          #@track.reveal
           @track.play
           content = @lysource.manual_get(@track)
         end
         if content.empty?
           skiplist[name] = true
-          skiplist.save
         else
           Plog.info "Set webcontent to #{@track.name_clean}"
           self.value = content
-          changed    = store_to_track
+          changed    = store_to_track(@options[:force])
         end
       end
-      # Do it inside the look cause we use 'ctrl-c' to break out
-      true
+      changed
     end
 
     def edit(edfile = nil, wait = true)
@@ -357,21 +388,29 @@ module ITune
 
     def check_and_update
       if File.mtime(@song_path) > @start_time
-        curtrack  = @app.current_track.get
-        stopfirst = (@track.track == curtrack)
-
-        @app.pause if stopfirst
         content = File.read(@song_path)
         Plog.info "Setting lyrics for #{@track.name} back to track"
         self.value = content
-        @track.updates(
-          :comment => Time.now.strftime("%y.%m.%d.%H.%M.%S"),
-          :lyrics  => content
-        )
+        if content.strip.empty?
+          clear_track
+        else
+          store_to_track(true)
+        end
         @start_time = Time.now
-        @app.play if stopfirst
       end
       true
+    end
+
+    def fix_old
+      tlyrics = @track.lyrics
+      if tlyrics.size >= MIN_SIZE
+        @track.updates(
+          :comment => Time.now.strftime("%y.%m.%d.%H.%M.%S")
+        )
+        if !test(?f, @wfile)
+          self.value = tlyrics
+        end
+      end
     end
 
     def self.build_index(dir = ".")
@@ -395,7 +434,7 @@ module ITune
       edsongs = []
       options[:limit] ||= 10
       ITuneFolder.new(playlist, options).each_track do |atrack, iname|
-        edsong = LyricStore.new("console", exdir, atrack, options)
+        edsong = LyricStore.new(nil, exdir, atrack, options)
         if edsong.edit(nil, false)
           edsongs << edsong
         end
@@ -403,8 +442,12 @@ module ITune
       unless edsongs.size > 0
         return false
       end
+      count = 0
       while true
-        Plog.info("Waiting for edit ...")
+        if count >= 10
+          Plog.info("Waiting for edit ...")
+          count = 0
+        end
         sleep(5)
         edsongs.each do |edsong|
           edsong.check_and_update if edsong
@@ -415,20 +458,26 @@ module ITune
 
     # Just wait around for track change and
     def self.edit_server(exdir = "./lyrics", options = {})
-      curtrack, edsong = nil, nil
+      curname, edsong = nil, nil
       folder           = ITuneFolder.new("play", options)
       tmpfile          = Tempfile.new("it")
+      count            = 0
       while true
-        atrack = folder.get_tracks(true).first
-        btrack = ITuneTrack.new(atrack, options)
-        if !curtrack || (btrack.name != curtrack.name)
-          curtrack = btrack
-          chksong  = LyricStore.new("console", exdir, btrack, options)
-          if chksong.edit(tmpfile.path, false)
-            edsong = chksong
+        if atrack = folder.get_tracks(true).first
+          btrack = ITuneTrack.new(atrack, options)
+          #p curname
+          if !curname || (btrack.name != curname)
+            curname = btrack.name
+            chksong  = LyricStore.new("console", exdir, btrack, options)
+            if chksong.edit(tmpfile.path, false)
+              edsong = chksong
+            end
           end
         end
-        Plog.info("Waiting for edit ...")
+        if count >= 10
+          Plog.info("Waiting for edit ...")
+          count = 0
+        end
         sleep(5)
         edsong.check_and_update if edsong
       end
@@ -485,15 +534,20 @@ module ITune
           raise "Folder #{name} not found"
         end
       end
-      if ptn
-        Plog.info "Search for #{ptn}"
-        @tracks = @ifolder.search :for=>ptn.gsub(/\./, ' ')
-      elsif @name == "select"
-        @tracks = @ifolder.get
-      elsif @name == "play"
-        @tracks = [@ifolder.get]
-      else
-        @tracks = @ifolder.tracks.get
+      begin
+        if ptn
+          Plog.info "Search for #{ptn}"
+          @tracks = @ifolder.search :for=>ptn.gsub(/\./, ' ')
+        elsif @name == "select"
+          @tracks = @ifolder.get
+        elsif @name == "play"
+          @tracks = [@ifolder.get]
+        else
+          @tracks = @ifolder.tracks.get
+        end
+      rescue => errmsg
+        p errmsg
+        @tracks = []
       end
       @tracks
     end
@@ -802,17 +856,28 @@ module ITune
       true
     end
 
-    def self.add_lyrics(playlist, src="yeucahat", exdir="./lyrics")
+    def self.add_lyrics(playlist, srcs="yeucahat", exdir="./lyrics")
       options = getOption
       ITuneFolder.new(playlist, options).each_track do |atrack, iname|
-        LyricStore.new(src, exdir, atrack, options).
-                set_track_lyric(options[:auto])
+        srcs.split(/,/).each do |src|
+          if LyricStore.new(src, exdir, atrack, options).
+                  set_track_lyric(options[:auto])
+            break
+          end
+        end
       end
       true
     end
 
     def self.edit_lyrics(playlist = "play", exdir="./lyrics")
       LyricStore.edit_all(playlist, exdir, getOption)
+    end
+
+    def self.fix_old(playlist = "select", exdir="./lyrics")
+      options = getOption
+      ITuneFolder.new(playlist, options).each_track do |atrack, iname|
+        LyricStore.new(nil, exdir, atrack, options).fix_old
+      end
     end
 
     def self.monitor_lyrics(exdir = "./lyrics")
