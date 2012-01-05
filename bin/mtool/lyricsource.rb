@@ -83,6 +83,7 @@ class LyricSource
 
     skipfile  = @source + ".yml"
     @skiplist = HashYaml.new(skipfile)
+    @chset    = {}
     at_exit { @skiplist.save }
   end
 
@@ -128,6 +129,11 @@ class LyricSource
   end
 
   def auto_get(track)
+    @curtrack = track
+    _auto_get(track)
+  end
+
+  def _auto_get(track)
     manual_get(track)
   end
 
@@ -140,10 +146,17 @@ class LyricSource
       return {}
     end
   end
+
+  def confirm_text(lyrics)
+    @curtrack.play
+    puts @curtrack.name + "\n"
+    puts lyrics
+    Cli.confirm("OK to save this")
+  end
 end
 
 class LyVideo4Viet < LyricSource
-  def auto_get(track)
+  def _auto_get(track)
     manual_get(track)
   end
 
@@ -162,54 +175,8 @@ class LyVideo4Viet < LyricSource
 end
 
 class LyYeuCaHat < LyricSource
-  def auto_get(track)
-    cname      = to_clean_ascii(track.name)
-    cartist    = to_clean_ascii(track.artist)
-    pg         = fetch_hpricot(self.page_url(track.name))
-    tb0        = pg.at("//table.forumline")
-    match_info = []
-    (tb0.search("//tr.row1") + tb0.search("//tr.row2")).each do |arow|
-      aref  = arow.at("//a.topictitle")
-      href  = aref['href']
-      wname = to_clean_ascii(aref.inner_text)
-      next unless (wname == cname)
-      wartist = to_clean_ascii(File.basename(href).sub(/^.*~/, '').
-              sub(/\.html$/, '').gsub(/-/, ' '))
-      if (wartist == cartist)
-        # If artist match, use it
-        return extract_text(track.name, href)
-      else
-        # Otherwise, see if composer match
-        ccomposer = to_clean_ascii(track.composer)
-        cref      = arow.search("//span.gensmall")[1]
-        wcomposer = to_clean_ascii(cref.children[3].to_s)
-        Plog.info "Found composer #{wcomposer}" if @options[:verbose]
-        if (wcomposer == ccomposer)
-          return extract_text(track.name, href)
-        else
-          match_info << [track, href]
-        end
-      end
-    end
-    if match_info.size == 1
-      track, href = match_info.first
-      return extract_text(track.name, href, true)
-    end
-    ""
-  end
-
-  def extract_text(title, href, confirm = false)
-    pg    = fetch_hpricot(@config[:base] + "/#{href}")
-    title = pg.search("//span.maintitle").inner_text
-    meta  = pg.search("//span.genmed")[1].inner_text.strip
-    lyric = pg.search("//span.lyric").inner_text.strip
-    if lyric.empty?
-      return ""
-    end
-    if confirm && !Cli.confirm("OK to save this")
-      return ""
-    end
-    title + "\n" + meta + "\n" + lyric + "\n" + href
+  def _auto_get(track)
+    manual_get(track)
   end
 
   def extract_metadata(lyrics)
@@ -234,7 +201,7 @@ end
 class LyZing < LyricSource
   # Get and parse automatically
   # @param [ITuneTrack] track
-  def auto_get(track)
+  def _auto_get(track)
     cname   = to_clean_ascii(track.name)
     cartist = to_clean_ascii(track.artist)
     pg      = fetch_hpricot(self.page_url(track.name))
@@ -279,7 +246,7 @@ end
 class LyJustSome < LyricSource
   # Get and parse automatically
   # @param [ITuneTrack] track
-  def auto_get(track)
+  def _auto_get(track)
     cname   = to_clean_ascii(track.name)
     cartist = to_clean_ascii(track.artist)
     pg      = fetch_hpricot(self.page_url(track.name))
@@ -313,7 +280,7 @@ class LyJustSome < LyricSource
     if lyric.empty?
       return ""
     end
-    if confirm && !Cli.confirm("OK to save this")
+    if confirm && !confirm_text(lyric)
       return ""
     end
     lyric = lyric.gsub(/^.*to your Cell/, '').
@@ -355,14 +322,13 @@ end
 class LyTkaraoke < LyricSource
   # Get and parse automatically
   # @param [ITuneTrack] track
-  def auto_get(track)
+  def _auto_get(track)
     cname     = to_clean_ascii(track.name)
     cartist   = to_clean_ascii(track.artist)
     ccomposer = to_clean_ascii(track.composer)
     pg        = fetch_hpricot(self.page_url(track.name))
     matchset  = []
-    @chset    = {}
-    pg.search("table.SResult/tr").each do |row|
+    pg.search("table.SResult//tr").each do |row|
       wfields = {}
       ['SongName', 'Singer', 'SongWriter'].each do |atag|
         wfields[atag] = []
@@ -422,11 +388,8 @@ class LyTkaraoke < LyricSource
       wtitle = title
     end
 
-    if confirm
-      puts wtitle + "\n" + meta + "\n\n" + lyric
-      if !Cli.confirm("OK to save this")
-        return ""
-      end
+    if confirm && !confirm_text(lyric)
+      return ""
     end
 
     wtitle + "\n" + meta + "\n\n" + lyric
@@ -452,12 +415,11 @@ end
 class LyNhacTui < LyricSource
   # Get and parse automatically
   # @param [ITuneTrack] track
-  def auto_get(track)
+  def _auto_get(track)
     cname     = to_clean_ascii(track.name)
     cartist   = to_clean_ascii(track.artist)
     pg        = fetch_hpricot(self.page_url(track.name))
     matchset  = []
-    @chset    = {}
     pg.search("div.col-music").each do |row|
       link = row.at("a.ico")
       next unless link
@@ -472,7 +434,7 @@ class LyNhacTui < LyricSource
         matchset << [track.name, href]
       end
     end
-    if false && matchset.size > 0
+    if true && matchset.size > 0
       name, href = matchset.first
       return extract_text(name, href, true)
     end
@@ -497,11 +459,8 @@ class LyNhacTui < LyricSource
       wtitle = title
     end
 
-    if confirm
-      puts wtitle + "\n\n" + lyric
-      if !Cli.confirm("OK to save this")
-        return ""
-      end
+    if confirm && !confirm_text(lyric)
+      return ""
     end
 
     wtitle + "\n\n" + lyric

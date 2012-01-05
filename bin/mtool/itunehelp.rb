@@ -525,13 +525,13 @@ module ITune
           if sources = @app.sources[1]
             if wset = sources.playlists.name.get.zip(
               sources.playlists.get).find {|lname, list|
-                lname == name}
+                lname == @name}
               @ifolder = wset[1]
             end
           end
         end
         unless @ifolder
-          raise "Folder #{name} not found"
+          raise "Folder #{@name} not found"
         end
       end
       begin
@@ -703,6 +703,7 @@ module ITune
           artist, title = atrack.name.split(/\s*-\s*/)
           next unless title
           atrack.updates(:name => title, :artist => artist)
+        # Track in form of title - artist
         when 'a.artist'
           title, artist = atrack.name.split(/\s*-\s*/)
           next unless artist
@@ -775,8 +776,6 @@ module ITune
         when 'clean.composer'
           atrack.composer = atrack.composer.sub(/^.*:\s*/, '').
                 sub(/\s*[\(\[].*$/, '')
-        when 'clean.name'
-          atrack.name = atrack.name.split(/\s*-\s*/, 2)[1]
         else
           Plog.error "Unsupported operation: #{instruction}"
           false
