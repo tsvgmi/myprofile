@@ -17,7 +17,8 @@ class LyricSource
   LySource = {
     'justsome' => {
       :base => "http://www.justsomelyrics.com",
-      :src  => "http://www.google.com/cse?cx=000975271163936304601%3Ao53s1ouhhyy&q=%TITLE%&sa=Search&cof=FORID%3A0&siteurl=www.justsomelyrics.com%2F#gsc.tab=0&gsc.q=%TITLE%&gsc.page=1"
+      :src  => "http://www.google.com/cse?cx=000975271163936304601%3Ao53s1ouhhyy&q=%TITLE%&sa=Search&cof=FORID%3A0&siteurl=www.justsomelyrics.com%2F#gsc.tab=0&gsc.q=%TITLE%&gsc.page=1",
+      :agent => :curl
     },
     'video4viet' => {
       :base => "http://www.video4viet.com",
@@ -34,7 +35,7 @@ class LyricSource
     },
     # Javascript protected
     'vportal' => {
-      :base => "http://http://vietnameseportal.com/",
+      :base => "http://vietnameseportal.com/",
       :src  => "http://vietnameseportal.com/cgi-bin/lyric/search.cgi?cx=014985440914852074501%3Asliobasbm7a&cof=FORID%3A11&query=%TITLE%&q=%TITLE%"
     },
     # Slow pace - 3-5 secs each
@@ -77,6 +78,8 @@ class LyricSource
   attr_reader :skiplist
 
   def initialize(src, options = {})
+    require 'appscript'
+
     @source  = src || 'console'
     @options = options
     @config  = LySource[src]
@@ -84,6 +87,7 @@ class LyricSource
     skipfile  = @source + ".yml"
     @skiplist = HashYaml.new(skipfile)
     @chset    = {}
+    @safari   = Appscript::app('Safari.app')
     at_exit { @skiplist.save }
   end
 
@@ -98,8 +102,32 @@ class LyricSource
     require 'hpricot'
 
     Plog.info "Fetching #{url}"
-    Pf.system("open -g '#{url}'", 1)
-    Hpricot(`curl --silent -A Mozilla/4.0 "#{url}"`)
+    content = ""
+    case @config[:agent]
+    when :curl
+      Pf.system("open -g '#{url}'", 1)
+      content = `curl --silent -A Mozilla/4.0 "#{url}"`
+    else
+      @safari.activate
+      @safari.document.URL.set url
+      counter = 0
+      while true
+        # Sleep must be first?
+        sleep(1)
+        pready = @safari.document.do_JavaScript("document.readyState").first
+        if pready == "complete"
+          Plog.debug "Document completed."
+          content = @safari.document.source.get.first
+          break
+        end
+        counter += 1
+        if (counter >= 10)
+          Plog.error "Timeout waiting for #{url}"
+          break
+        end
+      end
+    end
+    Hpricot(content)
   end
 
   public
@@ -130,11 +158,36 @@ class LyricSource
 
   def auto_get(track)
     @curtrack = track
-    _auto_get(track)
+    cname     = to_clean_ascii(track.name)
+    cartist   = to_clean_ascii(track.artist)
+    ccomposer = to_clean_ascii(track.composer)
+    pg        = fetch_hpricot(self.page_url(track.name))
+    wset      = find_match(pg, cname, cartist, ccomposer)
+
+    mset = []
+    wset.each do |wname, wartist, wcomposer, href|
+      if wname.is_a?(Array)
+        next unless wname.include?(cname)
+        if wcomposer.include?(ccomposer) || wartist.include?(cartist)
+          return extract_text(track.name, href, false)
+        end
+      else
+        next unless (wname == cname)
+        if (wcomposer == ccomposer) || (wartist == cartist)
+          return extract_text(track.name, href, false)
+        end
+      end
+      mset << [track.name, href]
+    end
+    if mset.size > 0
+      name, href = mset.shift
+      return extract_text(name, href, true)
+    end
+    ""
   end
 
-  def _auto_get(track)
-    manual_get(track)
+  def find_match(pg, cname, cartist, ccomposer)
+    []
   end
 
   def extract_metadata(lyrics)
@@ -147,19 +200,34 @@ class LyricSource
     end
   end
 
-  def confirm_text(lyrics)
-    @curtrack.play
-    puts @curtrack.name + "\n"
-    puts lyrics
-    Cli.confirm("OK to save this")
+  def clean_and_check(lyric, confirm)
+    filtered = []
+    blcount  = 0
+    lyric.split(/\n/).each do |l|
+      next if l =~ /(yeucahat.com|to your cell|^cf_| LYRICS)/i
+      l = l.strip
+      if l.empty?
+        blcount += 1
+        next if (blcount >= 2)
+      else
+        blcount = 0
+      end
+      filtered << l
+    end
+    lyric = filtered.join("\n")
+    if confirm
+      @curtrack.play
+      puts @curtrack.name + "\n==========\n"
+      puts lyric
+      unless Cli.confirm("OK to save this")
+        return nil
+      end
+    end
+    lyric
   end
 end
 
 class LyVideo4Viet < LyricSource
-  def _auto_get(track)
-    manual_get(track)
-  end
-
   def extract_metadata(lyrics)
     cn    = lyrics.split(/[\r\n]+/)
     chset = {}
@@ -175,8 +243,36 @@ class LyVideo4Viet < LyricSource
 end
 
 class LyYeuCaHat < LyricSource
-  def _auto_get(track)
-    manual_get(track)
+  def find_match(pg, cname, cartist, ccomposer)
+    tb0        = pg.at("//table.forumline")
+    match_info = []
+    (tb0.search("//tr.row1") + tb0.search("//tr.row2")).each do |arow|
+      aref      = arow.at("//a.topictitle")
+      href      = aref['href']
+      wname     = to_clean_ascii(aref.inner_text)
+      wartist   = to_clean_ascii(File.basename(href).sub(/^.*~/, '').
+              sub(/\.html$/, '').gsub(/-/, ' '))
+      cref      = arow.search("//span.gensmall")[1]
+      wcomposer = to_clean_ascii(cref.children[3].to_s)
+      match_info << [wname, wartist, wcomposer, href]
+    end
+    match_info
+  end
+  
+  def extract_text(title, href, confirm = false)
+    lurl = @config[:base] + "/#{href}"
+    Plog.debug("Fetching lyric page ato #{lurl}")
+    pg    = fetch_hpricot(lurl)
+    title = pg.search("//span.maintitle").inner_text
+    meta  = pg.search("//span.genmed")[1].inner_text.strip
+    lyric = pg.search("//span.lyric").inner_text.strip
+    if lyric.empty?
+      return ""
+    end
+    unless lyric = clean_and_check(lyric, confirm)
+      return ""
+    end
+    title + "\n" + meta + "\n" + lyric
   end
 
   def extract_metadata(lyrics)
@@ -201,26 +297,28 @@ end
 class LyZing < LyricSource
   # Get and parse automatically
   # @param [ITuneTrack] track
-  def _auto_get(track)
-    cname   = to_clean_ascii(track.name)
-    cartist = to_clean_ascii(track.artist)
-    pg      = fetch_hpricot(self.page_url(track.name))
-    pg.search("//a.f142").each do |ele|
+  def find_match(pg, cname, cartist, ccomposer)
+    wset    = []
+    pg.search("div.content-item/h3").each do |ele0|
+      ele      = ele0.at('a')
+      haslyric = ele0.at('img.hlyric')
+      next unless haslyric
+
       title, wartist = ele['title'].split(/\s*-\s*/)
-      wname = to_clean_ascii(title)
-      next unless (wname == cname)
+      wname   = to_clean_ascii(title)
       wartist = to_clean_ascii(wartist)
-      if (wartist == cartist)
-        return extract_text(title, ele['href'])
-      end
+      wset << [wname, wartist, "", ele['href']]
     end
-    ""
+    wset
   end
 
-  def extract_text(title, href)
+  def extract_text(title, href, confirm = false)
     pg    = fetch_hpricot(@config[:base] + "/#{href}")
     lyric = pg.search("//p._lyricContent").inner_text.strip
     if lyric.empty?
+      return ""
+    end
+    unless lyric = clean_and_check(lyric, confirm)
       return ""
     end
     title + "\n" + lyric + "\n" + href
@@ -246,32 +344,23 @@ end
 class LyJustSome < LyricSource
   # Get and parse automatically
   # @param [ITuneTrack] track
-  def _auto_get(track)
-    cname   = to_clean_ascii(track.name)
-    cartist = to_clean_ascii(track.artist)
-    pg      = fetch_hpricot(self.page_url(track.name))
+  def find_match(pg, cname, cartist, ccomposer)
     wlinks  = []
-    pg.search("//div/a").each do |ele|
+    p pg
+    p pg.search("//div//a")
+    pg.search("//div//a").each do |ele|
       href      = ele['href']
       bname     = URI.unescape(File.basename(href))
       checklink = bname.sub(/-lyrics$/i, '').vnto_ascii.downcase.gsub(/-/, ' ')
-      if @options[:verbose]
-        Plog.info "Check for [#{bname}] #{checklink}/#{cname}/#{cartist}"
-      end
       if (checklink =~ /#{cname}/)
         if (checklink =~ /#{cartist}/)
-          return extract_text(track.name, ele['href'])
+          wlinks << [cname, cartist, "", href]
         else
-          wlinks << [track.name, ele['href']]
+          wlinks << [cname, "", "", href]
         end
       end
     end
-    # Only 1 candidate, we take it also
-    if wlinks.size > 0
-      name, href = wlinks.first
-      return extract_text(name, href, true)
-    end
-    ""
+    wlinks
   end
 
   def extract_text(title, href, confirm = false)
@@ -280,13 +369,9 @@ class LyJustSome < LyricSource
     if lyric.empty?
       return ""
     end
-    if confirm && !confirm_text(lyric)
+    unless lyric = clean_and_check(lyric, confirm)
       return ""
     end
-    lyric = lyric.gsub(/^.*to your Cell/, '').
-      gsub(/^cf_.*$/, '').
-      gsub(/^.* LYRICS/, '').
-      gsub(/\n+/m, "\n")
     title + "\n" + lyric
   end
 
@@ -296,7 +381,6 @@ class LyJustSome < LyricSource
     cn.each do |aline|
       puts aline
       if aline =~ /(Composer|Sáng tác):\s*/
-        p aline
         chset[:composer] = $'
       end
     end
@@ -322,11 +406,7 @@ end
 class LyTkaraoke < LyricSource
   # Get and parse automatically
   # @param [ITuneTrack] track
-  def _auto_get(track)
-    cname     = to_clean_ascii(track.name)
-    cartist   = to_clean_ascii(track.artist)
-    ccomposer = to_clean_ascii(track.composer)
-    pg        = fetch_hpricot(self.page_url(track.name))
+  def find_match(pg, cname, cartist, ccomposer)
     matchset  = []
     pg.search("table.SResult//tr").each do |row|
       wfields = {}
@@ -342,20 +422,10 @@ class LyTkaraoke < LyricSource
       wartist   = wfields['Singer']     || []
       wcomposer = wfields['SongWriter'] || []
       href      = row.at("a.SongName")['href']
-      p wname, wartist, wcomposer
-      if wname.include?(cname)
-        if wartist.include?(cartist) || wcomposer.include?(ccomposer)
-          return extract_text(track.name, href)
-        end
-        matchset << [track.name, href]
-      end
+      Plog.debug "wname: #{wname}, #{wartist}, #{wcomposer}"
+      matchset << [wname, wartist, wcomposer, href]
     end
-    if matchset.size > 0
-      name, href = matchset.first
-      return extract_text(name, href, true)
-    end
-    sleep(3)
-    ""
+    matchset
   end
 
   def extract_text(title, href, confirm = false)
@@ -387,12 +457,11 @@ class LyTkaraoke < LyricSource
     if !wtitle || wtitle.empty?
       wtitle = title
     end
-
-    if confirm && !confirm_text(lyric)
+    unless lyric = clean_and_check(lyric, confirm)
       return ""
     end
-
-    wtitle + "\n" + meta + "\n\n" + lyric
+    # User must edit to select a good one.  I dont know which is good
+    title + "\n" + wtitle + "\n" + meta + "\n\n" + lyric
   end
 
   def extract_metadata(lyrics)
@@ -415,10 +484,7 @@ end
 class LyNhacTui < LyricSource
   # Get and parse automatically
   # @param [ITuneTrack] track
-  def _auto_get(track)
-    cname     = to_clean_ascii(track.name)
-    cartist   = to_clean_ascii(track.artist)
-    pg        = fetch_hpricot(self.page_url(track.name))
+  def find_match(pg, cname, cartist, ccomposer)
     matchset  = []
     pg.search("div.col-music").each do |row|
       link = row.at("a.ico")
@@ -427,18 +493,9 @@ class LyNhacTui < LyricSource
       wname, wartist = link['title'].split(/\s*-\s*/)
       wname = to_clean_ascii(wname)
       wartist = wartist ? to_clean_ascii(wartist) : ""
-      if wname == cname
-        if wartist == cartist
-          return extract_text(track.name, href)
-        end
-        matchset << [track.name, href]
-      end
+      matchset << [wname, wartist, "", href]
     end
-    if true && matchset.size > 0
-      name, href = matchset.first
-      return extract_text(name, href, true)
-    end
-    ""
+    matchset
   end
 
   def extract_text(title, href, confirm = false)
@@ -454,15 +511,12 @@ class LyNhacTui < LyricSource
       return ""
     end
     lyric  = lblock.inner_html.gsub(/<br +\/?>/, "\n").strip
-
     if !wtitle || wtitle.empty?
       wtitle = title
     end
-
-    if confirm && !confirm_text(lyric)
+    unless lyric = clean_and_check(lyric, confirm)
       return ""
     end
-
     wtitle + "\n\n" + lyric
   end
 

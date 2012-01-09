@@ -20,7 +20,7 @@ which could be used with many editors.
 =end
 
 require File.dirname(__FILE__) + "/../etc/toolenv"
-require 'core'
+require 'mtool/core'
 
 class TextFilt
   extendCli __FILE__
