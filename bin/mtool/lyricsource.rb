@@ -346,8 +346,6 @@ class LyJustSome < LyricSource
   # @param [ITuneTrack] track
   def find_match(pg, cname, cartist, ccomposer)
     wlinks  = []
-    p pg
-    p pg.search("//div//a")
     pg.search("//div//a").each do |ele|
       href      = ele['href']
       bname     = URI.unescape(File.basename(href))
