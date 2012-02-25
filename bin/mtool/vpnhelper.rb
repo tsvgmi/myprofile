@@ -45,16 +45,18 @@ and route the rest through regular interface
       Plog.error "Tunnel #{vpnif} is not default route"
       return false
     end
-    tunip = VpnHelper.intf_addr(vpnif)
+    tunip = deftunnel.first.split[1]
     unless tunip
       Plog.error "No tunnel #{vpnif} detected"
       return false
     end
     gwip = nil
     ['en0', 'en1'].each do |intf|
+      if intf == vpnif
+        next
+      end
       if (enip = VpnHelper.intf_addr(intf)) != nil
-        gwip = `netstat -nrf inet`.grep(/default.*#{intf}/).first
-        if gwip
+        if gwip = `netstat -nrf inet`.grep(/default.*#{intf}/).first
           gwip = gwip.split[1]
           break
         end

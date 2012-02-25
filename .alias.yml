@@ -57,6 +57,10 @@ dellist:
   - "'_rm'"
   - .alias-common
   - 2009-03-06 18:29:46.695829 -08:00
+  mail: 
+  - "'mutt'"
+  - .alias-common
+  - 2012-01-18 22:09:38.386549 -08:00
   ct: 
   - "'cleartool'"
   - .alias-common
@@ -80,10 +84,10 @@ dellist:
 oldlist: {}
 
 valias: 
-version: 138
+version: 142
 valias: 
   _ALIAS_VERSION:
-  - "'137'"
+  - "'141'"
   - ".alias-common"
   citrix:
   - "'open -a '\''Google Chrome'\'' https://citrix.etrade.com/vpn/index.html'"
@@ -175,9 +179,6 @@ valias:
   ll:
   - "'ls -l --color=tty'"
   - ""
-  mail:
-  - "'mutt'"
-  - ".alias-common"
   mpshell:
   - "'~/kamplayer/bin/katool mpshell'"
   - ".alias-common"
@@ -212,13 +213,13 @@ valias:
   - "'_ssh'"
   - ".alias-common"
   s2:
-  - "'emssh run -th tvuong@lxp6d199m0.etrade.com emtools/bin/screens resume -e ^Xx'"
+  - "'emssh run -th tvuong@lxp6d199m0.etrade.com emtools/bin/screens resume'"
   - ".alias-common"
   s3:
   - "'screens resume -e ^Xx'"
   - ".alias-common"
   s4:
-  - "'emssh run -th tvuong@lxp6d174m0 emtools/bin/screens resume -e ^Xx'"
+  - "'emssh run -th tvuong@lxp6d199m0.etrade.com emtools/bin/emtmux resume'"
   - ".alias-common"
   sclearcase:
   - "'ssh -X dev2m12'"

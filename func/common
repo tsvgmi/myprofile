@@ -156,13 +156,6 @@ function cls {
   echo -n "[m"
 }
 
-function scrsend {
-  echo "]83;${*}"
-}
-function scropen {
-  echo "]83;screen -t \"$*\" ${*}"
-}
-
 function _sudo {
   if [ -x /local/bin/sudo ]; then
     /local/bin/sudo $@
@@ -321,4 +314,8 @@ function setview {
   exec cleartool setview -login $view
 }
 
+function growl {
+  echo -e $'\e]9;'${1}'\007'
+  return
+}
 

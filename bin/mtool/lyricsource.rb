@@ -79,15 +79,16 @@ class LyricSource
   def initialize(src, options = {})
     require 'appscript'
 
-    @source  = src || 'console'
-    @options = options
-    @config  = LySource[src]
-
+    @source   = src || 'console'
+    @options  = options
+    @config   = DB::Source.find_by_name(src)
     skipfile  = @source + ".yml"
-    @skiplist = HashYaml.new(skipfile)
     @chset    = {}
-    @safari   = Appscript::app('Safari.app')
-    at_exit { @skiplist.save }
+    if false
+      @skiplist = HashYaml.new(skipfile)
+      at_exit { @skiplist.save }
+    else
+    end
   end
 
   protected
@@ -106,8 +107,34 @@ class LyricSource
     when :curl
       Pf.system("open -g '#{url}'", 1)
       content = `curl --silent -A Mozilla/4.0 "#{url}"`
+    when :chrome
+      unless @chrome
+        @chrome = Appscript::app('Google Chrome.app')
+        @chrome.activate
+        @appref = @chrome.windows.active_tab
+      end
+      @appref.URL.set url
+      counter = 0
+      while true
+        # Sleep must be first?
+        sleep(1)
+        if @appref.loading.get.first
+          Plog.debug "Document completed."
+          # Unfortunately, chrome has no such support.  It's a blind bat now
+          content = @appref.source.get.first
+          break
+        end
+        counter += 1
+        if (counter >= 10)
+          Plog.error "Timeout waiting for #{url}"
+          break
+        end
+      end
     else
-      #@safari.activate
+      unless @safari
+        @safari = Appscript::app('Safari.app')
+        @safari.activate
+      end
       @safari.document.URL.set url
       counter = 0
       while true
@@ -133,7 +160,7 @@ class LyricSource
   def page_url(name)
     require 'uri'
 
-    @config[:src].gsub(/%TITLE%/, URI.escape(to_clean_ascii(name)))
+    @config[:search_url].gsub(/%TITLE%/, URI.escape(to_clean_ascii(name)))
   end
 
   # Get and parse manually
@@ -271,7 +298,9 @@ class LyYeuCaHat < LyricSource
     Plog.debug("Fetching lyric page ato #{lurl}")
     pg    = fetch_hpricot(lurl)
     title = pg.search("//span.maintitle").inner_text
-    meta  = pg.search("//span.genmed")[1].inner_text.strip
+    if meta  = pg.search("//span.genmed")[1]
+      meta = meta.inner_text.strip
+    end
     lyric = pg.search("//span.lyric").inner_text.strip
     if lyric.empty?
       return ""

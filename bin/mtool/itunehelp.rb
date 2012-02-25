@@ -12,6 +12,7 @@ require 'tempfile'
 require 'mtool/core'
 require 'mtool/mp3file'
 require 'mtool/vnmap'
+require 'mtool/dbaccess'
 
 class HashYaml
   def initialize(yfile)
@@ -95,11 +96,12 @@ module ITune
 
     # Return the clean name. (Remove VN accent and modifier)
     def name_clean
-      unless @kname
-        name   = @track.name.get
-        @kname = name.vnto_ascii.sub(/\s*[-\(].*$/, '').strip
-      end
+      @kname ||= self.class.name_clean(@track.name.get)
       @kname
+    end
+
+    def self.name_clean(string)
+      string.vnto_ascii.sub(/\s*[-\(].*$/, '').downcase.strip
     end
 
     # Updating one or more track properties.
@@ -195,14 +197,13 @@ module ITune
       @app     = ITuneApp.app
       @store   = store
       @options = options
+      @track   = track
+      @kname   = @track.name_clean
+      @wfile   = "#{@store}/#{@kname}.2txt"
+
       unless test(?d, store)
         FileUtils.mkdir_p(store, :verbose=>true)
       end
-      @track = track
-
-      name      = @track.name
-      @kname    = name.vnto_ascii.sub(/\s*[-\(].*$/, '').strip
-      @wfile    = "#{@store}/#{@kname}.2txt"
 
       if src
         @source = src
@@ -316,7 +317,7 @@ module ITune
     # @param [Boolean] auto Auto extract and
     def set_track_lyric(auto)
       skipfile = @source + ".yml"
-      skiplist = @lysource.skiplist
+      skiplist = @lysource.skiplist || {}
       name     = @kname
       unless @options[:force]
         return if skiplist[name]
@@ -604,7 +605,7 @@ module ITune
           value  = atrack[prop]
           nvalue = value.split(/\s*,\s*/).sort.map do |avalue|
             subdefs.each do |k, v|
-              avalue = avalue.sub(/#{k}/i, v)
+              avalue = avalue.sub(/^#{k}$/i, v)
             end
             avalue
           end.join(', ')
@@ -699,6 +700,14 @@ module ITune
           title, artist = atrack.name.split(/\s*-\s*/)
           next unless artist
           atrack.updates(:name => title, :artist => artist)
+        when 'name.group'
+          title, group = atrack.name.split(/\s*[-\(\)]\s*/)
+          next unless group
+          atrack.updates(:name => title, :grouping => group)
+        when 'name.group.artist'
+          title, group, tmp, artist = atrack.name.split(/\s*[-\(\)]\s*/)
+          next unless group
+          atrack.updates(:name => title, :artist=>artist, :grouping => group)
         # Capitalize name
         when 'cap'
           updset = {}
@@ -726,7 +735,7 @@ module ITune
         when 'clean_name'
           fixname = atrack.name.sub(/^Lien Khuc/i, 'LK').
                   sub(/^:/, '').
-                  sub(/\s*[-\(].*$/, '')
+                  sub(/\s*[-\(].*$/, '').strip
           atrack.updates(:name => fixname)
 
         # Remove the track info in front of name and move to track
@@ -762,6 +771,14 @@ module ITune
               nvalue = values.sort.join(', ')
               updset[prop] = nvalue
             end
+          end
+          atrack.updates(updset)
+        when 'splitcap'
+          updset = {}
+          ['name', 'artist'].each do |prop|
+            value = atrack[prop]
+            nvalue = value.scan(/[A-Z][a-z]+/).join(' ')
+            updset[prop] = nvalue
           end
           atrack.updates(updset)
         when 'clean.composer'
@@ -879,14 +896,14 @@ module ITune
       end
       puts "Transfer meta from #{ftrack.name}/#{ftrack.album} to #{ttrack.name}/#{ttrack.album}"
       cset = {
-        :played_count => ftrack.played_count,
+        :played_count => ftrack.played_count + ttrack.played_count,
         :rating       => ftrack.rating,
-        :name         => ftrack.name,
-        :artist       => ftrack.artist,
-        :composer     => ftrack.composer,
         :lyrics       => ftrack.lyrics,
         :comment      => ftrack.comment
       }
+        #:name         => ftrack.name,
+        #:artist       => ftrack.artist,
+        #:composer     => ftrack.composer,
       if ttrack.album.strip.empty?
         cset[:album] = ftrack.album
       end
@@ -976,6 +993,45 @@ module ITune
     def self.notify(msg)
       Pf.system "growlNotify --appIcon iTunes --message '#{msg}'", 1
     end
+
+    def self.load_song_db
+      options = getOption
+      DB::Song.transaction do
+        DbAccess.execute "delete from songs"
+        ITuneFolder.new("Music", options).each_track do |atrack, iname|
+          oname  = atrack.name.gsub(/'/, "''")
+          oiname = iname.gsub(/'/, "''")
+          sql    = "insert into songs(name,name_clean) values('#{oname}', '#{oiname}')"
+          begin
+            DbAccess.execute(sql)
+          rescue => errmsg
+            p errmsg
+            p atrack.name, iname
+          end
+        end
+      end
+      true
+    end
+
+    def self.load_skip_db(*files)
+      options   = getOption
+      files.each do |file|
+        source    = File.basename(file).sub(/\..*$/, '')
+        source_id = DB::Source.find_by_name(source)[:id]
+        DB::SkipLyric.transaction do
+          YAML.load_file(file).each do |name, val|
+            name_clean = ITuneTrack.name_clean(name)
+            if (song_rec = DB::Song.find_by_name_clean(name_clean))
+              sql = "replace into skiplyrics(source_id,song_id)
+                    values(#{source_id},#{song_rec[:id]})"
+              DbAccess.execute(sql)
+            end
+          end
+        end
+      end
+      true
+    end
+
   end
 end
 
@@ -992,6 +1048,7 @@ def _src_reload_check
 end
 
 if (__FILE__ == $0)
+  DbAccess.connect('itune')
   ITune::ITuneHelper.handleCli(
         ['--auto',      '-a', 0],
         ['--cdir',      '-C', 1],

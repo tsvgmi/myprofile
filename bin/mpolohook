@@ -6,7 +6,6 @@
 # Created:	2002-06-23
 # $Id$
 #######################################################################
-
 PATH=$PATH:/sbin:/usr/sbin
 
 #======================================================================
@@ -84,12 +83,13 @@ case $oper in
     ;;
 
   splitvpn)
-    dest=$1
+    dest=$1 vpnif=$2
     [ "$dest" ] || dest=etrade
+    [ "$vpnif" ] || vpnif=utun0
     (
       ifconfig
       netstat -nrf inet
-      F_rbrun vpnhelper $dest split 
+      F_rbrun vpnhelper $dest split en0
     ) 2>&1 | \
     tee ~/$oper.log
     ;;
@@ -107,6 +107,7 @@ case $oper in
     F_exec ssh tvuong@lxp6d199m0 bin/mpolohook synergy
     ;;
 
+  # The IPsec VPN
   connect-vpn)
     dotunnel=yes
     while getopts :t i; do
@@ -117,44 +118,51 @@ case $oper in
     done
     let j=$OPTIND-1; shift $j; OPTIND=0
     (
-      F_system $EM_MYPROG splitvpn
+      F_system $EM_MYPROG splitvpn etrade utun0
       # Must put tunnel all in background to avoid blockage if
       # a remote node is down
       if [ "$dotunnel" ]; then
         F_system $EM_MYPROG tunnel-ssh
       fi
       open -a "Microsoft Communicator"
-      open -a 'Microsoft Outloook'
+      open -a 'Microsoft Outlook'
       # These require tunnel to finish opening
       sleep 3
       open -a 'Google Chrome' https://citrix.etrade.com/vpn/index.html
     ) &
     ;;
 
-  tunnel-ssh)
-    set -- $(ifconfig utun0 2>/dev/null | grep -w inet)
-    tset=all
-    if [ $# -gt 1 ]; then
-      utunip=$2
-      case $utunip in
-      10.150.173.*|10.50.73.*) tset=tvuong@lxp6d199m0.etrade.com ;;
-      esac
-    fi
-    F_system emssh tunnel -r $tset &
-    date > ~/.tool/tunnel.utun0
-    sleep 3
+  # The access point VPN
+  connect-etvpn)
+    F_system $EM_MYPROG splitvpn etrade en0
+    open -a "Microsoft Communicator"
+    open -a 'Microsoft Outlook'
+    ;;
+
+  _killasroot)
+    f_killApp $@
     ;;
 
   connect-home|connect-homewl)
-    f_killApp Microsoft.Messenger Microsoft.Communicator Microsoft.Outlook Synergyd
+    open -a "QuickSilver"
+    open "/System/Library/PreferencePanes/Dock.prefPane"
+    f_killApp Microsoft.Messenger Microsoft.Communicator Microsoft.Outlook \
+        Synergyd Plex.Media.Server
+    F_surun $EM_MYPROG _killasroot TrendMicro
     ;;
 
   connect-et|connect-etwl)
-    f_killApp Opera iTunes jDownloader
-    #open -a iCal
-    #open -a Mail
+    f_killApp Opera iTunes jDownloader Plex.Media.Server
     open -a "Microsoft Communicator"
     open -a "Microsoft Outlook"
+    open -a "QuickSilver"
+    open "/System/Library/PreferencePanes/Dock.prefPane"
+    F_surun $EM_MYPROG _killasroot TrendMicro
+    set -- $(netstat -nrf inet | egrep "^10 ")
+    if [ $# -gt 2 ]; then
+      gwif=$2
+      F_surun route delete -net 10.0.0.0 $gwif 255.0.0.0
+    fi
     if [ "$oper" == "connect-et" ]; then
       F_exec $EM_MYPROG rsynergy
     fi

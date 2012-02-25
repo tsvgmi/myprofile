@@ -33,15 +33,21 @@ function _ssh_setup {
     fi
   fi
 
-  case $USER in
-  thienvuong) SSH_USER=tvuong ;;
-  *)          SSH_USER=$user  ;;
+  case $target in
+  *@*)
+    user=${target%@*}
+    target=${target#*@}
+    ;;
+  *)
+    case $target in
+    tvmac*) user=thien ;;
+    *)      user=tvuong ;;
+    esac
+    ;;
   esac
-  case ${target%%:*} in
-  tvmac*) SSH_USER=thien ;;
-  esac
+  export SSH_USER=$user
   export SSH_USER SSH_PORT SSH_PROXYHOST
-
+  export SSH_TARGET=$target
 }
 
 _ssh_setup
@@ -56,18 +62,17 @@ function _ssh {
   typeset useproxy=
 
   _ssh_setup $target
-  [ "$target" ] || target=lxp6d199m0
   if [ "$SSH_PORT" ]; then
-    [ "$target" == "$HOST" ] || useproxy=yes
+    [ "$SSH_TARGET" == "$HOST" ] || useproxy=yes
   elif [ "$SSH_PROXYHOST" ]; then
-    case $target in
+    case $SSH_TARGET in
     *m7) useproxy=yes ;;
     esac
   fi
   if [ "$useproxy" ]; then
-    emssh connect ${SSH_USER}@${SSH_PROXYHOST}#$target
+    emssh connect ${SSH_USER}@${SSH_PROXYHOST}#$SSH_TARGET
   else
-    emssh connect ${SSH_USER}@$target
+    emssh connect ${SSH_USER}@$SSH_TARGET
   fi
 }
 alias s=_ssh
@@ -79,7 +84,7 @@ function _scp {
   _ssh_setup $dest
   [ "$dest" ] || return 1
   set -x
-  \scp -P $SSH_PORT $src ${SSH_USER}@$dest
+  \scp -P $SSH_PORT $src ${SSH_USER}@${SSH_TARGET}
   rc=$?
   set +x
 }
