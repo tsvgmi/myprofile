@@ -41,6 +41,7 @@ and route the rest through regular interface
 *      vpnif: 
 =end
     deftunnel = `netstat -nrf inet`.grep(/default.*#{vpnif}/)
+    p deftunnel
     if deftunnel.size <= 0
       Plog.error "Tunnel #{vpnif} is not default route"
       return false
@@ -66,7 +67,7 @@ and route the rest through regular interface
       Plog.error "No regular interface with default gw detected. ???"
       return false
     end
-    cmds = vpnroutes(vpnif)
+    cmds = vpnroutes(vpnif, tunip)
     cmds << "route delete -net 0.0.0.0 #{tunip} 0.0.0.0"
     cmds << "route add -net 0.0.0.0 #{gwip} 0.0.0.0"
     cmds.each do |acmd|
@@ -75,12 +76,7 @@ and route the rest through regular interface
     true
   end
 
-  def vpnroutes(vpnif = "utun0")
-    tunip = VpnHelper.intf_addr(vpnif)
-    unless tunip
-      Plog.error "No tunnel #{vpnif} detected"
-      return []
-    end
+  def vpnroutes(vpnif, tunip)
     cmds = []
     @routes.each do |aroute|
       net, mask = aroute.split('/')

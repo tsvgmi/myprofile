@@ -70,7 +70,7 @@ case $oper in
       if [ $? -ne 0 ]; then
         F_abort "X windows not started" $LINENO
       fi
-      F_system pkill synergyc && F_wait 1
+      F_system pkill -9 synergyc && F_wait 1
       F_logProgress "Turn off screen saver"
       DISPLAY=:0 F_system xset -dpms
       if [ "$dossh" ]; then
