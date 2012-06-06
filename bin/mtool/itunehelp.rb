@@ -217,7 +217,7 @@ module ITune
 
 # @return [String] Content of lyric in store.  Text format
     def value
-      if @_value.empty?
+      if !@value || @_value.empty?
         if test(?f, @wfile)
           data   = YAML.load_file(@wfile)
           Plog.debug("Loading lyrics from #{@wfile}")
@@ -578,6 +578,68 @@ module ITune
       wset.save
     end
 
+    def _dump_lyrics(names, lydata, prefix)
+      name0 = names[0].gsub(/[\s\']+/, '_').sub(/^(a|an|the)\s+/i, '')[0..2]
+      name9 = names[-1].gsub(/[\s\']+/, '_').sub(/^(a|an|the)\s+/i, '')[0..2]
+      cfile = "#{prefix}-#{name0}-#{name9}.txt"
+      Plog.info "Writing to #{cfile}"
+      fod   = File.open(cfile, "w")
+      fod.puts "{{toc}}\n\n"
+      names.each do |name|
+        fod.puts lydata[name]
+      end
+      fod.close
+    end
+
+    def print_lyrics(prefix = "lyrics")
+      lydata    = {}
+      processed = {}
+      fcount    = 0
+      songs     = []
+      self.each_track do |atrack, iname|
+        if processed[iname]
+          Plog.info "Skip repeated #{atrack[:name]}"
+          next
+        end
+        processed[iname] = true
+        lyrics           = atrack[:lyrics]
+        next if (lyrics.size < 200)
+        name = atrack[:name]
+        lyrics = lyrics.gsub(//, "\n").split(/\n/)
+        result = []
+        bpara  = true
+        lyrics.each do |l|
+          if bpara
+            if l.strip.empty?
+              result << l
+            else
+              result << "p=. #{l}"
+              bpara = false
+            end
+          else
+            if l.strip.empty?
+              bpara = true
+            end
+            result << l
+          end
+        end
+        title  = "\nh2. #{name} - #{atrack[:artist]} - #{atrack[:grouping]}\n\n"
+        lydata[iname] = title + "\n" + result.join("\n")
+        songs << iname
+        STDERR.print ".#{lydata.size}"
+        STDERR.flush
+        if lydata.size >= 100
+          _dump_lyrics(songs, lydata, prefix)
+          lydata = {}
+          songs  = []
+        end
+      end
+      if lydata.size > 0
+        _dump_lyrics(songs, lydata, prefix)
+      end
+      true
+    end
+
     SpecialName = {
       'Abba'  => 'ABBA',
       'Ac, M' => 'AC&M',
@@ -739,7 +801,7 @@ module ITune
           atrack.updates(:name => fixname)
 
         # Remove the track info in front of name and move to track
-        when 'number_track'
+        when 'number.track'
           updset = {}
           if name =~ /^(\d+)[-\.]?\s*/
             trackno = $1.to_i
@@ -933,6 +995,10 @@ module ITune
         LyricStore.new(src, exdir, atrack, options).clear_track
       end
       true
+    end
+
+    def self.print_lyrics(playlist, exdir="./lyrics")
+      ITuneFolder.new(playlist, getOption).print_lyrics
     end
 
     def self.clone_composer(playlist, dbfile="./composer.yml")

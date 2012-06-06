@@ -49,8 +49,8 @@ class DeviceDir
   end
 
   def try_add(atrack)
-    file  = atrack.location.get.path
-    album = atrack.album.get.gsub(/\//, '_')
+    file  = atrack.location.path
+    album = atrack.album.gsub(/\//, '_')
     dfile = "#{@dir}/#{album}/#{File.basename(file)}"
      
     # File is not accessible ?
@@ -216,9 +216,9 @@ class MediaSync
       # Once we do this, track ref is changed by iTune, so no more track op
       if icount > 0
         devdir.tracks.each do |atrack|
-          pcount = atrack.played_count.get || 0
-          atrack.played_date.set(Time.now)
-          atrack.played_count.set(pcount+1)
+          pcount = atrack.played_count || 0
+          atrack.played_date = Time.now
+          atrack.played_count = pcount+1
           STDERR.print "."
           STDERR.flush
         end
@@ -231,6 +231,7 @@ class MediaSync
   def transfer(config)
     require 'find'
 
+    Plog.info "Clean up old songs"
     if @options[:purge]
       Pf.system "rm -rf #{config.keys.join(' ')}"
     else
@@ -254,6 +255,7 @@ class MediaSync
       end
     end
 
+    Plog.info "Loading new songs"
     config.each do |ddir, content|
       DeviceDir.new(ddir, @options).copyfiles(content)
     end

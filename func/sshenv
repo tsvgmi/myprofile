@@ -108,3 +108,17 @@ function hcd {
   _cd $path
 }
 
+function sconnect {
+  typeset host=$1
+  typeset proxyhost
+
+  case $host in
+  #*m7|*m7.etrade.com|dvl-*)
+    #proxyhost=poc1w80m7.etrade.com
+    #;;
+  *)
+    proxyhost=lxp6d199m0.etrade.com
+    ;;
+  esac
+  emssh run -th tvuong@$proxyhost emtools/bin/screens resume $@
+}

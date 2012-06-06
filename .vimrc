@@ -268,8 +268,8 @@ endif
 command! -range AlignColumn1 <line1>,<line2>!~/bin/vimfilt.rb % alcol 1
 command! -range AlignColumn2 <line1>,<line2>!~/bin/vimfilt.rb % alcol 2
 command! -range AlignColumn3 <line1>,<line2>!~/bin/vimfilt.rb % alcol 3
-command! -range AlignColumn <line1>,<line2>!~/bin/vimfilt.rb % alcol
-command! -range AlignEqual <line1>,<line2>!~/bin/vimfilt.rb % ae
+command! -range AlignColumn <line1>,<line2>!~/bin/vimfilt.rb '%' alcol
+command! -range AlignEqual <line1>,<line2>!~/bin/vimfilt.rb '%' ae
 command! -range FmtComment <line1>,<line2>!~/bin/vimfilt.rb % fmtcmt
 command! -range FmtHaml    <line1>,<line2>!~/bin/vimfilt.rb % fmt_haml
 command! -range FuncHeader <line1>,<line2>!~/bin/vimfilt.rb % funcHeader

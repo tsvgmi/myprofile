@@ -127,7 +127,7 @@ case $oper in
     ;;
 
   connect-home|connect-homewl)
-    open -a "QuickSilver"
+    open -a "Plex Media Server"
     open "/System/Library/PreferencePanes/Dock.prefPane"
     f_killApp Microsoft.Messenger Microsoft.Communicator Microsoft.Outlook \
         Synergyd Plex.Media.Server
@@ -135,10 +135,10 @@ case $oper in
     ;;
 
   connect-et|connect-etwl)
-    f_killApp Opera iTunes jDownloader Plex.Media.Server YouControlTunesEngine
+    f_killApp Opera iTunes jDownloader Plex.Media.Server YouControlTunesEngine \
+        Synergyd
     open -a "Microsoft Communicator"
     open -a "Microsoft Outlook"
-    open -a "QuickSilver"
     open "/System/Library/PreferencePanes/Dock.prefPane"
     F_surun $EM_MYPROG _killasroot TrendMicro
     set -- $(netstat -nrf inet | egrep "^10 ")
@@ -155,7 +155,7 @@ case $oper in
   #------------------ Kill off all non-essential app to preserve battery ---
   lowpower)
     f_killApp MicrosoftKeyboardHelper Microsoft.Database.Daemon \
-	EyeTV.Helper Glims.Agent Little.Snitch.UIAgent QuickSilver \
+	EyeTV.Helper Glims.Agent Little.Snitch.UIAgent \
 	MarcoPolo Synergyd
     ;;
 
