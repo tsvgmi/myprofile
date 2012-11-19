@@ -117,6 +117,101 @@ class NYBook
     end
     true
   end
+
+  def self.rename_files_01(fcontent)
+    require 'fileutils'
+
+    File.read(fcontent).split(/\n/).each do |file|
+      next unless test(?e, file)
+      name = File.basename(file)
+      publisher = ""
+      authors, title = name.split(/\s*-\s*/, 2)
+      next unless authors
+      nauthors = []
+      authors.split(/\s*\&\s*/).each do |author|
+        fs = author.split
+        fname, lname = fs[0..-2].join(' '), fs[-1]
+        nauthors << "#{lname}, #{fname}"
+      end
+      p "N: #{name}"
+      title = title.sub(/\s*\(mobi\)\s*/i, '')
+      if title =~ /\s*-\s*/
+        publisher, title = $`, $'
+      end
+      #p "A: " + "#{nauthors.join(' & ')}", "T: " + title, "P: " + publisher
+      newname = "#{nauthors.join(' & ')} - #{title}"
+      if false
+        p newname
+      else
+        if newname != name
+          FileUtils.move(file, "#{newname}", :verbose=>true)
+        end
+      end
+    end
+    true
+  end
+
+  def self.rename_files(fcontent)
+    require 'fileutils'
+
+    File.read(fcontent).split(/\n/).each do |file|
+      next unless test(?e, file)
+      name = File.basename(file)
+      title, authors = name.split(/\s*, by\s*/, 2)
+      next unless authors
+      authors = authors.sub(/^by\s+/, '')
+      nauthors = []
+      authors.split(/\s+(and|with)\s+/).each do |author|
+        next if author =~ /and|with/
+        p "A: " + author
+        fs = author.split
+        fname, lname = fs[0..-2].join(' '), fs[-1]
+        nauthors << "#{lname}, #{fname}"
+      end
+      p "N: #{name}"
+      title = title.sub(/\s*\(mobi\)\s*/i, '')
+      if title =~ /\s*-\s*/
+        publisher, title = $`, $'
+      end
+      newname = "#{nauthors.join(' & ')} - #{title}"
+      if false
+        p newname
+      else
+        if newname != name
+          FileUtils.move(file, "#{newname}", :verbose=>true)
+        end
+      end
+    end
+    true
+  end
+
+  def self.rename_file(type, path)
+    dir, file = File.split(path)
+    case type
+    when 'author.title'
+      author, title = file.split(/\s*-\s*/, 2)
+      raise "No title" unless title
+      first, last, other = author.split
+      raise "Bad form name" if other
+      newtitle = "#{dir}/#{last}, #{first} - #{title}"
+      FileUtils.move(path, newtitle, :verbose=>true)
+    when 'title.author'
+      title, author = file.split(/\s*-\s*/, 2)
+      author, fext  = author.split(/\./)
+      raise "No author" unless author
+      names = author.sub(/\s*\(.*$/, '').split
+      last  = names[-1]
+      first = names[0..-2].join(' ')
+      raise "Bad form name" if other
+      newtitle = "#{dir}/#{last}, #{first} - #{title}"
+      if fext
+        newtitle += ".#{fext}"
+      end
+      FileUtils.move(path, newtitle, :verbose=>true)
+    else
+      raise "Unknown type: #{type}"
+    end
+  end
 end
 
 if (__FILE__ == $0)

@@ -13,6 +13,7 @@ require 'mtool/core'
 require 'mtool/mp3file'
 require 'mtool/vnmap'
 require 'mtool/dbaccess'
+require 'mtool/tunes'
 
 class HashYaml
   def initialize(yfile)
@@ -48,7 +49,7 @@ module ITune
 
       unless @@app
         ITuneHelper.notify "#{File.basename(__FILE__)} connecting to iTunes"
-        @@app = Appscript::app('iTunes.app')
+        @@app = Appscript::app.by_name('iTunes', Tunes)
         #@@app.activate
       end
       @@app
@@ -762,6 +763,26 @@ module ITune
           title, artist = atrack.name.split(/\s*-\s*/)
           next unless artist
           atrack.updates(:name => title, :artist => artist)
+        when 'track.artist.name'
+          updset = {}
+          if name =~ /^(\d+)\s*[-\.]?\s*/
+            trackno = $1.to_i
+            artist, title = $'.split(/\s*-\s*/, 2)
+            updset[:track_number] = trackno
+            updset[:name]         = title
+            updset[:artist]       = artist
+            atrack.updates(updset)
+          end
+        when 'track.name.artist'
+          updset = {}
+          if name =~ /^(\d+)\s*[-\.]?\s*/
+            trackno = $1.to_i
+            title, artist = $'.split(/\s*-\s*/, 2)
+            updset[:track_number] = trackno
+            updset[:name]         = title
+            updset[:artist]       = artist
+            atrack.updates(updset)
+          end
         when 'name.group'
           title, group = atrack.name.split(/\s*[-\(\)]\s*/)
           next unless group
@@ -803,7 +824,7 @@ module ITune
         # Remove the track info in front of name and move to track
         when 'number.track'
           updset = {}
-          if name =~ /^(\d+)[-\.]?\s*/
+          if name =~ /^(\d+)\s*[-\.]?\s*/
             trackno = $1.to_i
             rname   = $'
             updset[:track_number] = trackno
@@ -948,29 +969,34 @@ module ITune
     def self.clone_meta
       options = getOption
       tracks = ITuneFolder.new("select", options).get_tracks
-      if tracks.size != 2
-        raise "Must have 2 tracks to clone"
+      if (tracks.size % 2) != 0
+        raise "Must have even tracks to clone"
       end
-      if tracks[0].date_added > tracks[1].date_added
-        ttrack, ftrack = *tracks
-      else
-        ftrack, ttrack = *tracks
+      while tracks.size > 0
+        if tracks[0].date_added > tracks[1].date_added
+          new_track, old_track = *tracks
+        else
+          old_track, new_track = *tracks
+        end
+        if old_track.size > (new_track.size + 3000000)
+          Plog.warn "Track #{new_track.name} is smaller (#{old_track.size} - #{new_track.size}).  Skip"
+          tracks = tracks[2..-1]
+          next
+        end
+        puts "Transfer meta from #{old_track.name}/#{old_track.album} to #{new_track.name}/#{new_track.album}"
+        cset = {
+          :played_count => old_track.played_count + new_track.played_count,
+          :rating       => old_track.rating,
+          :lyrics       => old_track.lyrics,
+          :comment      => old_track.comment
+        }
+        if new_track.album.strip.empty?
+          cset[:album] = old_track.album
+        end
+        new_track.updates(cset)
+        old_track.updates(:rating => 20)
+        tracks = tracks[2..-1]
       end
-      puts "Transfer meta from #{ftrack.name}/#{ftrack.album} to #{ttrack.name}/#{ttrack.album}"
-      cset = {
-        :played_count => ftrack.played_count + ttrack.played_count,
-        :rating       => ftrack.rating,
-        :lyrics       => ftrack.lyrics,
-        :comment      => ftrack.comment
-      }
-        #:name         => ftrack.name,
-        #:artist       => ftrack.artist,
-        #:composer     => ftrack.composer,
-      if ttrack.album.strip.empty?
-        cset[:album] = ftrack.album
-      end
-      ttrack.updates(cset)
-      ftrack.updates(:rating => 20)
     end
 
     def self.monitor_lyrics(exdir = "./lyrics")

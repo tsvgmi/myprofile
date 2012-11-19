@@ -20,9 +20,9 @@ case $oper in
   #@Use: harvest-cache [-k] [-s] [-w time] [-t sound|image] [filetype ....]
   harvest-cache)
     ftypes= ropt=
-    while getopts :gkst:w: i; do
+    while getopts :knst:w: i; do
       case $i in
-      [gks]) ropt="$ropt -$i" ;;
+      [nks]) ropt="$ropt -$i" ;;
       w)     ropt="$ropt -$i $OPTARG" ;;
       t)
         case $OPTARG in

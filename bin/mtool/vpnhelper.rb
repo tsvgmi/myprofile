@@ -18,6 +18,7 @@ class VpnHelper
     if test(?f, CFILE)
       @config = YAML.load_file(CFILE)
     end
+    raise "#{CFILE} is not valid" unless @config
     @routes = @config[dest] || []
     if @routes.size <= 0
       Plog.error "No route specified for #{dest}"

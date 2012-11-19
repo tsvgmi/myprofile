@@ -144,7 +144,9 @@ class LyricSource
         if pready == "complete"
           Plog.debug "Document completed."
           content = @safari.document.source.get.first
-          break
+          if content.class == String
+            break
+          end
         end
         counter += 1
         if (counter >= 10)
@@ -153,6 +155,7 @@ class LyricSource
         end
       end
     end
+    p content.class
     Hpricot(content)
   end
 
@@ -334,24 +337,21 @@ class LyZing < LyricSource
   # Get and parse automatically
   # @param [ITuneTrack] track
   def find_match(pg, cname, cartist, ccomposer)
-    wset    = []
-    pg.search("div.content-item/h3").each do |ele0|
-      ele      = ele0.at('a')
-      haslyric = ele0.at('img.hlyric')
-      next unless haslyric
-
-      title, wartist = ele['title'].split(/\s*-\s*/)
-      wname   = to_clean_ascii(title)
-      wartist = to_clean_ascii(wartist)
-      wset << [wname, wartist, "", ele['href']]
+    unless sblock = pg.search("div.first-search-song")
+      return []
     end
-    wset
+    unless link = sblock.search("a._trackLink")[0]
+      return []
+    end
+    wname   = to_clean_ascii(link.inner_text)
+    wartist = to_clean_ascii(sblock.search("a.txtBlue")[0].inner_text)
+    [[wname, wartist, "", link['href']]]
   end
 
   def extract_text(title, rec, confirm = false)
     wname, wartist, wcomposer, href = rec
     pg    = fetch_hpricot(@config[:base] + "/#{href}")
-    lyric = pg.search("//p._lyricContent").inner_text.strip
+    lyric = pg.search("p._lyricContent").inner_text.strip
     if lyric.empty?
       return ""
     end
@@ -517,7 +517,7 @@ class LyTkaraoke < LyricSource
       return ""
     end
     # User must edit to select a good one.  I dont know which is good
-    title + "\n" + wtitle + "\n" + meta + "\n\n" + lyric
+    title + "\n" + wtitle.strip + "\n" + meta + "\n\n" + lyric
   end
 
   def extract_metadata(lyrics)
@@ -542,13 +542,17 @@ class LyNhacTui < LyricSource
   # @param [ITuneTrack] track
   def find_match(pg, cname, cartist, ccomposer)
     matchset  = []
-    pg.search("div.col-music").each do |row|
-      link = row.at("a.ico")
+    unless block = pg.search("ul.list_song")[0]
+      return matchset
+    end
+    block.children_of_type("li").each do |row|
+      link = row.at("h3/a")
       next unless link
-      href = link['href']
-      wname, wartist = link['title'].split(/\s*-\s*/)
-      wname = to_clean_ascii(wname)
-      wartist = wartist ? to_clean_ascii(wartist) : ""
+      href    = link['href']
+      wname   = to_clean_ascii(link.inner_text)
+      wartist = row.search("div.info-song//a").map do |lartist|
+        to_clean_ascii(lartist.inner_text)
+      end
       matchset << [wname, wartist, "", href]
     end
     matchset
@@ -557,12 +561,12 @@ class LyNhacTui < LyricSource
   def extract_text(title, rec, confirm = false)
     wname, wartist, wcomposer, href = rec
     pg     = fetch_hpricot(@config[:base] + "/#{href}")
-    sblock = pg.at("div.content-lyric")
+    sblock = pg.at("div.lyric")
     unless sblock
       Plog.warn "No lyric block"
       return ""
     end
-    wtitle = sblock.at("h2.title").inner_text.gsub(/^.*:\s+/, '')
+    wtitle = sblock.at("h2").inner_text.gsub(/^.*:\s+/, '')
     unless lblock = sblock.at("div#lyric")
       Plog.warn "No lyric block"
       return ""

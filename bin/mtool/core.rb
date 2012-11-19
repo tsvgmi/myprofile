@@ -640,12 +640,13 @@ end
 
 require 'logger'
 class PLogger < Logger
-  Format2 = "%s %s - %s\n"
+  Format2 = "%s %s - [%s] %s\n"
   def format_message(severity, timestamp, progname, msg)
+    script = caller[6].sub(/:in .*$/, '').sub(/^.*\//, '')
     if timestamp.respond_to?(:strftime)
-      Format2 % [severity[0..0], timestamp.strftime("%y/%m/%d %T"), msg]
+      Format2 % [severity[0..0], timestamp.strftime("%y/%m/%d %T"), script, msg]
     else
-      Format2 % [severity[0..0], timestamp, progname]
+      Format2 % [severity[0..0], timestamp, script, progname]
     end
   end
 end
