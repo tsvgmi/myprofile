@@ -42,7 +42,7 @@ and route the rest through regular interface
 *      vpnif: 
 =end
     deftunnel = `netstat -nrf inet`.grep(/default.*#{vpnif}/)
-    p deftunnel
+    Plog.info "Default: #{deftunnel}"
     if deftunnel.size <= 0
       Plog.error "Tunnel #{vpnif} is not default route"
       return false
@@ -53,10 +53,8 @@ and route the rest through regular interface
       return false
     end
     gwip = nil
-    ['en0', 'en1'].each do |intf|
-      if intf == vpnif
-        next
-      end
+    ['en0', 'en1', 'en2', 'en3', 'en4', 'en5'].each do |intf|
+      next if (intf == vpnif)
       if (enip = VpnHelper.intf_addr(intf)) != nil
         if gwip = `netstat -nrf inet`.grep(/default.*#{intf}/).first
           gwip = gwip.split[1]

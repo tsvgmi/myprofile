@@ -51,6 +51,11 @@ case $oper in
     F_rbexec ffhelper $ropt harvest $bdir $*
     ;;
 
+  self-organize)
+    ropt=
+    F_rbexec ffhelper $ropt self_organize $*
+    ;;
+
   srt-search)
     movie=$(echo $@ | sed 's/ /%20/g')
     open "http://subscene.com/filmsearch.aspx?q=${movie}&exact=1"

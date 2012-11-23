@@ -89,6 +89,7 @@ case $oper in
     (
       ifconfig
       netstat -nrf inet
+      echo vpnhelper $dest split $vpnif
       F_rbrun vpnhelper $dest split $vpnif
     ) 2>&1 | \
     tee ~/$oper.log
@@ -114,15 +115,23 @@ case $oper in
     rm -f ~/.ssh/master*
     ;;
 
-  # Split vpn (en1 is vpn)
+  # Split vpn (an interface is vpn)
   connect-etspvpn)
-    for intf in en0 en1; do
+    connected=
+    for intf in en0 en1 en2; do
       if ifconfig $intf | egrep "inet.*10\.50\."; then
+        F_logProgress "Detecting VPN interface at $intf"
         rm -f ~/.ssh/master*
-        F_exec $EM_MYPROG splitvpn etrade $intf
+        F_system $EM_MYPROG splitvpn etrade $intf
+        connected=true
       fi
     done
-    F_logError "No 10.50.x address detected"
+    if [ ! "$connected" ]; then
+      F_logError "No 10.50.x address detected"
+    fi
+    open -a "Microsoft Communicator"
+    open -a 'Microsoft Outlook'
+    rm -f ~/.ssh/master*
     ;;
 
   _killasroot)
