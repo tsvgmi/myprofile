@@ -8,6 +8,7 @@
 require File.dirname(__FILE__) + "/../../etc/toolenv"
 require 'yaml'
 require 'fileutils'
+require 'tempfile'
 require 'mtool/core'
 require 'mtool/mp3file'
 
@@ -57,7 +58,7 @@ class HarvestFile
   end
 
   def self_organize
-    here = @options[:dest_dir] || Dir.pwd
+    here = @options[:destdir] || Dir.pwd
     dfile = get_dest_name(here)
     next unless dfile
     unless test(?d, File.dirname(dfile))
@@ -74,6 +75,51 @@ class HarvestFile
         p errmsg
       end
     end
+  end
+
+  FilePtn = {
+    'mp3' => "Audio file|MPEG ADTS",
+    'mp4' => "MPEG v4",
+    'flv' => "Macromedia Flash data",
+    'jpg' => "JPEG image data",
+    'gif' => "GIF image data",
+    'png' => "PNG image",
+    'mid' => "MIDI data",
+    'gz'  => "gzip compressed data"
+  }
+
+  @@filetypes = {}
+  def self.find_matching_files(ftype, options = {})
+    unless FilePtn[ftype]
+      raise "File type #{ftype} not supported - need identification"
+    end
+
+    current_files = `find . -type f`.split("\n")
+    cache_list    = @@filetypes.keys
+    new_list      = current_files - cache_list
+    
+    purged_list = cache_list - current_files
+    if purged_list.size > 0
+      purged_list.each do |afile|
+        @@filetypes.delete(afile)
+      end
+    end
+
+    Plog.info "Found #{new_list.size} files" if options[:verbose]
+    tmpf      = Tempfile.new("ffhelper")
+    tmpf.puts(new_list.join("\n"))
+    tmpf.close
+
+    `cat #{tmpf.path} | xargs file`.split("\n").each do |line|
+      file, type = line.split(/:\s+/, 2)
+      @@filetypes[file] = type
+    end
+
+    flist = current_files.select do |afile|
+      @@filetypes[afile] =~ /#{FilePtn[ftype]}/
+    end
+
+    flist
   end
 
   def self.send_notifier(msg)
@@ -95,17 +141,6 @@ end
 
 class FirefoxHelper
   extendCli __FILE__
-
-  FilePtn = {
-    'mp3' => "Audio file|MPEG ADTS",
-    'mp4' => "MPEG v4",
-    'flv' => "Macromedia Flash data",
-    'jpg' => "JPEG image data",
-    'gif' => "GIF image data",
-    'png' => "PNG image",
-    'mid' => "MIDI data",
-    'gz'  => "gzip compressed data"
-  }
 
   def self.set_dname(file, description)
     title, artist, album = description.split(/\s*-\s*/)
@@ -130,22 +165,13 @@ class FirefoxHelper
     Dir.chdir(scandir) do
       ftypes.each do |ftype|
         fsizes = {}
-        flist  = `find . -type f | xargs file`.split("\n")
-        next if flist.empty?
-        flist = flist.grep(/#{FilePtn[ftype]}/).map do |line|
-          line.chomp.sub(/:.*$/, '')
-        end
+        flist  = HarvestFile.find_matching_files(ftype, options)
         HarvestFile.check_files(ftype, flist, options)
       end
     end
   end
 
   def self.harvest(scandir, *ftypes)
-    ftypes.each do |ftype|
-      unless FilePtn[ftype]
-        raise "File type #{ftype} not supported - need identification"
-      end
-    end
     if getOption(:server)
       while true
         _harvest(scandir, ftypes)
@@ -172,6 +198,7 @@ if (__FILE__ == $0)
         ['--copy',    '-k', 0],
         ['--notify',  '-n', 0],
         ['--server',  '-s', 0],
+        ['--size',    '-S', 1],
         ['--verbose', '-v', 0],
         ['--wait',    '-w', 1]
   )
