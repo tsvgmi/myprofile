@@ -155,7 +155,6 @@ class LyricSource
         end
       end
     end
-    p content.class
     Hpricot(content)
   end
 
@@ -188,30 +187,40 @@ class LyricSource
   def auto_get(track)
     @curtrack = track
     cname     = to_clean_ascii(track.name)
-    cartist   = to_clean_ascii(track.artist)
+    cartist   = to_clean_ascii(track.artist).split(/,\s+/)
     ccomposer = to_clean_ascii(track.composer)
     pg        = fetch_hpricot(self.page_url(track.name))
+
+    Plog.info "Search for #{cname}/#{cartist}/#{ccomposer}"
     wset      = find_match(pg, cname, cartist, ccomposer)
+    Plog.info "Found #{wset.size} matching entries"
 
     mset = []
     wset.each do |rec|
+      p rec
       wname, wartist, wcomposer, href = rec
       if wname.is_a?(Array)
         next unless wname.include?(cname)
-        if wcomposer.include?(ccomposer) || wartist.include?(cartist)
-          return extract_text(track.name, rec, false)
+        if (wcomposer.include?(ccomposer) || 
+            (wartist & cartist).size > 0)
+          mset << [track.name, rec, false]
+          next
         end
       else
         next unless (wname == cname)
-        if (wcomposer == ccomposer) || (wartist == cartist)
-          return extract_text(track.name, rec, false)
+        if ((wcomposer == ccomposer) ||
+            (wartist & cartist).size > 0)
+          mset << [track.name, rec, false]
+          next
         end
       end
-      mset << [track.name, rec]
+      mset << [track.name, rec, true]
     end
-    if mset.size > 0
-      name, rec = mset.shift
-      return extract_text(name, rec, true)
+    mset.each do |name, rec, xtype|
+      result = extract_text(name, rec, xtype)
+      unless result.empty?
+        return result
+      end
     end
     ""
   end
@@ -290,7 +299,7 @@ class LyYeuCaHat < LyricSource
               sub(/\.html$/, '').gsub(/-/, ' '))
       cref      = arow.search("//span.gensmall")[1]
       wcomposer = to_clean_ascii(cref.children[3].to_s)
-      match_info << [wname, wartist, wcomposer, href]
+      match_info << [wname, [wartist], wcomposer, href]
     end
     match_info
   end
@@ -337,15 +346,21 @@ class LyZing < LyricSource
   # Get and parse automatically
   # @param [ITuneTrack] track
   def find_match(pg, cname, cartist, ccomposer)
-    unless sblock = pg.search("div.first-search-song")
-      return []
+    result = []
+    ["div.first-search-song", "div.content-item.ie-fix"].each do |div_ident|
+       pg.search(div_ident).each do |adiv|
+          if link = adiv.search("a._trackLink")[0]
+            wname   = to_clean_ascii(link.inner_text)
+            break unless wname == cname
+            wartist = to_clean_ascii(adiv.search("a.txtBlue")[0].inner_text)
+            next unless cartist.include?(wartist)
+            result << [wname, [wartist], "", link['href']]
+          else
+            Plog.warn "No link found for #{adiv}"
+          end
+       end
     end
-    unless link = sblock.search("a._trackLink")[0]
-      return []
-    end
-    wname   = to_clean_ascii(link.inner_text)
-    wartist = to_clean_ascii(sblock.search("a.txtBlue")[0].inner_text)
-    [[wname, wartist, "", link['href']]]
+    result
   end
 
   def extract_text(title, rec, confirm = false)
@@ -388,10 +403,16 @@ class LyJustSome < LyricSource
       bname     = URI.unescape(File.basename(href))
       checklink = bname.sub(/-lyrics$/i, '').vnto_ascii.downcase.gsub(/-/, ' ')
       if (checklink =~ /#{cname}/)
-        if (checklink =~ /#{cartist}/)
-          wlinks << [cname, cartist, "", href]
-        else
-          wlinks << [cname, "", "", href]
+        found = false
+        cartist.each do |cartist0|
+          if (checklink =~ /#{cartist0}/)
+            wlinks << [cname, [cartist0], "", href]
+            found = true
+            break
+          end
+        end
+        unless found
+          wlinks << [cname, [""], "", href]
         end
       end
     end
@@ -437,7 +458,7 @@ class LyVPortal < LyricSource
       auth = ele0.at('a.author')
       wcomposer = to_clean_ascii(auth.inner_text).strip
       next unless link
-      wlinks << [wname, "", wcomposer, href]
+      wlinks << [wname, [""], wcomposer, href]
     end
     wlinks
   end
@@ -553,6 +574,7 @@ class LyNhacTui < LyricSource
       wartist = row.search("div.info-song//a").map do |lartist|
         to_clean_ascii(lartist.inner_text)
       end
+      next unless ((cartist & wartist).size > 0)
       matchset << [wname, wartist, "", href]
     end
     matchset

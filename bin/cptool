@@ -30,6 +30,20 @@ function f_killApp {
   fi
 }
 
+#==========================================================================
+# Function:    [f_delete10Net]
+# Description: .
+#==========================================================================
+function f_delete10Net {
+  typeset gwif
+
+  set -- $(netstat -nrf inet | egrep "^10 ")
+  if [ $# -gt 2 ]; then
+    gwif=$2
+    F_surun route delete -net 10.0.0.0 $gwif 255.0.0.0
+  fi
+}
+
 #------------------------------------------------ Begin of script ---
 #------------------------------------------------ Begin of script ---
 #------------------------------------------------ Begin of script ---
@@ -117,53 +131,50 @@ case $oper in
 
   # Split vpn (an interface is vpn)
   connect-etspvpn)
-    connected=
-    for intf in en0 en1 en2; do
-      if ifconfig $intf | egrep "inet.*10\.50\."; then
-        F_logProgress "Detecting VPN interface at $intf"
-        rm -f ~/.ssh/master*
-        F_system $EM_MYPROG splitvpn etrade $intf
-        connected=true
+    (
+      date
+      connected=
+      for intf in en0 en1 en2; do
+        if ifconfig $intf | egrep "inet.*10\.50\."; then
+          F_logProgress "Detecting VPN interface at $intf"
+          rm -f ~/.ssh/master*
+          F_system $EM_MYPROG splitvpn etrade $intf
+          connected=true
+        fi
+      done
+      if [ ! "$connected" ]; then
+        F_logError "No 10.50.x address detected"
       fi
-    done
-    if [ ! "$connected" ]; then
-      F_logError "No 10.50.x address detected"
-    fi
-    open -a "Microsoft Communicator"
-    open -a 'Microsoft Outlook'
-    rm -f ~/.ssh/master*
-    ;;
-
-  _killasroot)
-    f_killApp $@
+      open -a "Microsoft Communicator"
+      open -a 'Microsoft Outlook'
+      rm -f ~/.ssh/master*
+    ) | tee -a ~/.tool/cptool-$oper.log
     ;;
 
   connect-home|connect-homewl)
-    open "/System/Library/PreferencePanes/Dock.prefPane"
-    f_killApp Microsoft.Messenger Microsoft.Communicator Microsoft.Outlook \
-        Synergyd Plex.Media.Server
-    F_surun $EM_MYPROG _killasroot TrendMicro
-    rm -f ~/.ssh/master*
+    (
+      date
+      open "/System/Library/PreferencePanes/Dock.prefPane"
+      f_killApp Microsoft.Messenger Microsoft.Communicator Microsoft.Outlook \
+          Synergyd Plex.Media.Server
+      F_surun $EM_MYPROG _killasroot TrendMicro
+      f_delete10Net
+      rm -f ~/.ssh/master*
+    ) | tee -a ~/.tool/cptool-$oper.log
     ;;
 
   connect-et|connect-etwl)
-    f_killApp Opera iTunes jDownloader Plex.Media.Server YouControlTunesEngine \
-        Synergyd
-    open -a "Microsoft Communicator"
-    open -a "Microsoft Outlook"
-    open "/System/Library/PreferencePanes/Dock.prefPane"
-    F_surun $EM_MYPROG _killasroot TrendMicro
-    set -- $(netstat -nrf inet | egrep "^10 ")
-    if [ $# -gt 2 ]; then
-      gwif=$2
-      F_surun route delete -net 10.0.0.0 $gwif 255.0.0.0
-    fi
-    rm -f ~/.ssh/master*
-    ;;
-
-  connect-etoffice)
-    F_exec $EM_MYPROG rsynergy
-    rm -f ~/.ssh/master*
+    (
+      date
+      f_killApp Opera iTunes jDownloader Plex.Media.Server YouControlTunesEngine \
+         Synergyd
+      open -a "Microsoft Communicator"
+      open -a "Microsoft Outlook"
+      open "/System/Library/PreferencePanes/Dock.prefPane"
+      F_surun $EM_MYPROG _killasroot TrendMicro
+      f_delete10Net
+      rm -f ~/.ssh/master*
+    ) | tee -a ~/.tool/cptool-$oper.log
     ;;
 
   #------------------ Kill off all non-essential app to preserve battery ---
@@ -171,6 +182,10 @@ case $oper in
     f_killApp MicrosoftKeyboardHelper Microsoft.Database.Daemon \
 	EyeTV.Helper Glims.Agent Little.Snitch.UIAgent \
 	MarcoPolo Synergyd
+    ;;
+
+  _killasroot)
+    f_killApp $@
     ;;
 
   *)

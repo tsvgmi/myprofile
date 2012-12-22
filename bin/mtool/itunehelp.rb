@@ -62,22 +62,27 @@ module ITune
     # @param track ITune Track to check for
     def self.prepare_track_update(track)
       itune    = self.app
-      curtrack = itune.current_track.get
-      if (track == curtrack)
-        invisual = itune.visuals_enabled.get
-        Plog.debug "Pausing play"
-        itune.pause
-        yield
+      begin
+        curtrack = itune.current_track.get
+        if (track == curtrack)
+          invisual = itune.visuals_enabled.get
+          Plog.debug "Pausing play"
+          itune.pause
+          yield
 
-        #--- Toggle visual to refresh lyric --- 
-        if invisual
-          Plog.debug "Toggle visual"
-          itune.visuals_enabled.set(false)
-          itune.visuals_enabled.set(true)
+          #--- Toggle visual to refresh lyric --- 
+          if invisual
+            Plog.debug "Toggle visual"
+            itune.visuals_enabled.set(false)
+            itune.visuals_enabled.set(true)
+          end
+          Plog.debug "Resuming play"
+          itune.play
+        else
+          yield
         end
-        Plog.debug "Resuming play"
-        itune.play
-      else
+      rescue => errmsg
+        p errmsg
         yield
       end
     end
@@ -283,6 +288,7 @@ module ITune
           end
           @track.comment = Time.now.strftime("%y.%m.%d.%H.%M.%S")
         end
+        Plog.info "Updated"
         return true
       else
         clyrics = @track[:lyrics]
@@ -606,7 +612,8 @@ module ITune
         lyrics           = atrack[:lyrics]
         next if (lyrics.size < 200)
         name = atrack[:name]
-        lyrics = lyrics.gsub(//, "\n").split(/\n/)
+        lyrics = lyrics.gsub(/
+/, "\n").split(/\n/)
         result = []
         bpara  = true
         lyrics.each do |l|

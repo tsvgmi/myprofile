@@ -37,9 +37,9 @@ class HarvestFile
     if @ftype == 'mp3'
       m3info = Mp3File.new(@sfile)
       puts m3info.to_yaml if @options[:verbose]
-      fname  = m3info.tag['title']
+      fname  = m3info.tag['title'] || 'unknown'
       artist = m3info.tag['artist'] || 'unknown'
-      artist = artist.sub(/,.*$/, '')
+      artist = artist.sub(/,.*$/, '').strip
       album  = m3info.tag['album'] || 'unknown'
       brate  = m3info.bitrate
       ddir   = "#{ddir}/#{artist}/#{album}"
@@ -100,6 +100,7 @@ class HarvestFile
     
     purged_list = cache_list - current_files
     if purged_list.size > 0
+      Plog.info "Purging #{purged_list.size} files"
       purged_list.each do |afile|
         @@filetypes.delete(afile)
       end
@@ -164,7 +165,6 @@ class FirefoxHelper
     options[:destdir] ||= Dir.pwd
     Dir.chdir(scandir) do
       ftypes.each do |ftype|
-        fsizes = {}
         flist  = HarvestFile.find_matching_files(ftype, options)
         HarvestFile.check_files(ftype, flist, options)
       end
