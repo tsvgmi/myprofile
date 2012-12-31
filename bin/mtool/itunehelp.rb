@@ -790,6 +790,15 @@ module ITune
             updset[:artist]       = artist
             atrack.updates(updset)
           end
+        when 'track.name'
+          updset = {}
+          if name =~ /^(\d+)\s*[-\.]?\s*/
+            trackno = $1.to_i
+            title   = $'
+            updset[:track_number] = trackno
+            updset[:name]         = title
+            atrack.updates(updset)
+          end
         when 'name.group'
           title, group = atrack.name.split(/\s*[-\(\)]\s*/)
           next unless group

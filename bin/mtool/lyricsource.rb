@@ -140,7 +140,13 @@ class LyricSource
       while true
         # Sleep must be first?
         sleep(1)
-        pready = @safari.document.do_JavaScript("document.readyState").first
+        unless pready = @safari.document.do_JavaScript("document.readyState")
+          Plog.info "Waiting for Safari"
+          @safari.activate
+          next
+        end
+
+        pready = pready.first
         if pready == "complete"
           Plog.debug "Document completed."
           content = @safari.document.source.get.first

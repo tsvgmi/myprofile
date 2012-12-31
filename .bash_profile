@@ -17,20 +17,10 @@ if [ $? -eq 0 ]; then
   [ -f ~/.profile_priv ] && . ~/.profile_priv
 fi
 
-##
-# Your previous /Users/thienvuong/.bash_profile file was backed up as /Users/thienvuong/.bash_profile.macports-saved_2010-08-22_at_16:29:23
-##
-
-# MacPorts Installer addition on 2010-08-22_at_16:29:23: adding an appropriate PATH variable for use with MacPorts.
-export PATH=/opt/local/bin:/opt/local/sbin:$PATH
-# Finished adapting your PATH environment variable for use with MacPorts.
-
-
-##
-# Your previous /Users/thienvuong/.bash_profile file was backed up as /Users/thienvuong/.bash_profile.macports-saved_2011-08-22_at_00:42:28
-##
-
 # MacPorts Installer addition on 2011-08-22_at_00:42:28: adding an appropriate PATH variable for use with MacPorts.
 export PATH=/opt/local/bin:/opt/local/sbin:$PATH
 # Finished adapting your PATH environment variable for use with MacPorts.
 
+unset LD_LIBRARY_PATH
+
+#[[ -s "$HOME/.rvm/scripts/rvm" ]] && source "$HOME/.rvm/scripts/rvm" # Load RVM into a shell session *as a function*
