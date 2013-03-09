@@ -762,7 +762,7 @@ module ITune
           next unless name
           atrack.updates(:name => artist, :artist => name)
         when 'artist.name'
-          artist, title = atrack.name.split(/\s*-\s*/)
+          artist, title = atrack.name.split(/\s*[-\/]\s*/)
           next unless title
           atrack.updates(:name => title, :artist => artist)
         # Track in form of title - artist

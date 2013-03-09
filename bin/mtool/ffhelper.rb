@@ -18,12 +18,15 @@ class HarvestFile
     @ftype   = ftype
     @options = options
     @ssize   = 0
+    if minsize = @options[:minsize]
+      @minsize = minsize.to_i * 1024
+    end
   end
 
   def has_changed?
     newsize = File.size(@sfile)
     if newsize != @ssize
-      #Plog.info "#{@sfile} chages from #{@ssize} to #{newsize}"
+      #Plog.info "#{@sfile} changes from #{@ssize} to #{newsize}"
       STDERR.print "F"
       STDERR.flush
       @ssize = newsize
@@ -58,15 +61,27 @@ class HarvestFile
   end
 
   def self_organize
-    here = @options[:destdir] || Dir.pwd
+    here  = @options[:destdir] || Dir.pwd
     dfile = get_dest_name(here)
     next unless dfile
+    if test(?f, dfile)
+      Plog.warn "#{File.basename(dfile)} already exist.  Skip"
+      FileUtils.remove(@sfile, :verbose=>true)
+      return false
+    end
     unless test(?d, File.dirname(dfile))
       FileUtils.mkdir_p(File.dirname(dfile))
     end
     if @options[:copy]
       FileUtils.cp(@sfile, dfile, :verbose=>true)
     else
+      if @minsize && (@minsize > File.size(@sfile))
+        Plog.info "File #{@sfile} is too small: #{File.size(@sfile)}"
+        if File.mtime(@sfile) < (Time.now - 300)
+          FileUtils.remove(@sfile, :verbose=>true)
+        end
+        return false
+      end
       Plog.info "Moving #{@sfile} to #{dfile}"
       begin
         FileUtils.move(@sfile, dfile)
@@ -75,17 +90,20 @@ class HarvestFile
         p errmsg
       end
     end
+    true
   end
 
   FilePtn = {
+    'avi' => "AVI",
+    'flv' => "Macromedia Flash data",
+    'gif' => "GIF image data",
+    'gz'  => "gzip compressed data",
+    'jpg' => "JPEG image data",
+    'mid' => "MIDI data",
+    'mkv' => "Matroska",
     'mp3' => "Audio file|MPEG ADTS",
     'mp4' => "MPEG v4",
-    'flv' => "Macromedia Flash data",
-    'jpg' => "JPEG image data",
-    'gif' => "GIF image data",
-    'png' => "PNG image",
-    'mid' => "MIDI data",
-    'gz'  => "gzip compressed data"
+    'png' => "PNG image"
   }
 
   @@filetypes = {}
@@ -172,12 +190,13 @@ class FirefoxHelper
   end
 
   def self.harvest(scandir, *ftypes)
+    wait = (getOption(:wait) || 30).to_i
     if getOption(:server)
       while true
         _harvest(scandir, ftypes)
         STDERR.print "."
         STDERR.flush
-        sleep(5)
+        sleep(30)
       end
     else
       _harvest(scandir, ftypes)
@@ -196,9 +215,8 @@ if (__FILE__ == $0)
   FirefoxHelper.handleCli(
         ['--destdir', '-d', 1],
         ['--copy',    '-k', 0],
-        ['--notify',  '-n', 0],
         ['--server',  '-s', 0],
-        ['--size',    '-S', 1],
+        ['--minsize', '-S', 1],
         ['--verbose', '-v', 0],
         ['--wait',    '-w', 1]
   )

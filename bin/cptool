@@ -103,7 +103,6 @@ case $oper in
     (
       ifconfig
       netstat -nrf inet
-      echo vpnhelper $dest split $vpnif
       F_rbrun vpnhelper $dest split $vpnif
     ) 2>&1 | \
     tee ~/$oper.log
@@ -140,8 +139,10 @@ case $oper in
           rm -f ~/.ssh/master*
           F_system $EM_MYPROG splitvpn etrade $intf
           connected=true
+          break
         fi
       done
+      exit
       if [ ! "$connected" ]; then
         F_logError "No 10.50.x address detected"
       fi

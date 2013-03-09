@@ -19,16 +19,17 @@ case $oper in
 
   #@Use: harvest-cache [-k] [-s] [-w time] [-t sound|image] [filetype ....]
   harvest-cache)
-    ftypes= ropt=
-    while getopts :knst:w: i; do
+    ftypes= ropt= browser=firefox
+    while getopts :b:knsS:t:w: i; do
       case $i in
+      b) browser=$OPTARG ;;
       [nks]) ropt="$ropt -$i" ;;
-      w)     ropt="$ropt -$i $OPTARG" ;;
+      [Sw])  ropt="$ropt -$i $OPTARG" ;;
       t)
         case $OPTARG in
         sound) ftypes="mp3 mid" ;;
         image) ftypes="jpg gif png" ;;
-        video) ftypes="mp4" ;;
+        video) ftypes="mp4 flv mkv avi" ;;
         zip)   ftypes="gz" ;;
         *)     F_abort "Support sound/image only" ;;
         esac
@@ -41,7 +42,14 @@ case $oper in
     [ $# -gt 0 ] || F_usageOper $oper
     case $EM_OSTYPE in
     osx)
-      bdir=$HOME/Library/Caches/Firefox/Profiles
+      case $browser in
+      chrome)
+        bdir=$HOME/Library/Caches/Google/Chrome/Default
+        ;;
+      *)
+        bdir=$HOME/Library/Caches/Firefox/Profiles
+        ;;
+      esac
       ;;
     *)
       F_abort "Unsupported OS: $EM_OSTYPE"

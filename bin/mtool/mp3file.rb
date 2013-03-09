@@ -105,6 +105,25 @@ class Mp3Shell
     true
   end
 
+  def set_properties(*args)
+    require 'yaml'
+
+    args.each do |assign|
+      name, value = assign.split(/=/)
+      next unless value
+      case name
+      when 'title'
+        @info.tag.title = value
+      when 'artist'
+        @info.tag.artist  = value
+      else
+        Plog.warn "Unknown property to set: #{name}"
+      end
+    end
+    @info.close
+    @info.to_yaml
+  end
+
   def self.set_properties(*files)
     files.each do |afile|
       bname = File.basename(afile).sub(/\..mp3$/, '')

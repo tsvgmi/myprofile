@@ -30,7 +30,9 @@ function sconnect {
 
   case ${host%%.*} in
   *m7|s2poc*m3)
+    proxyhost=adm1m7.etrade.com
     proxyhost=poc1w80m7.etrade.com
+    proxyhost=lxdm19m7.etrade.com
     ;;
   *m3)
     proxyhost=adm0m3.etrade.com

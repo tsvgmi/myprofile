@@ -91,7 +91,7 @@ class WorkDir
         break
       end
       if @options[:burn]
-        DVDBackup._burn_disk(ofile)
+        DVDBackup.burn_disk(ofile)
         FileUtils.rm(ofile, :verbose=>true)
       end
       ofiles << ofile
@@ -102,7 +102,6 @@ class WorkDir
   end
 end
 
-# Helper for vnc script.
 class DVDBackup
   extendCli __FILE__
 
@@ -121,11 +120,11 @@ class DVDBackup
   # dvdbackup.rb burn_images -p8 dvd-01.iso
   def self.burn_images(*isofiles)
     isofiles.each do |afile|
-      _burn_disk(afile, getOption)
+      burn_disk(afile, getOption)
     end
   end
 
-  def self._burn_disk(afile, options = {})
+  def self.burn_disk(afile, options = {})
     bopt = ""
     unless options[:verify]
       bopt += " -noverifyburn"
