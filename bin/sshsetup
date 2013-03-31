@@ -96,11 +96,11 @@ case $oper in
     jobs=10
     cd $HOME
     for host in $*; do
-      rsopt="--rsh=ssh --exclude .svn --delete --delete-excluded"
+      rsopt="--rsh=ssh --exclude .svn --exclude .git --delete --delete-excluded"
       rsopt="$rsopt $(f_rsoption $host)"
       F_parallel $jobs - rsync $rsopt -vaz myprofile $user@$host:
       if [ "$doetfw" ]; then
-        F_parallel $jobs - rsync $rsopt -vaz etfw2 --exclude /etfw2/pem/ $user@$host:
+        Ft_parallel $jobs - rsync $rsopt -vaz etfw2 --exclude /etfw2/pem/ $user@$host:
       fi
       if [ "$dotool" ]; then
         F_parallel $jobs - rsync $rsopt -vaz emtools $user@$host:

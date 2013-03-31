@@ -28,10 +28,10 @@ class VideoFile
     ['srt', 'eng.srt', 'idx'].each do |sub|
       subfile = "#{@bname}.#{sub}"
       if test(?f, subfile)
-        if sub == "srt"
+        if sub =~ /srt$/
           @subfile = Tempfile.new("srt")
           File.read(subfile).split("\n").each do |l|
-            @subfile.puts l + " "
+            @subfile.puts l.chomp + " "
           end
           @subfile.close
           return @subfile.path
@@ -92,7 +92,7 @@ class MKVMux
       next unless afile =~ /\.(avi|mp4)$/
       video = VideoFile.new(afile, getOption)
       ofile = video.mkv_file
-      if test(?f, ofile)
+      if test(?f, ofile) && !getOption(:force)
         Plog.warn "MKV file found for #{afile}. skip"
         next
       end
@@ -111,7 +111,8 @@ end
 
 if (__FILE__ == $0)
   MKVMux.handleCli(
-    ['--odir', '-d', 1]
+    ['--force', '-f', 0],
+    ['--odir',  '-d', 1]
   )
 end
 

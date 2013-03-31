@@ -157,8 +157,9 @@ case $oper in
       date
       open "/System/Library/PreferencePanes/Dock.prefPane"
       f_killApp Microsoft.Messenger Microsoft.Communicator Microsoft.Outlook \
-          Synergyd Plex.Media.Server
+          Synergyd
       F_surun $EM_MYPROG _killasroot TrendMicro
+      open -a "Plex Media Server"
       f_delete10Net
       rm -f ~/.ssh/master*
     ) | tee -a ~/.tool/cptool-$oper.log
