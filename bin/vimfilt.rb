@@ -340,7 +340,7 @@ EOH
     (ARGV.size > 1) || VimFilt.cliUsage
     file  = ARGV.shift
     ftype = getOption(:type) || File.extname(file)[1..-1]
-    unless ftype
+    if !ftype && (file != "-")
       File.open(file) do |fid|
       aline = fid.gets.chomp
 	if (aline =~ /perl/)

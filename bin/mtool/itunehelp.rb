@@ -14,7 +14,8 @@ require 'mtool/core'
 require 'mtool/mp3file'
 require 'mtool/vnmap'
 require 'mtool/dbaccess'
-require 'mtool/tunes'
+#require 'mtool/tunes'
+require 'appscript'
 
 class HashYaml
   def initialize(yfile)
@@ -50,7 +51,8 @@ module ITune
 
       unless @@app
         ITuneHelper.notify "#{File.basename(__FILE__)} connecting to iTunes"
-        @@app = Appscript::app.by_name('iTunes', Tunes)
+        #@@app = Appscript::app.by_name('iTunes', Tunes)
+        @@app = Appscript::app('iTunes')
       end
       @@app
     end
@@ -175,11 +177,19 @@ module ITune
     def set_lyric(storetrack)
       @track.lyrics.set(storetrack[:content])
       if storetrack[:composer] && @track.composer.get.empty?
-        @track.composer.set(storetrack[:composer])
+        tcomposer = storetrack[:composer]
+        if tcomposer.is_a?(Array)
+          tcomposer = tcomposer.first
+        end
+        @track.composer.set(tcomposer)
       end
       if @track.name.get !~ /[\(\[]/
         if storetrack[:name] && !storetrack[:name].empty?
-          @track.name.set(storetrack[:name])
+          tname = storetrack[:name]
+          if tname.is_a?(Array) 
+            tname = tname.first
+          end
+          @track.name.set(tname)
         end
       end
       @track.comment.set(Time.now.strftime("%y.%m.%d.%H.%M.%S"))
@@ -314,11 +324,18 @@ module ITune
       fod.close
     end
 
+    def sizeof
+      tsize = 0
+      self.each_track do |atrack, iname|
+        bsize = ((atrack[:size] + 2047)/2048)*2048
+        puts "%8d %8d %s" % [atrack[:size], bsize, atrack[:name]]
+        tsize += bsize
+      end
+      tsize
+    end
+
     def print_lyrics(prefix = "lyrics")
-      lydata    = {}
       processed = {}
-      fcount    = 0
-      songs     = []
       self.each_track do |atrack, iname|
         if processed[iname]
           Plog.info "Skip repeated #{atrack[:name]}"
@@ -326,40 +343,28 @@ module ITune
         end
         processed[iname] = true
         lyrics           = atrack[:lyrics]
-        next if (lyrics.size < 200)
-        name = atrack[:name]
-        lyrics = lyrics.gsub(/
-/, "\n").split(/\n/)
-        result = []
-        bpara  = true
-        lyrics.each do |l|
-          if bpara
-            if l.strip.empty?
-              result << l
-            else
-              result << "p=. #{l}"
-              bpara = false
-            end
-          else
-            if l.strip.empty?
-              bpara = true
-            end
-            result << l
-          end
+        if (lyrics.size < 200)
+          Plog.warn "No lyrics found in #{iname}"
+          next
         end
-        title  = "\nh2. #{name} - #{atrack[:artist]} - #{atrack[:grouping]}\n\n"
-        lydata[iname] = title + "\n" + result.join("\n")
-        songs << iname
-        STDERR.print ".#{lydata.size}"
-        STDERR.flush
-        if lydata.size >= 100
-          _dump_lyrics(songs, lydata, prefix)
-          lydata = {}
-          songs  = []
-        end
+        name   = atrack[:name]
+        lyrics = lyrics.gsub(/[\n]/, "\n").split(/\n/)
+        title  = "#{name} - #{atrack[:artist]} - #{atrack[:grouping]}"
+        ofile  = "#{iname}.txt".gsub(/\s+/, '_')
+        fod = File.open(ofile, "w")
+        fod.puts title
+        fod.puts
+        fod.puts lyrics
+        fod.close
+        Plog.info "File #{ofile} written"
       end
-      if lydata.size > 0
-        _dump_lyrics(songs, lydata, prefix)
+      true
+    end
+
+    def print_content
+      self.each_track do |atrack, iname|
+        puts "| %-20.20s | %-10.10s | %-10.10s |" %
+                [atrack[:name], atrack[:composer], atrack[:grouping]]
       end
       true
     end
@@ -690,9 +695,19 @@ module ITune
       true
     end
 
-    def self.print_lyrics(playlist, exdir="./lyrics")
+    def self.print_lyrics(playlist)
       options = handle_common_options
       ITuneFolder.new(playlist, options).print_lyrics
+    end
+
+    def self.sizeof(playlist)
+      options = handle_common_options
+      ITuneFolder.new(playlist, options).sizeof
+    end
+
+    def self.print_content(playlist, exdir="./content")
+      options = handle_common_options
+      ITuneFolder.new(playlist, options).print_content
     end
 
     def self.clone_composer(playlist, dbfile="./composer.yml")

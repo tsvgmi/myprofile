@@ -1,54 +1,38 @@
 --- !ruby/object:Alias 
 cfile: /Users/tvuong/.alias.yml
 dellist: 
-  cd: 
-  - "'_cd'"
-  - .alias-common
-  - 2010-07-12 20:13:30.428657 -07:00
-  ct: 
-  - "'cleartool'"
-  - .alias-common
-  - 2010-04-03 21:50:07.864397 -07:00
-  rsyncsol: 
-  - "'rsync --rsync-path=/etrade/pkgs/opensrc/1.0/bin/rsync'"
-  - .alias-common
-  - 2010-04-03 21:50:07.864367 -07:00
-  l: 
-  - "'ls -sFC'"
-  - .alias-common
-  - 2011-12-12 22:38:31.878660 -08:00
-  godsa: 
-  - "'cd2 /etrade/home/tvuong'"
-  - .alias-common
-  - 2010-04-03 21:50:07.864336 -07:00
+  firefox: 
+  - "'/etrade/pkgs/linux/intel/firefox3/3.6/firefox'"
+  - ""
+  - 2011-04-10 21:07:54.080116 -07:00
   etenv: 
   - "'emtool etenv'"
   - .alias-common
   - 2010-04-03 21:50:07.864427 -07:00
+  gfeed: 
+  - "'cd2 /etrade/home/tvuong/etpro/MarketFeedSystem/FeedDataClient/sampleFeedDataClient'"
+  - ""
+  - 2011-03-07 13:40:09.147580 -08:00
+  rm: 
+  - "'_rm'"
+  - .alias-common
+  - 2009-03-06 18:29:46.695829 -08:00
   katool: 
   - "'/Users/thienvuong/kamplayer/bin/katool'"
   - .alias-common
   - 2012-11-25 16:05:18.994145 -08:00
-  emgrep: 
-  - "'emtool grep'"
-  - .alias-common
-  - 2011-04-10 21:07:54.080147 -07:00
   edtool: 
   - "'etoolset ed'"
   - .alias-common
   - 2011-02-08 11:32:40.084338 -08:00
+  godsa: 
+  - "'cd2 /etrade/home/tvuong'"
+  - .alias-common
+  - 2010-04-03 21:50:07.864336 -07:00
   vi: 
   - "'vim'"
   - .alias-common
   - 2008-05-28 23:13:08.268527 -07:00
-  mail: 
-  - "'mutt'"
-  - .alias-common
-  - 2012-01-18 22:09:38.386549 -08:00
-  ksar: 
-  - "'/etrade/pkgs/linux/intel/kSar/5.0.6.rhas5.x86_64/run.sh &'"
-  - ""
-  - 2011-03-07 13:40:09.147550 -08:00
   grai: 
   - "'cd2 /home/thien/etool/staf-rails'"
   - .alias-common
@@ -57,14 +41,38 @@ dellist:
   - "'cleartool setview -login'"
   - ""
   - 2009-06-30 00:17:19.144812 -07:00
-  ems: 
-  - "'emssh emconnect'"
+  ksar: 
+  - "'/etrade/pkgs/linux/intel/kSar/5.0.6.rhas5.x86_64/run.sh &'"
   - ""
-  - 2011-04-10 21:07:54.080084 -07:00
-  gfeed: 
-  - "'cd2 /etrade/home/tvuong/etpro/MarketFeedSystem/FeedDataClient/sampleFeedDataClient'"
-  - ""
-  - 2011-03-07 13:40:09.147580 -08:00
+  - 2011-03-07 13:40:09.147550 -08:00
+  l: 
+  - "'ls -sFC'"
+  - .alias-common
+  - 2011-12-12 22:38:31.878660 -08:00
+  cd: 
+  - "'_cd'"
+  - .alias-common
+  - 2010-07-12 20:13:30.428657 -07:00
+  ct: 
+  - "'cleartool'"
+  - .alias-common
+  - 2010-04-03 21:50:07.864397 -07:00
+  mail: 
+  - "'mutt'"
+  - .alias-common
+  - 2012-01-18 22:09:38.386549 -08:00
+  gvim: 
+  - "'xvim'"
+  - 
+  - 2008-05-08 00:12:39.240669 -07:00
+  emgrep: 
+  - "'emtool grep'"
+  - .alias-common
+  - 2011-04-10 21:07:54.080147 -07:00
+  rsyncsol: 
+  - "'rsync --rsync-path=/etrade/pkgs/opensrc/1.0/bin/rsync'"
+  - .alias-common
+  - 2010-04-03 21:50:07.864367 -07:00
   s22: 
   - "'emssh run -th tvuong@adm1m7.etrade.com emtools/bin/screens resume'"
   - ""
@@ -77,22 +85,10 @@ dellist:
   - "'emssh run -th tvuong@poc1w80m7.etrade.com emtools/bin/screens resume'"
   - ""
   - 2012-10-25 09:26:52.265144 -07:00
-  gvim: 
-  - "'xvim'"
-  - 
-  - 2008-05-08 00:12:39.240669 -07:00
-  rm: 
-  - "'_rm'"
-  - .alias-common
-  - 2009-03-06 18:29:46.695829 -08:00
   which: 
   - "'alias | /usr/bin/which --tty-only --read-alias --show-dot --show-tilde'"
   - .alias-common
   - 2012-11-18 23:36:28.682356 -08:00
-  firefox: 
-  - "'/etrade/pkgs/linux/intel/firefox3/3.6/firefox'"
-  - ""
-  - 2011-04-10 21:07:54.080116 -07:00
   etrpm: 
   - "'rpm --dbpath /etrade/var/lib/rpm'"
   - ""
@@ -101,13 +97,17 @@ dellist:
   - "'etcmd -s'"
   - .alias-rhas3
   - 2008-05-29 08:45:41.140384 -07:00
+  ems: 
+  - "'emssh emconnect'"
+  - ""
+  - 2011-04-10 21:07:54.080084 -07:00
 oldlist: {}
 
 valias: 
-version: 166
+version: 172
 valias: 
   _ALIAS_VERSION:
-  - "'165'"
+  - "'171'"
   - ".alias-common"
   citrix:
   - "'open https://citrix.etrade.com/vpn/index.html'"
@@ -118,15 +118,18 @@ valias:
   cwa:
   - "'open -a '\''Google Chrome'\'' https://cwa.corp.etradegrp.com'"
   - ".alias-common"
+  dgrep:
+  - "'devtool grep'"
+  - ""
   edemt:
-  - "'emtool ed -d ~/emtools'"
+  - "'devtool ed -d ~/emtools'"
   - ".alias-common"
   edetf:
-  - "'emtool ed -d ~/etfw2'"
+  - "'devtool ed -d ~/etfw2'"
   - ".alias-common"
   edmt:
-  - "'emtool ed -d ~/myprofile'"
-  - ""
+  - "'devtool ed -d ~/myprofile'"
+  - ".alias-common"
   edprof:
   - "'emtool ed -d ~/myprofile'"
   - ".alias-common"
@@ -144,7 +147,7 @@ valias:
   - ".alias-common"
   essh:
   - "'emssh run -h'"
-  - ""
+  - ".alias-common"
   fs:
   - "'fsh -l tvuong'"
   - ".alias-common"
@@ -207,7 +210,7 @@ valias:
   - ".alias-common"
   locate:
   - "'mdfind -name'"
-  - ""
+  - ".alias-common"
   mpshell:
   - "'~/kamplayer/bin/katool mpshell'"
   - ".alias-common"
@@ -245,7 +248,7 @@ valias:
   - "'sconnect'"
   - ".alias-common"
   s3:
-  - "'screens resume -e ^Xx'"
+  - "'screens resume'"
   - ".alias-common"
   s4:
   - "'stmux'"
@@ -276,7 +279,7 @@ valias:
   - ".alias-common"
   ssh:
   - "'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no'"
-  - ""
+  - ".alias-common"
   tgrep:
   - "'etoolset grep'"
   - ".alias-common"
@@ -291,7 +294,7 @@ valias:
   - ".alias-common"
   vssh:
   - "'vagrant ssh'"
-  - ""
+  - ".alias-common"
   vzyum3m:
   - "'sudo vzyum  -c http://lxp6d199m0/yum-repo/rhas5/i386/corp/etem.repo'"
   - ".alias-common"

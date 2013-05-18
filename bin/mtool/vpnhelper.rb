@@ -69,6 +69,7 @@ and route the rest through regular interface
     cmds = vpnroutes(vpnif, tunip)
     cmds << "route delete -net 0.0.0.0 #{tunip} 0.0.0.0"
     cmds << "route add -net 0.0.0.0 #{gwip} 0.0.0.0"
+    ENV.delete('LD_LIBRARY_PATH')
     cmds.each do |acmd|
       Pf.system("sudo #{acmd}", 1)
     end

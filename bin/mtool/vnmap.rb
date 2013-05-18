@@ -13,7 +13,7 @@ class VnMap
   end
 
   def self.to_ascii(string)
-    require 'utfstring'
+    require 'mtool/utfstring'
 
     unless @@rmap
       load_map("#{ENV['EM_HOME_DIR']}/etc/vnmap.yml")

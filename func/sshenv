@@ -26,22 +26,31 @@ function hcd {
 
 function sconnect {
   typeset host=$1
-  typeset proxyhost
+  typeset oper=$2
+  typeset proxyhost=$3
 
-  case ${host%%.*} in
-  *m7|s2poc*m3)
-    proxyhost=adm1m7.etrade.com
-    proxyhost=poc1w80m7.etrade.com
-    proxyhost=lxdm19m7.etrade.com
-    ;;
-  *m3)
-    proxyhost=adm0m3.etrade.com
-    ;;
-  *)
-    proxyhost=lxp6d199m0.etrade.com
-    ;;
-  esac
-  emssh run -th tvuong@$proxyhost emtools/bin/screens resume $@
+  [ "$oper" ] || oper=resume
+  if [ ! "$proxyhost" ]; then
+    case ${host%%.*} in
+    *m7|s2poc*m3)
+      proxyhost=lxdm19m7.etrade.com
+      ;;
+    *m3)
+      proxyhost=adm0m3.etrade.com
+      ;;
+    *m0)
+      proxyhost=lxp6d199m0.etrade.com
+      ;;
+    *)
+      proxyhost=lxdm19m7.etrade.com
+      ;;
+    esac
+  fi
+  emssh run -th tvuong@$proxyhost emtools/bin/screens $oper $@
+}
+
+function emsconnect {
+  sconnect $1 emresume adm0m3
 }
 
 function stmux {

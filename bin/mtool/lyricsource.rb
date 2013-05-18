@@ -231,7 +231,7 @@ class LyricSource
 
     Plog.debug "Search for #{cname}/#{cartist}/#{ccomposer}"
     wset      = find_match(pg, cname, cartist, ccomposer)
-    #sleep(5)
+    sleep(3)
     Plog.debug "Found #{wset.size} matching entries"
 
     # Find another match set?  Is it needed?
@@ -244,9 +244,22 @@ class LyricSource
       unless wcomposer.is_a?(Array)
         wcomposer = [wcomposer]
       end
-      next unless wname.include?(cname)
-      if (wcomposer.include?(ccomposer) || 
-          (wartist & cartist).size > 0)
+      found = false
+      wname.each do |awname|
+        if to_clean_ascii(awname) == cname
+          found = true
+          break
+        end
+      end
+      next unless found
+      found = false
+      wcomposer.each do |awcomposer|
+        if to_clean_ascii(awcomposer) == ccomposer
+          found = true
+          break
+        end
+      end
+      if found || ((wartist & cartist).size <= 0)
         mset << [track.name, rec, false]
         next
       end
@@ -437,7 +450,7 @@ class LyZing < LyricSource
     meta[:composer] = pg.text_at("p.song-info//a.txtBlue")
     meta[:name]     = pg.text_at("h3/strong")
 
-    ["#{title}\nSáng tác: #{meta[:composer]}\n#{lyric}\n#{href}", meta]
+    ["#{title}\nSang tac: #{meta[:composer]}\n#{lyric}\n#{href}", meta]
   end
 end
 
@@ -512,7 +525,7 @@ class LyVPortal < LyricSource
     unless lyric = clean_and_check(lyric, confirm)
       return ["", {}]
     end
-    ["#{title}\nNhạc Sĩ: #{composer}\n\n" + lyric, {}]
+    ["#{title}\nNhac Si: #{composer}\n\n" + lyric, {}]
   end
 end
 
@@ -526,8 +539,10 @@ class LyTkaraoke < LyricSource
       ['SongName', 'Singer', 'SongWriter'].each do |atag|
         wfields[atag] = []
         result = row.search("a.#{atag}").map do |href|
-          values = to_clean_ascii(href.inner_text, "-").
-                gsub(/[\(\)]/, ",").split(/\s*,\s*/)
+          values = href.inner_text.gsub(/[\(\)]/, ",").split(/\s*,\s*/)
+          #if atag != "SongName"
+            #values = values.map{|f| to_clean_ascii(f, "-")}
+          #end
           wfields[atag].concat(values)
         end.join
       end
@@ -612,7 +627,7 @@ class LyNhacTui < LyricSource
       href    = link['href']
       wname   = to_clean_ascii(link.inner_text)
       wartist = to_clean_ascii(row.search("div.singer").inner_text)
-      next unless ((cartist & wartist).size > 0)
+      next if (wname == "") && (wartist == "")
       matchset << [wname, wartist, "", href]
     end
     matchset

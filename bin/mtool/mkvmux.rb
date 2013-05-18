@@ -8,10 +8,12 @@ require File.dirname(__FILE__) + "/../../etc/toolenv"
 require 'fileutils'
 require 'mtool/core'
 
+VideoExt = Regexp.new(/\.(avi|divx|mp4)$/)
+
 class VideoFile
   def initialize(vfile, options = {})
     @vfile   = vfile
-    @bname   = @vfile.sub(/\.(avi|mp4)$/, '')
+    @bname   = @vfile.sub(VideoExt, '')
     @options = options
     # Make this instance var so it survive during lifetime of Videofile
     @subfile = nil
@@ -49,11 +51,14 @@ class MKVMux
 
   def self.check_and_move(input, output, *others)
     if test(?f, output) &&
-      (File.size(output)*1.0 >= (File.size(input)*0.90))
+      (File.size(output)*1.0 >= (File.size(input)*0.80))
       Plog.info "File generated to #{output} successfully"
       FileUtils.move(input, "#{input}.bak", :verbose=>true)
       others.each do |afile|
         FileUtils.move(afile, "#{afile}.bak", :verbose=>true)
+      end
+      if output =~ /\.new$/
+        FileUtils.move(output, output.sub(/\.new$/, ''), :verbose=>true)
       end
       true
     else
@@ -64,32 +69,31 @@ class MKVMux
 
   def self.join_multi(ptn = "")
     wset = {}
-    cmd  = "find . -name '*#{ptn}*cd*' | sort"
-    `#{cmd}`.split("\n").each do |afile|
-      next unless afile =~ /\.(avi|mp4|mkv)$/
+    cmd  = "find . -name '*#{ptn}*'"
+    `#{cmd}`.split("\n").grep(/(cd|dvd)/i).sort.each do |afile|
+      next unless afile =~ /\.(avi|divx|mp4|mkv)$/
       bname = File.dirname(afile) + "/" +
-              File.basename(afile).gsub(/-?cd\d+/, '')
-      p afile
+              File.basename(afile).gsub(/[-_\.]?(cd|dvd)\d+/i, '')
       wset[bname] ||= []
       wset[bname] << afile
     end
-    wset.each do |ofile, components|
+    wset.sort.each do |ofile, components|
       file0  = components.shift
       cplist = "'#{file0}'"
       components.each do |acomp|
         cplist << " '+#{acomp}'"
       end
-      cmd = "mkvmerge --default-language en -o '#{ofile}' #{cplist}"
+      cmd = "mkvmerge --default-language en -o '#{ofile}.new' #{cplist}"
       Pf.system(cmd, 1)
-      check_and_move(file0, ofile, *components)
+      check_and_move(file0, "#{ofile}.new", *components)
     end
     true
   end
 
   def self.merge_subtitle(ptn = "")
-    cmd = "find . -name '*#{ptn}*' | sort"
-    `#{cmd}`.split("\n").each do |afile|
-      next unless afile =~ /\.(avi|mp4)$/
+    cmd = "find . -name '*#{ptn}*'"
+    `#{cmd}`.split("\n").sort.each do |afile|
+      next unless VideoExt.match(afile)
       video = VideoFile.new(afile, getOption)
       ofile = video.mkv_file
       if test(?f, ofile) && !getOption(:force)
@@ -100,9 +104,9 @@ class MKVMux
         Plog.warn "Subtitle file for #{afile} not found.  Skip"
         next
       end
-      cmd = "mkvmerge --default-language en -o '#{ofile}' '#{afile}' '#{subfile}'"
+      cmd = "mkvmerge --default-language en -o '#{ofile}.new' '#{afile}' '#{subfile}'"
       Pf.system(cmd, 1)
-      check_and_move(afile, ofile, subfile)
+      check_and_move(afile, "#{ofile}.new", subfile)
     end
     true
   end
