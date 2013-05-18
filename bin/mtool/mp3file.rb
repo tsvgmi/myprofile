@@ -89,16 +89,21 @@ class Mp3Shell
     end
   end
 
-  def mk_thumbnail(ofile, size)
+  def get_artwork(tplname)
     itype, image = @info.get_image
     unless itype
       Plog.info "No image found for #{@file}" if @options[:verbose]
-      return false
+      return nil
     end
-    dfile = "tempout.#{itype}"
+    dfile = "#{tplname}.#{itype}"
     open(dfile, "w") do |fod|
       fod.write(image)
     end
+    return dfile
+  end
+
+  def mk_thumbnail(ofile, size)
+    dfile = get_artwork("forthumbnail")
     Pf.system("convert '#{dfile}' -adaptive-resize #{size} '#{ofile}'",
         @options[:verbose])
     FileUtils.remove(dfile, :verbose=>true)

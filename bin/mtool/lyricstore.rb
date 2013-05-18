@@ -94,29 +94,12 @@ class LyricCache
     return true
   end
 
+  # Pull the lyrics from mp3, put in an editor, monitor editing and save back
+  # if changes are deteced
   def edit(edfile = nil, wait = true)
-    if @options[:store]
-      wset = [get_value, @track.lyrics]
-    else
-      wset = [@track.lyrics, get_value]
-    end
-
-    lyrics = nil
-    wset.each do |alyrics|
-      unless alyrics.strip.empty?
-        lyrics = alyrics.strip
-        break
-      end
-    end
-
-    unless lyrics
+    unless lyrics = @track.lyrics
       Plog.debug "No lyrics found for #{@track.name} to edit"
       return false
-    end
-
-    # Cache it
-    if get_value.empty?
-      set_value(lyrics)
     end
 
     unless edfile
@@ -133,7 +116,7 @@ class LyricCache
     end
 
     @start_time = Time.now
-    ITuneHelper.notify "Editing lyrics for #{@track.name}"
+    ITune::ITuneHelper.notify "Editing lyrics for #{@track.name}"
     cmd = @options[:editor] ? "open -a #{@options[:editor]}" : "open"
     unless wait
       Pf.system("#{cmd} #{@song_path}", 1)
@@ -141,54 +124,8 @@ class LyricCache
       Pf.system("#{cmd} -FnWt #{@song_path}", 1)
       check_and_update
     end
+    show_in_browser(@song_path)
     true
-  end
-
-  def check_and_update
-    if File.mtime(@song_path) > @start_time
-      content = File.read(@song_path)
-      ITuneHelper.notify "Setting lyrics for #{@track.name} into track"
-      self.set_value(content)
-      if content.strip.empty?
-        clear_track
-      else
-        store_to_track(:force=>true)
-      end
-      @start_time = Time.now
-    end
-    true
-  end
-
-  # Just wait around for track change and
-  def self.edit_server(exdir = "./lyrics", options = {})
-    require 'tempfile'
-
-    curname, edsong = nil, nil
-    folder   = ITuneFolder.new("play", options)
-    tmpfile  = Tempfile.new("it")
-    while true
-      if btrack = folder.get_tracks(true).first
-        if !curname || (btrack.name != curname)
-          Plog.debug "Detect track change to '#{btrack.name}'"
-          curname = btrack.name
-          chksong = new("console", exdir, btrack, options)
-          if chksong.edit(tmpfile.path, false)
-            edsong = chksong
-          end
-        end
-      end
-      _edcheck([edsong], options)
-    end
-    true
-  end
-
-  def self._edcheck(edsongs, options)
-    interval = (options[:interval] || 5).to_i
-    Plog.debug("Waiting for edit ...")
-    sleep(interval)
-    edsongs.each do |edsong|
-      edsong.check_and_update if edsong
-    end
   end
 end
 

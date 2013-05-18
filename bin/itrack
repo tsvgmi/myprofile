@@ -55,6 +55,10 @@ case $oper in
     F_exec irb $@
     ;;
 
+  lyric-monitor)
+    F_rbexec lyricmonitor -e TextMate -c edit_server
+    ;;
+
   *)
     ioper=$(echo $oper | sed 's/-/_/g')
     F_rbexec itunehelp $ioper "$@"

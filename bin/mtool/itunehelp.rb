@@ -6,6 +6,7 @@
 #---------------------------------------------------------------------------
 #+++
 require File.dirname(__FILE__) + "/../../etc/toolenv"
+require 'rubygems'
 require 'mtool/lyricstore'
 require 'yaml'
 require 'fileutils'
@@ -684,7 +685,7 @@ module ITune
 
     def self.monitor_lyrics(exdir = "./lyrics")
       options = handle_common_options
-      LyricCache.edit_server(exdir, options)
+      LyricMonitor.edit_server(options)
     end
 
     def self.clear_lyrics(playlist, src="yeucahat", exdir="./lyrics")
