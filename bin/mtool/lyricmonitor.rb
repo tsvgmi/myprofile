@@ -13,9 +13,11 @@ require 'mtool/itunehelp'
 require 'mtool/mp3file'
 
 module ITune
+  # Monitor iTunes lyrics and display/edit
   class LyricMonitor
     extendCli __FILE__
 
+    # A tract to monitor
     def initialize(itrack, options = {})
       @track     = itrack
       @options   = options
@@ -38,9 +40,11 @@ module ITune
       end
 
       @start_time = Time.now
-      ITuneHelper.notify "Editing lyrics for #{@track.name}"
-      cmd = @options[:editor] ? "open -a #{@options[:editor]}" : "open"
-      Pf.system("#{cmd} #{@song_path}", 1)
+      if editor = @options[:editor]
+        ITuneHelper.notify "Editing lyrics for #{@track.name}"
+        cmd = "open -a #{@options[:editor]}"
+        Pf.system("#{cmd} #{@song_path}", 1)
+      end
       show_in_browser(@song_path)
       true
     end
@@ -54,8 +58,8 @@ module ITune
           clear_lyric
         else
           set_lyric(content)
+          show_in_browser(@song_path)
         end
-        show_in_browser(@song_path)
         @start_time = File.mtime(@song_path)
       end
       true
@@ -68,7 +72,7 @@ module ITune
       begin
         mp3info = Mp3Shell.new(@track.location.path)
         awfile = mp3info.get_artwork("/tmp/artwork")
-        if awfile && (File.size(awfile) > 1024)
+        if awfile && (awfile !~ /xxx$/) && (File.size(awfile) > 1024)
           background = "background: url(#{awfile}) no-repeat center center fixed"
         else
           Plog.info "No image found for #{@track.name}.  Use gradient"
@@ -92,19 +96,45 @@ module ITune
   }
   .transbox {
     width:80%;
-    margin:10% 10%;
+    margin:5% 10%;
+    padding: 5px;
     background-color:#ffffff;
     border:1px solid #888888;
     opacity:0.7;
     filter:alpha(opacity=70); /* For IE8 and earlier */
+    position: relative;
+  }
+  .composer {
+    text-align: right;
+    font-size: 80%;
+  }
+  .info {
+    font-size:  80%;
+    position:   relative;
+    margin-top: 20px;
+    height:     20px;
+    clear:      both;
   }
 </style>
 </head>
 <body><div class=transbox><center>
+<h2>#{@track.name}</h2>
 EOF
         
-        fod.puts(File.read(lfile).gsub(/[\r\n]/, "<br/>"))
-        fod.puts("</div></center></body></html>")
+        lines = File.read(lfile).split(/[\r\n][\r\n]+/)[1..-1]
+        lines = lines.join("\n\n").gsub(/[\r\n]/, "\n<br>")
+
+        fod.puts(lines)
+        fod.puts <<EOF
+</center>
+<div class=info>
+<b>Artist:</b> #{@track.artist}
+<b>Author:</b> #{@track.composer}
+<b>Album:</b>  #{@track.album}
+</div>
+</div>
+</body></html>
+EOF
       end
       Pf.system("open -a Safari #{htfile}", 1)
     end
@@ -113,12 +143,19 @@ EOF
       Plog.info "#{@track.name}. Clearing lyrics"
       @track.lyrics  = ""
       @track.comment = ""
+      ITuneApp.app.play
     end
 
     def set_lyric(content)
       Plog.info "#{@track.name}. Setting lyrics"
       @track.lyrics  = content
       @track.comment = Time.now.strftime("%y.%m.%d.%H.%M.%S")
+      newcontent = @track.lyrics
+      if newcontent != content
+        Plog.error "Error writing #{@track.name} to iTunes..."
+        return false
+      end
+      true
     end
 
     def self.edit_server(options=nil)
