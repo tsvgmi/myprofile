@@ -104,10 +104,6 @@ module ITune
     filter:alpha(opacity=70); /* For IE8 and earlier */
     position: relative;
   }
-  .composer {
-    text-align: right;
-    font-size: 80%;
-  }
   .info {
     font-size:  80%;
     position:   relative;
