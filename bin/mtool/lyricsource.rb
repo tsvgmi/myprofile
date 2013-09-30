@@ -343,7 +343,10 @@ class LyVideo4Viet < LyricSource
     Plog.debug("Fetching lyric page at #{lurl}")
 
     pg    = fetch_hpricot(lurl)
-    lyric = pg.at("div.content/center").inner_html.gsub(/<br\s*\/>/, "\n").
+    unless content = pg.at("div.content/center")
+      return ""
+    end
+    lyric = content.inner_html.gsub(/<br\s*\/>/, "\n").
         gsub(/<[^>]+>/, '')
     if lyric.empty?
       return ""

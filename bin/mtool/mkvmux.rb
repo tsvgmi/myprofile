@@ -7,8 +7,9 @@
 require File.dirname(__FILE__) + "/../../etc/toolenv"
 require 'fileutils'
 require 'mtool/core'
+require 'iconv'
 
-VideoExt = Regexp.new(/\.(avi|divx|mp4)$/)
+VideoExt = Regexp.new(/\.(avi|divx|mp4|mkv)$/)
 
 class VideoFile
   def initialize(vfile, options = {})
@@ -21,18 +22,24 @@ class VideoFile
 
   def mkv_file
     odir = @options[:odir] || "."
+    unless test(?d, odir)
+      FileUtils.mkpath(odir, verbose:true)
+    end
     "#{odir}/#{@bname}.mkv"
   end
 
   def subtitle_file
     require 'tempfile'
 
+    ic = Iconv.new('UTF-8//IGNORE', 'UTF-8')
+
     ['srt', 'eng.srt', 'idx'].each do |sub|
       subfile = "#{@bname}.#{sub}"
       if test(?f, subfile)
         if sub =~ /srt$/
           @subfile = Tempfile.new("srt")
-          File.read(subfile).split("\n").each do |l|
+          vcontent = ic.iconv(File.read(subfile) + ' ')[0..-2]
+          vcontent.split("\n").each do |l|
             @subfile.puts l.chomp + " "
           end
           @subfile.close
@@ -53,12 +60,12 @@ class MKVMux
     if test(?f, output) &&
       (File.size(output)*1.0 >= (File.size(input)*0.80))
       Plog.info "File generated to #{output} successfully"
-      FileUtils.move(input, "#{input}.bak", :verbose=>true)
+      FileUtils.move(input, "#{input}.bak", verbose:true)
       others.each do |afile|
-        FileUtils.move(afile, "#{afile}.bak", :verbose=>true)
+        FileUtils.move(afile, "#{afile}.bak", verbose:true)
       end
       if output =~ /\.new$/
-        FileUtils.move(output, output.sub(/\.new$/, ''), :verbose=>true)
+        FileUtils.move(output, output.sub(/\.new$/, ''), verbose:true)
       end
       true
     else
@@ -91,12 +98,13 @@ class MKVMux
   end
 
   def self.merge_subtitle(ptn = "")
-    cmd = "find . -name '*#{ptn}*'"
+    cmd     = "find . -name '*#{ptn}*'"
+    options = getOption
     `#{cmd}`.split("\n").sort.each do |afile|
       next unless VideoExt.match(afile)
-      video = VideoFile.new(afile, getOption)
+      video = VideoFile.new(afile, options)
       ofile = video.mkv_file
-      if test(?f, ofile) && !getOption(:force)
+      if test(?f, ofile) && !options[:force]
         Plog.warn "MKV file found for #{afile}. skip"
         next
       end
@@ -104,9 +112,16 @@ class MKVMux
         Plog.warn "Subtitle file for #{afile} not found.  Skip"
         next
       end
-      cmd = "mkvmerge --default-language en -o '#{ofile}.new' '#{afile}' '#{subfile}'"
-      Pf.system(cmd, 1)
-      check_and_move(afile, "#{ofile}.new", subfile)
+      ofile2   = ofile.gsub(/'/, "\\\\'")
+      STDERR.puts({ofile:ofile, ofile2:ofile2}.inspect)
+      afile2   = afile.gsub(/'/, "\\\\'")
+      cmd = "mkvmerge --default-language en -o '#{ofile2}.new' '#{afile2}' '#{subfile}'"
+      if options[:dryrun]
+        Plog.info(cmd)
+      else
+        Pf.system(cmd, 1)
+        check_and_move(afile, "#{ofile}.new", subfile)
+      end
     end
     true
   end
@@ -115,8 +130,9 @@ end
 
 if (__FILE__ == $0)
   MKVMux.handleCli(
-    ['--force', '-f', 0],
-    ['--odir',  '-d', 1]
+    ['--dryrun', '-n', 0],
+    ['--force',  '-f', 0],
+    ['--odir',   '-d', 1]
   )
 end
 

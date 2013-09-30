@@ -88,6 +88,41 @@ module Cli
     end
   end
 
+  def handleCli2(*optset)
+    imethods = self.instance_methods(false)
+    if imethods.size > 0
+      optset << ['--class', '-c']
+    end
+    @cliOptions = optset
+    opt = Cli.parseOptions(*optset)
+    setOptions(opt)
+    obj = nil
+    if opt[:class] || (imethods.size <= 0)
+      (ARGV.length > 0) || self.cliUsage
+      result = self.send(*ARGV)
+    elsif block_given?
+      result = yield opt
+    # Class handle CLI instantiation?
+    elsif self.respond_to?(:cliNew)
+      # ARGV could change during cliNew, so we check both places
+      (ARGV.length > 0) || self.cliUsage
+      obj = self.cliNew(@options)
+      (ARGV.length > 0) || self.cliUsage
+      result = obj.send(*ARGV)
+    else
+      (ARGV.length > 0) || self.cliUsage
+      obj    = self.new(ARGV.shift, @options)
+      result = obj.send(*ARGV)
+    end
+
+    # Class handle result?
+    if self.respond_to?(:cliResult)
+      self.cliResult(result, obj)
+    else
+      Cli.setShellResult(result)
+    end
+  end
+
   # Regenerate the command line option for self invocation use.
   def cliOptBuild
     result = ""

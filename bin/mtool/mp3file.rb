@@ -6,11 +6,14 @@
 #---------------------------------------------------------------------------
 #+++
 require File.dirname(__FILE__) + "/../../etc/toolenv"
+require 'rubygems'
 require 'mtool/core'
 
 class Mp4File
   def initialize(file, options = {})
-    require 'mp4info'
+    # Some now bundle put it in a place not accessible.  So I have to copy
+    # it locally
+    require 'mtool/mp4info'
 
     @options = options
     @mp4info = MP4Info.open(file)
@@ -103,7 +106,9 @@ class Mp3Shell
   end
 
   def mk_thumbnail(ofile, size)
-    dfile = get_artwork("forthumbnail")
+    unless dfile = get_artwork("forthumbnail")
+      return false
+    end
     Pf.system("convert '#{dfile}' -adaptive-resize #{size} '#{ofile}'",
         @options[:verbose])
     FileUtils.remove(dfile, :verbose=>true)

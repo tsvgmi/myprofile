@@ -9,6 +9,10 @@ require File.dirname(__FILE__) + "/../../etc/toolenv"
 require 'mtool/core'
 require 'yaml'
 
+def grep_cmd(cmd, ptn)
+  `#{cmd}`.split("\n").grep(ptn).first
+end
+
 class VpnHelper
   extendCli __FILE__
 
@@ -26,11 +30,10 @@ class VpnHelper
   end
 
   def self.intf_addr(intf)
-    enip = `ifconfig #{intf}`.grep(/inet\s/)
-    if enip.size <= 0
+    unless enip = grep_cmd("ifconfig #{intf}", /inet\s/)
       return nil
     end
-    enip.first.split[1]
+    enip.split[1]
   end
 
 #=================================================================== split
@@ -41,13 +44,11 @@ Split the VPN by only move address range terminated to VPN to its interface
 and route the rest through regular interface
 *      vpnif: 
 =end
-    deftunnel = `netstat -nrf inet`.grep(/default.*#{vpnif}/)
-    Plog.info "Default: #{deftunnel}"
-    if deftunnel.size <= 0
+    unless deftunnel = grep_cmd("netstat -nrf inet", /default.*#{vpnif}/)
       Plog.error "Tunnel #{vpnif} is not default route"
       return false
     end
-    tunip = deftunnel.first.split[1]
+    tunip = deftunnel.split[1]
     unless tunip
       Plog.error "No tunnel #{vpnif} detected"
       return false
@@ -56,7 +57,7 @@ and route the rest through regular interface
     ['en0', 'en1', 'en2', 'en3', 'en4', 'en5'].each do |intf|
       next if (intf == vpnif)
       if (enip = VpnHelper.intf_addr(intf)) != nil
-        if gwip = `netstat -nrf inet`.grep(/default.*#{intf}/).first
+        if gwip = grep_cmd("netstat -nrf inet", /default.*#{intf}/)
           gwip = gwip.split[1]
           break
         end
@@ -93,5 +94,4 @@ end
 if (__FILE__ == $0)
   VpnHelper.handleCli
 end
-
 

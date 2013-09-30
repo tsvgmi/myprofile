@@ -41,7 +41,7 @@ let &l:path=rubypath
 setlocal fo-=t fo+=croql
 setlocal include=^\\s*\\<\\(load\\\|require\\)\\>
 setlocal includeexpr=substitute(substitute(v:fname,'::','/','g'),'$','.rb','')
-setlocal iskeyword=48-57,_,A-Z,a-z,:
+setlocal iskeyword=48-57,_,A-Z,a-z
 setlocal comments=:#
 setlocal define=^\\s*
 setlocal suffixesadd=.rb

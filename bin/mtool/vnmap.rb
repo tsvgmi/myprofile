@@ -16,7 +16,7 @@ class VnMap
     require 'mtool/utfstring'
 
     unless @@rmap
-      load_map("#{ENV['EM_HOME_DIR']}/etc/vnmap.yml")
+      load_map("#{ENV['HOME']}/etc/vnmap.yml")
     end
     result = ""
     string.each_utf8_char do |achar|

@@ -42,7 +42,8 @@ function sconnect {
       proxyhost=lxp6d199m0.etrade.com
       ;;
     *)
-      proxyhost=lxdm19m7.etrade.com
+      # This one has reachability anywhere
+      proxyhost=lxp6d199m0.etrade.com
       ;;
     esac
   fi

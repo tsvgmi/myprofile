@@ -16,8 +16,8 @@ class PhotoInfo
     require 'find'
 
     @images = []
-    Find.find("#{ENV['HOME']}/itune-dump/images") do |afile|
-      if afile =~ /\.jpg$/
+    Find.find("#{ENV['HOME']}/.tool/images") do |afile|
+      if afile =~ /\.jpg$/ && (afile == afile.force_encoding("UTF-8"))
         @images << afile
       end
     end
@@ -26,6 +26,7 @@ class PhotoInfo
   def mk_thumbnail(ofile, size)
     rndfile = @images[rand(@images.size)]
     if rndfile
+      p({rndfile:rndfile, ofile:ofile})
       Pf.system("convert '#{rndfile}' -adaptive-resize #{size} '#{ofile}'", 1)
       test(?f, ofile)
     else
@@ -49,9 +50,10 @@ class DeviceDir
   end
 
   def try_add(atrack)
+    #p({atrack:atrack, location:atrack.location})
     file  = atrack.location.path
     album = atrack.album.gsub(/\//, '_')
-    dfile = "#{@dir}/#{album}/#{File.basename(file)}"
+    dfile = "#{@dir}/#{album}/#{File.basename(file).force_encoding("UTF-8")}"
      
     # File is not accessible ?
     unless test(?f, file)
@@ -67,7 +69,7 @@ class DeviceDir
     else
       @cursize = newsize
       @tracks << atrack
-      @wlist << [file, dfile, album]
+      @wlist  << [file, dfile, album, atrack]
     end
   end
 
@@ -86,7 +88,7 @@ class DeviceDir
     dircount  = {}
 
     photoinfo = PhotoInfo.new
-    `find #{@dir}`.split("\n").each do |afile|
+    `find #{@dir}`.force_encoding("UTF-8").split("\n").each do |afile|
 
       next if afile =~ /.(bmp|jpg)$/o
       next if afile =~ /#{@dir}$/o
@@ -105,7 +107,7 @@ class DeviceDir
 
       unless test(?f, cvfile)
         m3info = Mp3Shell.new(afile, @options)
-        cafile = "#{cache_dir}/#{album}-#{size}.jpg"
+        cafile = "#{cache_dir}/#{album}-#{size}.jpg".force_encoding("UTF-8")
         cache  = true
         unless test(?f, cafile)
           unless m3info.mk_thumbnail(cafile, size)
@@ -181,62 +183,53 @@ class DeviceDir
 end
 
 class MediaSync
-  def initialize(folder, ddirs, options = {})
+  def initialize(folders, ddirs, options = {})
     require 'appscript'
 
     @app     = Appscript::app('iTunes')
-    @folder  = folder
+    @folders = folders.split(',')
     @ddirs   = ddirs
     @options = options
   end
 
-  def prepare
-    icount  = (@options[:incr] || 0).to_i
-    fset    = ITune::ITuneFolder.new(@folder).get_tracks.each do |atrack|
-      atrack.enabled
+  def prepare_list
+    fset    = []
+    @folders.each do |folder|
+      fset += ITune::ITuneFolder.new(folder).get_tracks.each do |atrack|
+        atrack.enabled
+      end
     end
     Plog.info "Source list contains #{fset.size} files"
 
     csize   = 0
-    outlist = {}
-    Plog.info "Record to iTunes ..."
+    manifest = {}
     @ddirs.each do |dentry|
-      dlist = []
+      Plog.info "Check adding to #{dentry}..."
+      dlist  = []
       devdir = DeviceDir.new(dentry)
       while atrack = fset.shift
+        STDERR.print('.'); STDERR.flush()
         unless devdir.try_add(atrack)
           next unless devdir.full
           fset.unshift(atrack)
           break
         end
       end
-
-      outlist[devdir.dir] = devdir.wlist
-
-      # Once we do this, track ref is changed by iTune, so no more track op
-      if icount > 0
-        devdir.tracks.each do |atrack|
-          pcount = atrack.played_count || 0
-          atrack.played_date = Time.now
-          atrack.played_count = pcount+1
-          STDERR.print "."
-          STDERR.flush
-        end
-        STDERR.puts
-      end
+      manifest[devdir.dir] = devdir.wlist
     end
-    outlist
+    STDERR.puts("")
+    manifest
   end
 
-  def transfer(config)
+  def transfer(manifest)
     require 'find'
 
     Plog.info "Clean up old songs"
     if @options[:purge]
-      Pf.system "rm -rf #{config.keys.join(' ')}"
+      Pf.system "rm -rf #{manifest.keys.join(' ')}"
     else
       cflist = {}
-      config.each do |ddir, content|
+      manifest.each do |ddir, content|
         # Scan all destination dirs for files
         Find.find(ddir) do |afile|
           next unless test(?f, afile)
@@ -256,14 +249,33 @@ class MediaSync
     end
 
     Plog.info "Loading new songs"
-    config.each do |ddir, content|
+    manifest.each do |ddir, content|
       DeviceDir.new(ddir, @options).copyfiles(content)
     end
     true
   end
 
+  def post_transfer(manifest)
+    icount  = (@options[:incr] || 0).to_i
+    if icount <= 0
+      return
+    end
+    manifest.each do |ddir, content|
+      content.each do |sfile, dfile, album, atrack|
+        pcount = atrack.played_count || 0
+        atrack.played_date  = Time.now
+        atrack.played_count = pcount+1
+        STDERR.print "."
+        STDERR.flush
+      end
+    end
+    STDERR.flush
+  end
+
   def sync
-    transfer(prepare)
+    manifest = prepare_list
+    transfer(manifest)
+    post_transfer(manifest)
   end
 
   def add_images

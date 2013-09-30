@@ -15,7 +15,6 @@ require 'mtool/core'
 require 'mtool/mp3file'
 require 'mtool/vnmap'
 require 'mtool/dbaccess'
-#require 'mtool/tunes'
 require 'appscript'
 
 class HashYaml
@@ -48,8 +47,6 @@ module ITune
     @@app = nil
 
     def self.app
-      require 'appscript'
-
       unless @@app
         ITuneHelper.notify "#{File.basename(__FILE__)} connecting to iTunes"
         #@@app = Appscript::app.by_name('iTunes', Tunes)
@@ -255,7 +252,11 @@ module ITune
         when "play"
           @ifolder = @app.current_track
         else
-          @ifolder = @app.playlists[@name]
+          if true
+            @ifolder = @app.folder_playlists[@name]
+          else
+            @ifolder = @app.playlists[@name]
+          end
         end
         unless @ifolder
           raise "Folder #{@name} not found"
@@ -434,6 +435,9 @@ module ITune
       updopts  = {
         :overwrite => @options[:overwrite]
       }
+      if @options[:query]
+        @options[:dryrun] = true
+      end
       self.each_track do |atrack, iname|
         name    = atrack.name
         case instruction
@@ -453,7 +457,7 @@ module ITune
             updset[:name] = tname
           end
           atrack.updates(updset)
-        when 'flip.name.artist'
+        when 'x.name.artist', 'x.artist.name'
           name   = atrack.name
           artist = atrack.artist
           next unless name
@@ -464,7 +468,7 @@ module ITune
           atrack.updates(:name => title, :artist => artist)
         # Track in form of title - artist
         when 'name.artist'
-          title, artist = atrack.name.split(/\s*-\s*/)
+          title, artist = atrack.name.split(/\s*[-_]\s*/, 2)
           next unless artist
           atrack.updates(:name => title, :artist => artist)
         when 'track.artist.name'
@@ -528,12 +532,6 @@ module ITune
         # General fix
         # Update Lien Khuc to LK
         # Remove all after -
-        when 'clean_name'
-          fixname = atrack.name.sub(/^Lien Khuc/i, 'LK').
-                  sub(/^:/, '').
-                  sub(/\s*[-\(].*$/, '').strip
-          atrack.updates(:name => fixname)
-
         # Remove the track info in front of name and move to track
         when 'number.track'
           updset = {}
@@ -562,7 +560,7 @@ module ITune
           ['composer', 'artist', 'album_artist'].each do |prop|
             value = atrack[prop]
             if value && !value.empty? && (value !~ /AC\&M/i)
-              values = value.strip.split(/\s*[-,\&\/]\s*/)
+              values = value.strip.split(/\s*[-_,\&\/]\s*/)
               next unless (values.size > 1)
               nvalue = values.sort.join(', ')
               updset[prop] = nvalue
@@ -580,9 +578,23 @@ module ITune
         when 'clean.composer'
           atrack.composer = atrack.composer.sub(/^.*:\s*/, '').
                 sub(/\s*[\(\[].*$/, '')
+        when 'clean.album'
+          atrack.updates(:album => atrack.album.gsub(/_/, ' '))
+        when 'clean.name'
+          fixname = atrack.name.sub(/^Lien Khuc/i, 'LK').
+                  sub(/^:/, '').
+                  sub(/\s*[-\(].*$/, '').strip
+          atrack.updates(:name => fixname)
         else
           Plog.error "Unsupported operation: #{instruction}"
           false
+        end
+      end
+      if @options[:query]
+        if Cli.confirm "OK to apply the change"
+          @options.delete(:dryrun)
+          @options.delete(:query)
+          track_run(instruction)
         end
       end
       true
@@ -681,11 +693,6 @@ module ITune
         old_track.updates(:rating => 20)
         tracks = tracks[2..-1]
       end
-    end
-
-    def self.monitor_lyrics(exdir = "./lyrics")
-      options = handle_common_options
-      LyricMonitor.edit_server(options)
     end
 
     def self.clear_lyrics(playlist, src="yeucahat", exdir="./lyrics")
@@ -840,6 +847,7 @@ if (__FILE__ == $0)
         ['--ofile',     '-o', 1],
         ['--purge',     '-p', 0],
         ['--pattern',   '-P', 1],
+        ['--query',     '-q', 0],
         ['--store',     '-s', 0],
         ['--size',      '-S', 1],
         ['--tracks',    '-t', 1],

@@ -19,6 +19,7 @@ module ITune
 
     # A tract to monitor
     def initialize(itrack, options = {})
+      p options
       @track     = itrack
       @options   = options
       if options[:edfile]
@@ -106,33 +107,47 @@ module ITune
   }
   .info {
     font-size:  80%;
+    color: #888;
+  }
+  .footer {
     position:   relative;
+    clear:      both;
     margin-top: 20px;
     height:     20px;
-    clear:      both;
   }
 </style>
+<script src="http://code.jquery.com/jquery.js"></script>
 </head>
-<body><div class=transbox><center>
-<h2>#{@track.name}</h2>
+<body>
+<div class="container">
+<div class="transbox">
 EOF
-        
+        fod.puts <<EOF
+<div class=info>
+<b>Artist:</b> #{@track.artist}
+<b>Author:</b> #{@track.composer}
+<b>Album:</b>  #{@track.album}
+</div>
+EOF
+        fod.puts "<center><h2>#{@track.name}</h2>"
         lines = File.read(lfile).split(/[\r\n][\r\n]+/)[1..-1]
         lines = lines.join("\n\n").gsub(/[\r\n]/, "\n<br>")
 
         fod.puts(lines)
         fod.puts <<EOF
 </center>
-<div class=info>
+<div class="info footer">
 <b>Artist:</b> #{@track.artist}
 <b>Author:</b> #{@track.composer}
 <b>Album:</b>  #{@track.album}
 </div>
 </div>
+</div>
 </body></html>
 EOF
       end
-      Pf.system("open -a Safari #{htfile}", 1)
+      browser = @options[:browser] || "Safari"
+      Pf.system("open -a '#{browser}' #{htfile}", 1)
     end
 
     def clear_lyric
@@ -207,7 +222,8 @@ def check_source_change
 end
 
 if (__FILE__ == $0)
-  ITune::LyricMonitor.handleCli(
+  ITune::LyricMonitor.handleCli2(
+        ['--browser',   '-b', 1],
         ['--editor',    '-e', 1],
         ['--interval',  '-i', 1],
         ['--verbose',   '-v', 0]
