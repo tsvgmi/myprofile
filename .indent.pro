@@ -1,10 +1,1 @@
--nbc
--br
--brs
--bli0
--nbs
--ncdb
--ci2
--i4
--npcs
--sob
+myprofile/.indent.pro
