@@ -1,0 +1,20 @@
+---
+et_packages:
+sys_packages:
+commands:
+  - help
+
+  - install
+  - remove
+  - pkgadd
+  - list
+  - update
+  - selftest
+  - setup
+
+  - start
+  - stop
+  - status
+
+  - eclipse
+  - promote
