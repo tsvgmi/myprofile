@@ -1,1 +1,231 @@
-myprofile/.profile_cm
+#!/bin/bash
+############################################################################
+# File:        .profile_cm
+# Author:      thienvuong
+# Created:     Fri Mar 13 20:47:06 -0700 2009
+# Copyright (c) E*Trade - 2009.
+# Description: Common profile for all nodes
+# $Id$
+############################################################################
+unset EM_TOOL_DEFINED EM_TOOL_DIR
+
+HOST=$(hostname)
+HOST=${HOST%%.*}
+[ "$USER" ] || USER=$LOGNAME
+
+# Keep track of where I logged on from.
+lrec=$(who am i)
+[ "$lrec" ] && echo "$HOST: $(who am i)"  >>~/lastlogin.dat
+[ -f ~/lastlogin.dat ] && tail ~/lastlogin.dat
+
+# Setting OSTYPE based on current OS
+case $(uname) in
+  Linux)
+    CPU=$(uname -m)
+    case $CPU in
+    ppc)   OSTYPE=linux-ppc   ;;
+    ppc64) OSTYPE=linux-ppc64 ;;
+    mips)  OSTYPE=linux-mips  ;;
+    *)     OSTYPE=linux       ;;
+    esac
+    ;;
+  SunOS)
+    OSTYPE=solaris ;;
+  CYGWIN*)
+    OSTYPE=cygwin
+    ;;
+  OpenBSD) OSTYPE=openbsd ;;
+esac
+
+case $OSTYPE in
+  cygwin)
+    PATH=$PATH:/bin:/usr/bin
+    # Windows box ip address and name is a mess
+    set -- $(ipconfig | egrep "(IP|IPv4) Address" | sed 's/^.* //')
+    address=$1
+    set -- $(nslookup $address 2>/dev/null| sed 's/^.* //')
+    if [ $# -gt 2 ]; then
+      export EM_HOST=${3%%.*}
+      export EM_IPADDR=$4
+      echo "Cygwin: name=$T_HOST, ip=$T_IPADDR"
+      HOST=$T_HOST
+    fi
+    ;;
+  *)
+    PATH=$PATH:/bin:/usr/bin
+    ;;
+esac
+
+# Initialize LD_LIBRARY_PATH so it would not pick up the :: as component
+export LD_LIBRARY_PATH
+pathlist="/ /usr /usr/openwin /usr/X11R6 /usr/local /sw $HOME/tools
+          $HOME/etool /usr/atria /etrade /etrade/pkgs/COMENV
+          /opt/local /opt/etrade/p6 /etrade/tools /etrade/tools/jruby"
+for path in $pathlist; do
+  [ "$path" == "/" ] && path=
+  [ -d $path/sbin ] && PATH=$PATH:$path/sbin
+  [ -d $path/bin ] && PATH=$PATH:$path/bin
+  if [ -d $path/lib ]; then
+    if [ -d $path/lib64 ]; then
+      LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$path/lib64
+    else
+      LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$path/lib
+    fi
+  fi
+  [ -d $path/man ] && MANPATH=$MANPATH:$path/man
+  [ -d $path/share/man ] && MANPATH=$MANPATH:$path/share/man
+done
+for dir in ~/bin ~/emtools/bin ~/bin/mtool ~/etool/bin ~/etfw2/bin \
+        ~/etfw2/lib/pem ~/selaf/bin /usr/winbin \
+        /usr/java/jre1.6*/bin; do
+  [ -d $dir ] && PATH=$dir:$PATH
+done
+export CDPATH=.:$CDPATH:$HOME:$HOME/etool
+
+if [ -f ~/func/common ]; then
+  . ~/func/common
+  realias
+fi
+[ -f ~/func/sshenv ] && . ~/func/sshenv
+
+export PS1='[\!.\u.\h] \W>'
+stty echoe
+set -o vi
+set -o ignoreeof
+
+if which shopt >/dev/null 2>&1; then
+  shopt -s cdspell
+  shopt -s cmdhist
+fi
+
+export PAGER=less
+export OPATH=$PATH
+export OLD_LIBRARY_PATH=$LD_LIBRARY_PATH
+
+set -- $SSH_CLIENT
+case $1 in
+::*) ;;
+*)   remip=$1 ;;
+esac
+
+netlan=yes
+if [ "$remip" ]; then
+# This will hang if DNS server is down or no internet access ....
+  set -- $(host $HOST)
+  myip=$4
+
+  netlan=
+  case $myip in
+  10.21.*|10.152.*)        # lxp6d
+    case $remip in
+    10.21.*|10.85.*|127.0.*)      # lxp6d, mb45-
+      netlan=yes ;;
+    esac
+    ;;
+  esac
+fi
+
+if [ ! "$netlan" ]; then
+  if [ "$DISPLAY" ]; then
+    echo "Clear display from $DISPLAY"
+    export ODISPLAY=$DISPLAY
+    unset DISPLAY
+  fi
+fi
+
+if [ ! "$DISPLAY" ]; then
+  if [ "$SSH_RDISPLAY" ]; then
+    export XEDITOR="sshedit.rb edit"
+  fi
+fi
+
+echo "Display is [$DISPLAY]"
+
+export CVSROOT=:pserver:$USER@cvsserver.etrade.com:2401/etrade/cvsserver/cvs
+# The smart option is dumber than the dumb option.  Don' clear sreen
+export LESS=X
+
+[ "$TERM" ] || export TERM=xterm
+[ "$TERM" == "rxvt" ] && export TERM=xterm
+
+if [ -d ~/selaf ]; then
+  CDPATH=$CDPATH:~/selaf:~/selaf/ats:~/selaf/ats/datasource
+fi
+if [ "$CLEARCASE_ROOT" ]; then
+  CDPATH=$CDPATH:/vob:/vob/frame:/vob/frame/src:/vob/frame/src/Products
+fi
+if /usr/bin/which vim >/dev/null 2>&1; then
+  export EDITOR=vim
+fi
+
+alias ib='cd $ET_INSTANCE_ROOT/bin'
+alias ic='cd $ET_INSTANCE_ROOT/config'
+alias il='cd $ET_INSTANCE_ROOT/logs'
+
+export ODBCINI=/etrade/tools/etc/odbc.ini
+export ODBCSYSINI=/etrade/tools/etc
+export FREETDSCONF=/etrade/tools/etc/freetds.conf
+
+[ -f ~/.ctierrc ] && . ~/.ctierrc
+[ -f ~/etc/profile ] && . ~/etc/profile
+
+if [ ! "$ET_ROOT" ]; then
+  export ET_ROOT=/etrade
+  case $OSTYPE in
+  solaris) PKGBASE=/etrade/pkgs ;;
+  *)       PKGBASE=/etrade/pkgs/linux/intel ;;
+  esac
+  export ET_OPENSRC_ROOT=$PKGBASE/opensrc/1.0
+  PATH=$PATH:$ET_OPENSRC_ROOT/bin
+fi
+
+export RUBYLIB=~/etfw2/lib
+if [ -x /etrade/tools/bin/ruby ]; then
+  export RUBYLIB=$RUBYLIB:/etrade/tools/lib
+  #set -- $(rpm -ql selaf-gempak 2>/dev/null | head -1)
+  #if [ $# -gt 0 ]; then
+    #export GEM_HOME=$1
+    #export PATH=$PATH:$GEM_HOME/bin
+  #fi
+elif [ -x ~/tools/bin/ruby ]; then
+  export RUBYLIB=$RUBYLIB:~/tools/lib:~/tools/lib/ruby/1.8:~/tools/lib/ruby/site_ruby/1.8
+  case $OSTYPE in
+  solaris) rbostype=sparc-solaris2.9 ;;
+  linux)   rbostype=i686-linux ;;
+  linux65) rbostype=x86_64-linux ;;
+  esac
+  RUBYLIB=$RUBYLIB:~/tools/lib/ruby/1.8/$rbostype:~/tools/lib/ruby/site_ruby/1.8/$rbostype
+fi
+if ! /usr/bin/which ruby >/dev/null 2>&1; then
+  for dir in /etrade/pkgs/linux/intel/ruby/1.8.4; do
+    [ -d $dir/bin ] && PATH=$PATH:$dir/bin
+  done
+fi
+
+eval $(ruby -S shhelper.rb vimFont)
+echo VIMFONT=$VIMFONT
+
+tty=$(tty)
+export HISTFILE=~/.tool/bhist${tty##*/}
+
+if [ ! "$ET_ENVIRONMENT" ]; then
+  if [ -f ~/.tool/etenv-$HOST ]; then
+    echo "... Switching into etenv ..."
+    exec emtool etenv
+  else
+    if [ -f /etrade/tools/etc/bashswitch ]; then
+      . /etrade/tools/etc/bashswitch
+    elif [ -f etfw2/etc/bashswitch ]; then
+      . etfw2/etc/bashswitch
+    fi
+  fi
+fi
+
+if [ -f /usr/lib/libhoard.so ]; then
+  export LD_PRELOAD_32=/usr/lib/libhoard.so:/usr/lib/libdl.so
+fi
+if [ -f /usr/lib64/libhoard.so ]; then
+  export LD_PRELOAD_64=/usr/lib64/libhoard.so:/usr/lib64/libdl.so
+fi
+
+_cd

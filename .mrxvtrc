@@ -1,1 +1,15 @@
-myprofile/.mrxvtrc
+Mrxvt.foreground:   rgb:f/e/c
+Mrxvt.background:   rgb:2/0/0
+Mrxvt.cursorColor:  rgb:f/f/0
+Mrxvt.cursorBlink:  true
+Mrxvt.saveLines:    2000
+Mrxvt.bottomTabbar:    false
+Mrxvt.tabBackground:   rgb:f/f/f
+Mrxvt.tabForeground:   rgb:0/4/0
+'Mrxvt.xft:          true
+Mrxvt.xftSize:      13
+Mrxvt.xftAntialias: true
+Mrxvt.xftWidth:     condensed
+Mrxvt.xftWeight:    light
+Mrxvt.syncTabTitle: true
+Mrxvt.showMenu:     false

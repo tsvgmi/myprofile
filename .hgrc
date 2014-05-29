@@ -1,1 +1,3 @@
-myprofile/.hgrc
+[extensions]
+hgk=
+fetch=

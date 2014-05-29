@@ -1,1 +1,2 @@
-myprofile/.inputrc
+set editing-mode vi
+set bell-style none
