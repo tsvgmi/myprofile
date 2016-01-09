@@ -38,3 +38,13 @@ CDPATH=$CDPATH:~/work:~/projects
 
 export PATH="$HOME/.rvm/bin:$PATH" # Add RVM to PATH for scripting
 
+export PATH="$HOME/.rbenv/bin:$PATH"
+eval "$(rbenv init -)"
+
+CDPATH=$CDPATH:~/work:~/projects
+
+# The next line updates PATH for the Google Cloud SDK.
+export PATH=/Users/tvuong/google-cloud-sdk/bin:$PATH
+
+# The next line enables bash completion for gcloud.
+source /Users/tvuong/google-cloud-sdk/arg_rc
