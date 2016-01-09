@@ -117,10 +117,10 @@ function __loading_ {
   #echo "+Loading $func from $file" >&2
   unset -f $func
   . $file
-  typeset -fx $func
+  export -f $func
   $func "$@"
 }
-typeset -fx __loading_
+export -f __loading_
 EOF
       fset      = {}
       tooldir   = File.expand_path(ENV['EM_TOOL_DIR'])
@@ -145,7 +145,7 @@ EOF
 function #{f} {
   __loading_ #{wfile} #{f} "$@"
 }
-typeset -fx #{f}
+export -f #{f}
 EOF
       end
       true

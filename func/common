@@ -4,14 +4,12 @@
 # Created:     Thu Mar 23 22:38:28 PST 2006
 # Description:
 ############################################################################
-if [ ! "$OSTYPE" ]; then
-  case $(uname) in
-  Linux)   OSTYPE=linux   ;;
-  SunOS)   OSTYPE=solaris ;;
-  CYGWIN*) OSTYPE=cygwin ;;
-  Darwin)  OSTYPE=macos ;;
-  esac
-fi
+case $(uname) in
+Linux)   OSTYPE=linux   ;;
+SunOS)   OSTYPE=solaris ;;
+CYGWIN*) OSTYPE=cygwin ;;
+Darwin)  OSTYPE=macos ;;
+esac
 
 #==========================================================================
 # Function:    [cd2]
@@ -90,79 +88,15 @@ function xtitle {
 # Purpose  : A customized 'cd' version to display essential info on the
 #	xterm title bar
 #-------------------------------------------------------------------------
-function _cdTitle {
-  [ "$HOST" ] || export HOST=$(hostname)
-  if [ "$ET_ENVIRONMENT" ]; then
-    ident="$HOST:$ET_ENVIRONMENT:$ET_APPLICATION:$ET_SERVER:$ET_INSTANCE"
-  else
-    ident=$HOST
-  fi
-  typeset here=${PWD##*/fuse/}
-  if [ "$here" != $PWD ]; then
-    rhost=${here%%/*}
-    export HCD_HOST=$rhost
-    ident="$ident($rhost)"
-  fi
-  # Touch the title only when it changes.  So user could override
-  # elsewhere
-  if [ "$TERM_TITLE" != "$ident" ]; then
-    echo -n "]0;$ident"
-    TERM_TITLE=$ident
-  fi
-  # Prompt have history and tail of dir
-  if [ "$BASH_VERSION" ]; then
-    export PS1="[\!.$ident] \W>"
-  else
-    export PS1="[!.$ident] ${PWD##*/}>"
-  fi
-}
-
-#==========================================================================
-# Function:    [_cd]
-# Description: Emulate the switch cd of ksh to bash
-# Use:         cd newdir | cd oldir newdir
-#==========================================================================
-function _cd {
-  typeset ident
-
-  if [ "$BASH" -a $# -gt 1 ]; then
-    'cd' ${PWD/$1/$2}
-  else
-    'cd' $*
-  fi
-  _cdTitle
-}
-alias cd=_cd
-
-#==========================================================================
-# Function:    [pd newdir] or [pd pattern replacement]
-# Description: Push to new directory.  Also emulate the cd substitution
-#	of ksh.
-# Use:         .
-#==========================================================================
-function pd {
-  if [ "$BASH" -a $# -gt 1 ]; then
-    pushd ${PWD/$1/$2}
-  else
-    pushd $*
-  fi
-  _cdTitle
-}
 
 function xname {
-  echo -n "]0;$*:$HOST:$TTY"
+  #echo -n "]0;$*:$HOST:$TTY"
+  echo -n "]0;$*"
 }
 
 function cls {
   clear
   echo -n "[m"
-}
-
-function scrsend {
-  echo "]83;${*}"
-}
-function scropen {
-  echo "]83;screen -t \"$*\" ${*}"
 }
 
 function _sudo {
@@ -260,53 +194,17 @@ function terminal {
 
 function cterm {
   typeset count=${1:-1}
-  typeset value wfont
 
-  set -- $(ruby -e '
-    rcount = ARGV.shift.to_i
-    1.upto(rcount) {|count|
-      puts "%02x%02x%02x" % [16+rand(80), 16+rand(80), 16+rand(80)]
+  ruby -e '
+    1.upto(ARGV.shift.to_i) {|count|
+      value = "%02x%02x%02x" % [16+rand(80), 16+rand(80), 16+rand(80)]
+      bg = "-bg \\##{value}"
+      ENV["MRXVT_OPT"] = bg
+      cmd = "mrxvt #{bg} -ls &"
+      STDERR.puts "+ #{cmd}"
+      system cmd
     }
-    ' $count)
-  wfont=$RXVT_FONT
-  [ "$wfont" ] || wfont="Lucida Console-12"
-  for value in $*; do
-    if [ "$DISPLAY" ]; then
-      export MRXVT_OPT=$bg
-      set -x
-      mrxvt -bg "#$value" -ls &
-      set +x
-    else
-      set -x
-      rxvt -bg "#$value" -fn "$wfont" -e bash -login &
-    fi
-  done
-}
-
-# The new cterm.  Shell is much easier
-function cterm {
-  typeset count=${1:-1}
-  typeset value wfont
-
-  set -- $(ruby -e '
-    rcount = ARGV.shift.to_i
-    1.upto(rcount) {|count|
-      puts "%02x%02x%02x" % [16+rand(80), 16+rand(80), 16+rand(80)]
-    }
-    ' $count)
-  wfont=$RXVT_FONT
-  [ "$wfont" ] || wfont="Lucida Console-12"
-  for value in $*; do
-    if [ "$DISPLAY" ]; then
-      set -x
-      mrxvt -bg "#$value" -ls &
-      set +x
-    else
-      set -x
-      rxvt -bg "#$value" -fn "$wfont" -e bash -login &
-      set +x
-    fi
-  done
+  ' $count
 }
 
 function l {
@@ -359,4 +257,29 @@ function setview {
   exec cleartool setview -login $view
 }
 
+function growl {
+  echo -e $'\e]9;'${1}'\007'
+  return
+}
 
+function proxy {
+  (
+    . ~/.ssh/cnport.env
+    $@
+  )
+}
+
+function edx {
+  typeset prog=$1
+  typeset apath
+  shift
+
+  for apath in $path; do
+    if [ -x $apath/$prog ]; then
+      set -x
+      mvim $apath/$prog $@
+      set +x
+      break
+    fi
+  done
+}

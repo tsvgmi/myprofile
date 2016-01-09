@@ -9,61 +9,46 @@
 ############################################################################
 unset EM_TOOL_DEFINED EM_TOOL_DIR
 
-if [ ! "$ET_ENVIRONMENT" ]; then
-  if [ -f ~/.tool/etenv-$HOST ]; then
-    if whence emtool; then
-      echo "... Switching into etenv ..."
-      exec emtool etenv
-    fi
-  fi
-  if [ -f /etrade/tools/etc/bashswitch ]; then
-    . /etrade/tools/etc/bashswitch
-  elif [ -f etfw2/etc/bashswitch ]; then
-    . etfw2/etc/bashswitch
-  fi
-fi
-
 HOST=$(hostname)
 HOST=${HOST%%.*}
 [ "$USER" ] || USER=$LOGNAME
 
-if [ "$WINDIR" ]; then
-  OSTYPE=cygwin
-else
-  case $(uname) in
-    Linux)
-      CPU=$(uname -m)
-      case $CPU in
-      ppc)   OSTYPE=linux-ppc   ;;
-      ppc64) OSTYPE=linux-ppc64 ;;
-      mips)  OSTYPE=linux-mips  ;;
-      *)     OSTYPE=linux       ;;
-      esac
-      ;;
-    SunOS)
-      OSTYPE=solaris ;;
-    CYGWIN*)
-      OSTYPE=cygwin
-      ;;
-    OpenBSD) OSTYPE=openbsd ;;
-  esac
-fi
+# Keep track of where I logged on from.
+lrec=$(who am i)
+[ "$lrec" ] && echo "$HOST: $(who am i)"  >>~/lastlogin.dat
+[ -f ~/lastlogin.dat ] && tail ~/lastlogin.dat
+
+# Setting OSTYPE based on current OS
+case $(uname) in
+  Linux)
+    CPU=$(uname -m)
+    case $CPU in
+    ppc)   OSTYPE=linux-ppc   ;;
+    ppc64) OSTYPE=linux-ppc64 ;;
+    mips)  OSTYPE=linux-mips  ;;
+    *)     OSTYPE=linux       ;;
+    esac
+    ;;
+  SunOS)
+    OSTYPE=solaris ;;
+  CYGWIN*)
+    OSTYPE=cygwin
+    ;;
+  OpenBSD) OSTYPE=openbsd ;;
+esac
 
 case $OSTYPE in
   cygwin)
-    [ "$WINPATH" ] || export WINPATH=$PATH
-    PATH=/bin:/usr/bin
+    PATH=$PATH:/bin:/usr/bin
     # Windows box ip address and name is a mess
-    if false; then
-      set -- $(ipconfig | egrep "(IP|IPv4) Address" | sed 's/^.* //')
-      address=$1
-      set -- $(nslookup $address 2>/dev/null| sed 's/^.* //')
-      if [ $# -gt 2 ]; then
-        export EM_HOST=${3%%.*}
-        export EM_IPADDR=$4
-        echo "Cygwin: name=$EM_HOST, ip=$EM_IPADDR"
-        HOST=$EM_HOST
-      fi
+    set -- $(ipconfig | egrep "(IP|IPv4) Address" | sed 's/^.* //')
+    address=$1
+    set -- $(nslookup $address 2>/dev/null| sed 's/^.* //')
+    if [ $# -gt 2 ]; then
+      export EM_HOST=${3%%.*}
+      export EM_IPADDR=$4
+      echo "Cygwin: name=$T_HOST, ip=$T_IPADDR"
+      HOST=$T_HOST
     fi
     ;;
   *)
@@ -73,26 +58,24 @@ esac
 
 # Initialize LD_LIBRARY_PATH so it would not pick up the :: as component
 export LD_LIBRARY_PATH
-pathlist="/ /usr /usr/openwin /usr/X11R6 /usr/local /sw $HOME/tools
-          $HOME/etool /usr/atria /etrade /etrade/pkgs/COMENV
-          /opt/local /etrade/tools /etrade/tools/jruby"
-for path in $pathlist; do
-  [ "$path" == "/" ] && path=
-  [ -d $path/sbin ] && PATH=$PATH:$path/sbin
-  [ -d $path/bin ] && PATH=$PATH:$path/bin
-  if [ -d $path/lib ]; then
-    if [ -d $path/lib64 ]; then
-      LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$path/lib64
+pathlist=(/ /usr /usr/openwin /usr/X11R6 /usr/local /sw $HOME/tools /etrade)
+for upath in $pathlist; do
+  [ "$upath" = "/" ] && upath=
+  [ -d $upath/sbin ] && PATH=$PATH:$upath/sbin
+  [ -d $upath/bin ] && PATH=$PATH:$upath/bin
+  if [ -d $upath/lib ]; then
+    if [ -d $upath/lib64 ]; then
+      LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$upath/lib64
     else
-      LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$path/lib
+      LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$upath/lib
     fi
   fi
-  [ -d $path/man ] && MANPATH=$MANPATH:$path/man
-  [ -d $path/share/man ] && MANPATH=$MANPATH:$path/share/man
+  [ -d $upath/man ] && MANPATH=$MANPATH:$upath/man
+  [ -d $upath/share/man ] && MANPATH=$MANPATH:$upath/share/man
 done
+
 for dir in ~/bin ~/emtools/bin ~/bin/mtool ~/etool/bin ~/etfw2/bin \
-        ~/etfw2/lib/pem ~/selaf/bin /usr/winbin \
-        /usr/java/jre1.6*/bin; do
+        ~/etfw2/lib/pem ~/selaf/bin /usr/winbin; do
   [ -d $dir ] && PATH=$dir:$PATH
 done
 export CDPATH=.:$CDPATH:$HOME:$HOME/etool
@@ -101,19 +84,18 @@ if [ -f ~/func/common ]; then
   . ~/func/common
   realias
 fi
-if [ "$OSTYPE" != cygwin ]; then
-  [ -f ~/func/sshenv ] && . ~/func/sshenv
-fi
+[ -f ~/func/sshenv ] && . ~/func/sshenv
 
-export PS1='[\!.\u.\h] \W>'
+export PS1='%F{yellow}%h %m.%B%2~%b.%T%#%f '
+#export PS1='[\!.\u.\h] \W>'
+
 stty echoe
 set -o vi
 set -o ignoreeof
 
-if shopt -s >/dev/null 2>&1; then
+if which shopt >/dev/null 2>&1; then
   shopt -s cdspell
   shopt -s cmdhist
-  shopt -s checkwinsize
 fi
 
 export PAGER=less
@@ -121,7 +103,10 @@ export OPATH=$PATH
 export OLD_LIBRARY_PATH=$LD_LIBRARY_PATH
 
 set -- $SSH_CLIENT
-remip=$1
+case $1 in
+::*) ;;
+*)   remip=$1 ;;
+esac
 
 netlan=yes
 if [ "$remip" ]; then
@@ -142,7 +127,7 @@ fi
 
 if [ ! "$netlan" ]; then
   if [ "$DISPLAY" ]; then
-    echo "Clear display from $DISPLAY - myip=$myip, remip=$remip"
+    echo "Clear display from $DISPLAY"
     export ODISPLAY=$DISPLAY
     unset DISPLAY
   fi
@@ -150,14 +135,12 @@ fi
 
 echo "Display is [$DISPLAY]"
 
-export http_proxy=http://lxp6d199m0:6100
-#export http_proxy=http://sys6w96m6:80
-
+export CVSROOT=:pserver:$USER@cvsserver.etrade.com:2401/etrade/cvsserver/cvs
 # The smart option is dumber than the dumb option.  Don' clear sreen
 export LESS=X
 
 [ "$TERM" ] || export TERM=xterm
-[ "$TERM" == "rxvt" ] && export TERM=xterm
+[ "$TERM" = "rxvt" ] && export TERM=xterm
 
 if [ -d ~/selaf ]; then
   CDPATH=$CDPATH:~/selaf:~/selaf/ats:~/selaf/ats/datasource
@@ -193,6 +176,11 @@ fi
 export RUBYLIB=~/etfw2/lib
 if [ -x /etrade/tools/bin/ruby ]; then
   export RUBYLIB=$RUBYLIB:/etrade/tools/lib
+  #set -- $(rpm -ql selaf-gempak 2>/dev/null | head -1)
+  #if [ $# -gt 0 ]; then
+    #export GEM_HOME=$1
+    #export PATH=$PATH:$GEM_HOME/bin
+  #fi
 elif [ -x ~/tools/bin/ruby ]; then
   export RUBYLIB=$RUBYLIB:~/tools/lib:~/tools/lib/ruby/1.8:~/tools/lib/ruby/site_ruby/1.8
   case $OSTYPE in
@@ -208,16 +196,24 @@ if ! /usr/bin/which ruby >/dev/null 2>&1; then
   done
 fi
 
-if [ "$OSTYPE" != cygwin ]; then
-  eval $(ruby -S shhelper.rb vimFont)
-  echo VIMFONT=$VIMFONT
-fi
+eval $(ruby -S shhelper.rb vimFont)
+echo VIMFONT=$VIMFONT
 
-# Maintain seoarate history so multiple shells don't clobber one another
-# Als put time marker in there
 tty=$(tty)
 export HISTFILE=~/.tool/bhist${tty##*/}
-date >>$HISTFILE
+
+if [ ! "$ET_ENVIRONMENT" ]; then
+  if [ -f ~/.tool/etenv-$HOST ]; then
+    echo "... Switching into etenv ..."
+    exec emtool etenv
+  else
+    if [ -f /etrade/tools/etc/bashswitch ]; then
+      . /etrade/tools/etc/bashswitch
+    elif [ -f etfw2/etc/bashswitch ]; then
+      . etfw2/etc/bashswitch
+    fi
+  fi
+fi
 
 if [ -f /usr/lib/libhoard.so ]; then
   export LD_PRELOAD_32=/usr/lib/libhoard.so:/usr/lib/libdl.so
@@ -226,4 +222,4 @@ if [ -f /usr/lib64/libhoard.so ]; then
   export LD_PRELOAD_64=/usr/lib64/libhoard.so:/usr/lib64/libdl.so
 fi
 
-_cd
+cd

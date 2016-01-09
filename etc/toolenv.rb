@@ -7,6 +7,7 @@
 #---------------------------------------------------------------------------
 #+++
 if !ENV["TOOL_DEFINED"]
+  ENV["TOOL_DEFINED"] = "1"
   ENV["T_TOOL_DIR"]  = File.dirname(__FILE__) + "/.."
   ENV["T_TOOL_BIN"]  = ENV["T_TOOL_DIR"] + "/bin"
   $: << ENV["T_TOOL_BIN"]

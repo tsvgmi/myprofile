@@ -86,6 +86,28 @@ class TextFilter
     end
   end
 
+  def self.wikifix(rows)
+    rows.map do |arow|
+      arow = arow.gsub(/\[([A-Z\/]+)\]/, ':\\1:')
+      if arow =~ /":/
+        if arow =~ /"\$":/i
+          if $' =~ /^http/i
+            arow = arow.gsub(/"\$":http/i, "http")
+          else
+            arow = arow.gsub(/"\$":(.*)$/, '[[\\1]]')
+          end
+        else
+          arow = arow.gsub(/"([^"]+)":(.*)$/, '[[\\2|\\1]]')
+        end
+      end
+      if arow =~ /\[\[([0-9\/]+)\s/
+        pre, sdate, post = $`, $1, $'
+        arow = pre + "[[" + sdate.gsub('/', '-') + " " + post
+      end
+      arow
+    end
+  end
+
   # Filter to align the equal signs of block.  Make assignment block cleaner
   # rows::    Data to wrap
   def self.alignEqual(rows)
@@ -157,6 +179,10 @@ class VimFilt
     TextFilter.alignEqual(readData)
   end
   alias ae alignEqual
+
+  def wikifix
+    TextFilter.wikifix(readData)
+  end
 
   # Align all columns (up to ncols)
   def alignColumn(ncols = 9999) 
@@ -340,7 +366,7 @@ EOH
     (ARGV.size > 1) || VimFilt.cliUsage
     file  = ARGV.shift
     ftype = getOption(:type) || File.extname(file)[1..-1]
-    unless ftype
+    if !ftype && (file != "-")
       File.open(file) do |fid|
       aline = fid.gets.chomp
 	if (aline =~ /perl/)

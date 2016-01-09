@@ -96,11 +96,11 @@ case $oper in
     jobs=10
     cd $HOME
     for host in $*; do
-      rsopt="--rsh=ssh --exclude .svn --delete --delete-excluded"
+      rsopt="--rsh=ssh --exclude .svn --exclude .git --delete --delete-excluded"
       rsopt="$rsopt $(f_rsoption $host)"
       F_parallel $jobs - rsync $rsopt -vaz myprofile $user@$host:
       if [ "$doetfw" ]; then
-        F_parallel $jobs - rsync $rsopt -vaz etfw2 --exclude /etfw2/pem/ $user@$host:
+        Ft_parallel $jobs - rsync $rsopt -vaz etfw2 --exclude /etfw2/pem/ $user@$host:
       fi
       if [ "$dotool" ]; then
         F_parallel $jobs - rsync $rsopt -vaz emtools $user@$host:
@@ -143,39 +143,29 @@ case $oper in
 
   cntlm)
     user=$LOGNAME nopass=
-    proxy=10.50.79.250:8080
-    copt="-g -P $HOME/.ssh/cntlm.pid -l 6100"
-    while getopts :Psu: i; do
+    while getopts :u:P i; do
       case $i in
       P) nopass=yes ;;
-      s)
-         proxy=10.55.79.200:9090
-         copt="-g -P $HOME/.ssh/cntlm2.pid -l 6101"
-         ;;
       u) user=$OPTARG ;;
       *) F_usageOper $oper ;;
       esac
     done
     let j=$OPTIND-1; shift $j; OPTIND=0    
-    if pgrep -lf cntlm.*$proxy; then
-      F_system pkill -f cntlm.*$proxy
-      sleep 1
-    fi
+    F_system pkill cntlm
     domain=CORP
     if [ ! "$nopass" ]; then
       passwd=$(F_passwdGetNew $domain) || exit 1
     fi
-    if [ -f ~/.ssh/cntlm.conf ]; then
-      cfile=~/.ssh/cntlm.conf
+    if [ -f ~/.tool/cntlm.conf ]; then
+      cfile=~/.tool/cntlm.conf
     else
       cfile=$(F_tmpf 0)
       touch $cfile
     fi
-    copt="$copt -c $cfile"
     if [ "$nopass" ]; then
-      F_exec cntlm $copt -u $user@$domain $proxy
+      F_exec cntlm -g -c $cfile -l 6100 -u $user@$domain 10.50.79.250:8080
     else
-      exec cntlm $copt -u $user@$domain -p $passwd $proxy
+      exec cntlm -g -c $cfile -l 6100 -u $user@$domain -p $passwd 10.50.79.250:8080
     fi    
     ;;
 

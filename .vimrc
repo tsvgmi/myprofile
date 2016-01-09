@@ -1,4 +1,5 @@
-"source $HOME/vim/default.vim
+source $HOME/.vim/vundle.vim
+
 " ========================================================================
 " This file usually is named "$HOME/vimrc".
 " Purpose: setup file for the editor "vim"
@@ -56,6 +57,11 @@ cnoremap <C-B> <Left>
 cnoremap <ESC>b <S-Left>
 cnoremap <ESC>f <S-Right>
 cnoremap <ESC><C-H> <C-W>
+
+
+nnoremap <Leader>t :TlistToggle<CR>
+map! <Leader>f <Plug>ShowFunc
+
 "
 " DOS keyboard mapping for cursor keys
 "
@@ -167,38 +173,19 @@ map     <M-Left>        :tabprev<CR>
 set wmh=0
 
 "------------------------------------------- Quick switching of buffers ---
-"<A-1>	Switch to buffer #1
-"<A-2>	Switch to buffer #2
-"...
-"map 	±	:1bu<CR>
-"map 	²	:only\|split<CR>
-map 	<F2>	:only\|split<CR>
-"map 	³ 	:3bu<CR>
-"map 	´	:4bu<CR>
-"map 	µ	:5bu<CR>
-"map 	¶	:6bu<CR>
-"map	·	:7bu<CR>
-"map	¸	:8bu<CR>
-"map	¹	:9bu<CR>
-"imap 	±	<C-O>:1bu<CR>
-"imap 	²	<C-O>:only\|split<CR>
-"imap 	³ 	<C-O>:3bu<CR>
-"imap 	´	<C-O>:4bu<CR>
-"imap 	µ	<C-O>:5bu<CR>
-"imap 	¶	<C-O>:6bu<CR>
-"imap	·	<C-O>:7bu<CR>
-"imap	¸	<C-O>:8bu<CR>
-"imap	¹	<C-O>:9bu<CR>
+" Maximize and split the window
+map 	 <Leader>- :only\|split<CR>
+" Maximize back windows + show all buffer tabs
+nmap     <Leader>0 :only\|bn\|bp<CR>
+nmap     <Leader>1 :1bu<CR>
+nmap     <Leader>2 :2bu<CR>
+nmap     <Leader>4 :4bu<CR>
+nmap     <Leader>5 :5bu<CR>
+nmap     <Leader>6 :6bu<CR>
+nmap     <Leader>7 :7bu<CR>
+nmap     <Leader>8 :8bu<CR>
+nmap     <Leader>9 :9bu<CR>
 
-map 	1	:1bu<CR>
-map 	2	:2bu<CR>
-map 	3	:3bu<CR>
-map 	4	:4bu<CR>
-map 	5	:5bu<CR>
-map 	6	:6bu<CR>
-map 	7	:7bu<CR>
-map 	8	:8bu<CR>
-map 	9	:9bu<CR>
 
 nmap 	<M-C>	!!~/bin/vimfilt.rb % cbar<CR>
 nmap 	c	!!~/bin/vimfilt.rb % cbar<CR>
@@ -268,8 +255,8 @@ endif
 command! -range AlignColumn1 <line1>,<line2>!~/bin/vimfilt.rb % alcol 1
 command! -range AlignColumn2 <line1>,<line2>!~/bin/vimfilt.rb % alcol 2
 command! -range AlignColumn3 <line1>,<line2>!~/bin/vimfilt.rb % alcol 3
-command! -range AlignColumn <line1>,<line2>!~/bin/vimfilt.rb % alcol
-command! -range AlignEqual <line1>,<line2>!~/bin/vimfilt.rb % ae
+command! -range AlignColumn <line1>,<line2>!~/bin/vimfilt.rb '%' alcol
+command! -range AlignEqual <line1>,<line2>!~/bin/vimfilt.rb '%' ae
 command! -range FmtComment <line1>,<line2>!~/bin/vimfilt.rb % fmtcmt
 command! -range FmtHaml    <line1>,<line2>!~/bin/vimfilt.rb % fmt_haml
 command! -range FuncHeader <line1>,<line2>!~/bin/vimfilt.rb % funcHeader
@@ -281,6 +268,8 @@ command! Bartedit      set guifont=Monaco:h14|color zellner
 command! Normedit      set guifont=Monaco:h12|color koehler
 command! Bigfont       set guifont=Monaco:h14
 command! Normfont      set guifont=Monaco:h12
+
+set guifont=Monaco:h11
 
 map ,af		:AddFold<CR>
 map ,fH		:FileHeader<CR>
@@ -295,6 +284,8 @@ vmap ,cf	:FmtComment<CR>
 vmap ,hf	:FmtHaml<CR>
 vmap ,fh	:FuncHeader<CR>
 
+" Open current file in new window
+map <C-N> :!gvim %<CR><CR>:bd<CR>
 
 " Map alt-z to fold alternate
 map <BS>	za
@@ -339,7 +330,61 @@ let g:miniBufExplMapCTabSwitchWindows = 1
 let g:miniBufExplUseSingleClick = 1
 let g:miniBufExplModSelTarget = 1
 
-color evening
+color darkblue
 
 set ttymouse=xterm
-set vb
+set number
+
+" Change cursor based on insert mode
+let &t_SI = "\<Esc>]50;CursorShape=1\x7"
+let &t_EI = "\<Esc>]50;CursorShape=0\x7"
+
+" 256 colors
+set t_Co=256
+
+command! -bang Svim redir @" | silent ls<bang> | redir END | echo " " |
+ \ perl {
+ \ my $msg=VIM::Eval('@"');
+ \ my $file, $value, $bfile;
+ \ my @flist, %slist;
+ \ while($msg =~ m/(.*?line\s+\d+)/g) {
+ \   $value = $1;
+ \   $value =~ m/"([^"]+)"/;
+ \   $file  = $1;
+ \   next if ($file =~ /No Name/);
+ \   ($bfile = $file) =~ s!^.*/_?!!;
+ \   $bfile =~ tr/[A-Z]/[a-z]/;
+ \   $slist{$bfile} = $file;
+ \ }
+ \ my $cmd = "mvim";
+ \ for $bfile (sort keys %slist) {
+ \   $cmd .= " $slist{$bfile}";
+ \ }
+ \ system($cmd);
+ \ VIM::Msg("OK - $cmd");
+ \ }
+ \ <CR>
+
+command! -bang Smate redir @" | silent ls<bang> | redir END | echo " " |
+ \ perl {
+ \ my $msg=VIM::Eval('@"');
+ \ my $file, $value, $bfile;
+ \ my @flist, %slist;
+ \ while($msg =~ m/(.*?line\s+\d+)/g) {
+ \   $value = $1;
+ \   $value =~ m/"([^"]+)"/;
+ \   $file  = $1;
+ \   next if ($file =~ /No Name/);
+ \   ($bfile = $file) =~ s!^.*/_?!!;
+ \   $slist{$bfile} = $file;
+ \ }
+ \ my $cmd = "mate";
+ \ for $bfile (sort keys %slist) {
+ \   $cmd .= " $slist{$bfile}";
+ \ }
+ \ system($cmd);
+ \ VIM::Msg("OK - $cmd");
+ \ }
+ \ <CR>
+
+Bundle 'wakatime/vim-wakatime'

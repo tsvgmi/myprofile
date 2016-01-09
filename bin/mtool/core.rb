@@ -6,6 +6,18 @@
 #---------------------------------------------------------------------------
 #++
 
+class Hash
+  def to_yaml(opts = {})
+    YAML::quick_emit(object_id, opts) do |out|
+      out.map(taguri, to_yaml_style) do |map|
+        sort_by{|a| a.to_s}.each do |k, v|
+          map.add(k, v)
+        end
+      end
+    end
+  end
+end
+
 # Functions to support CLI interaction (i.e. options processing,
 # help, result interpretation, exit handling)
 module Cli
@@ -65,6 +77,41 @@ module Cli
     else
       (ARGV.length > 0) || self.cliUsage
       obj    = self.new(ARGV.shift)
+      result = obj.send(*ARGV)
+    end
+
+    # Class handle result?
+    if self.respond_to?(:cliResult)
+      self.cliResult(result, obj)
+    else
+      Cli.setShellResult(result)
+    end
+  end
+
+  def handleCli2(*optset)
+    imethods = self.instance_methods(false)
+    if imethods.size > 0
+      optset << ['--class', '-c']
+    end
+    @cliOptions = optset
+    opt = Cli.parseOptions(*optset)
+    setOptions(opt)
+    obj = nil
+    if opt[:class] || (imethods.size <= 0)
+      (ARGV.length > 0) || self.cliUsage
+      result = self.send(*ARGV)
+    elsif block_given?
+      result = yield opt
+    # Class handle CLI instantiation?
+    elsif self.respond_to?(:cliNew)
+      # ARGV could change during cliNew, so we check both places
+      (ARGV.length > 0) || self.cliUsage
+      obj = self.cliNew(@options)
+      (ARGV.length > 0) || self.cliUsage
+      result = obj.send(*ARGV)
+    else
+      (ARGV.length > 0) || self.cliUsage
+      obj    = self.new(ARGV.shift, @options)
       result = obj.send(*ARGV)
     end
 
@@ -628,12 +675,13 @@ end
 
 require 'logger'
 class PLogger < Logger
-  Format2 = "%s %s - %s\n"
+  Format2 = "%s %s - [%s] %s\n"
   def format_message(severity, timestamp, progname, msg)
+    script = caller[6].sub(/:in .*$/, '').sub(/^.*\//, '')
     if timestamp.respond_to?(:strftime)
-      Format2 % [severity[0..0], timestamp.strftime("%y/%m/%d %T"), msg]
+      Format2 % [severity[0..0], timestamp.strftime("%y/%m/%d %T"), script, msg]
     else
-      Format2 % [severity[0..0], timestamp, progname]
+      Format2 % [severity[0..0], timestamp, script, progname]
     end
   end
 end

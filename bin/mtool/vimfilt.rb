@@ -18,7 +18,8 @@ for other editors as well).  This allows creating common filter script
 which could be used with many editors.
 
 =end
-
+#
+$: << ENV['HOME'] + "/myprofile/bin"
 require File.dirname(__FILE__) + "/../etc/toolenv"
 require 'mtool/core'
 

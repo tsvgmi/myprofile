@@ -6,77 +6,6 @@
 ############################################################################
 
 #==========================================================================
-# Function:    [_ssh_setup]
-# Description: Setup required environments for SSH/tunnel
-#==========================================================================
-function _ssh_setup {
-  typeset utunip
-
-  set -- $(ifconfig utun0 2>/dev/null| grep -w inet)
-  if [ $# -gt 1 ]; then
-    utunip=$2
-    case $utunip in
-    10.150.173.*|10.50.73.*) SSH_PORT=443 ;;
-    esac
-
-    if [ "$SSH_PORT" ]; then
-      SSH_PROXYHOST=lxp6d199m0
-    else
-      case $utunip in
-      # This one needs proxy to go to m7
-      10.150.17[345].*)
-        SSH_PROXYHOST=lxp6d199m0
-        ;;
-      esac
-    fi
-  fi
-
-  case $USER in
-  thienvuong) SSH_USER=tvuong ;;
-  *)          SSH_USER=$USER  ;;
-  esac
-  export SSH_USER SSH_PORT SSH_PROXYHOST
-}
-
-_ssh_setup
-unset _ssh_setup
-
-#==========================================================================
-# Function:    [_ssh]
-# Description: SSH with proxy on demand
-#==========================================================================
-function _ssh {
-  typeset target=$1
-  typeset useproxy=
-
-  [ "$target" ] || target=lxp6d199m0
-  if [ "$SSH_PORT" ]; then
-    [ "$target" == "$HOST" ] || useproxy=yes
-  elif [ "$SSH_PROXYHOST" ]; then
-    case $target in
-    *m7) useproxy=yes ;;
-    esac
-  fi
-  if [ "$useproxy" ]; then
-    emssh connect ${SSH_USER}@${SSH_PROXYHOST}#$target
-  else
-    emssh connect ${SSH_USER}@$target
-  fi
-}
-alias s=_ssh
-
-function _scp {
-  src=$1
-  dest=$2
-
-  [ "$dest" ] || return 1
-  set -x
-  \scp -P $SSH_PORT $src ${SSH_USER}@$dest
-  rc=$?
-  set +x
-}
-
-#==========================================================================
 # Function:    [hcd]
 # Description: CD while under fuse dir
 #==========================================================================
@@ -85,7 +14,7 @@ function hcd {
 
   if [ "$host" ]; then
     if ! grep $host ~/.ssh/known_hosts >/dev/null; then
-      emssh keypush $host
+      mssh keypush $host
     fi
     export HCD_HOST=$host
   else
@@ -95,3 +24,39 @@ function hcd {
   _cd $path
 }
 
+function sc0 {
+  mssh run -t ~/emtools/bin/screens resume $@
+}
+
+function sconnect {
+  typeset host=$1
+  typeset oper=$2
+  typeset proxyhost=$3
+
+  [ "$oper" ] || oper=resume
+  if [ ! "$proxyhost" ]; then
+    case ${host%%.*} in
+    *m7|s2poc*m3)
+      proxyhost=poc1w80m7.etrade.com
+      ;;
+    *m3)
+      proxyhost=adm0m3.etrade.com
+      ;;
+    *)
+      proxyhost=lxdm19m7.etrade.com
+      ;;
+    esac
+  fi
+  mssh run -th tvuong@$proxyhost emtools/bin/screens $oper $@
+}
+
+function stmux {
+  typeset host=$1
+  typeset proxyhost
+
+  case $host in
+  *m3) proxyhost=dcube1w110m3 ;;
+  *)   proxyhost=poc1w80m7 ;;
+  esac
+  ssh -t tvuong@$proxyhost emtools/bin/emtmux resume $@
+}

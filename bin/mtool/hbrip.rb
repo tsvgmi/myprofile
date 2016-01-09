@@ -161,7 +161,7 @@ class HbRip
   def rip_dvd(maxtitle = -1)
     encode  = HbRip.getOption(:encopt) || 'highdvd'
     encopt  = @video.encode_option(encode)
-    _rip_chapter(0,  maxtitle.to_i, encopt)
+    _rip_chapter(0,  maxtitle.to_i, "#{encopt} -m")
   end
 
   private

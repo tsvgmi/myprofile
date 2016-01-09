@@ -103,7 +103,6 @@ class PhpForum
       str = str.gsub(/[^&a-z._0-9 -]/i, "").tr(".", "_")
     end
     str = str.gsub(/&#\d+;/) {|p| entitymap(p)}
-    #str = Iconv.iconv('ASCII//IGNORE//TRANSLIT', 'UTF-8', str).to_s
   end
 
   def print(folder_name, spage = 1)
@@ -122,7 +121,6 @@ class PhpForum
       else
         title = item.title
       end
-      #title = Iconv.iconv('ASCII//IGNORE//TRANSLIT', 'UTF-8', title).to_s
       puts "%8s | %6d | %s | %3d | %s" % ["#{item.folder}.#{item.page}",
         item.thread, item.created.strftime("%m/%d/%y"), item.php_urls.size,
         title]

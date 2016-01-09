@@ -6,11 +6,14 @@
 #---------------------------------------------------------------------------
 #+++
 require File.dirname(__FILE__) + "/../../etc/toolenv"
+require 'rubygems'
 require 'mtool/core'
 
 class Mp4File
   def initialize(file, options = {})
-    require 'mp4info'
+    # Some now bundle put it in a place not accessible.  So I have to copy
+    # it locally
+    require 'mtool/mp4info'
 
     @options = options
     @mp4info = MP4Info.open(file)
@@ -40,7 +43,7 @@ class Mp3File
     @options = options
     begin
       @mp3info = Mp3Info.open(file, :encoding => 'utf-8')
-    rescue Mp3InfoError => errmsg
+    rescue Mp3InfoError, Encoding::InvalidByteSequenceError => errmsg
       p errmsg
     end
   end
@@ -89,19 +92,71 @@ class Mp3Shell
     end
   end
 
-  def mk_thumbnail(ofile, size)
+  def get_artwork(tplname)
     itype, image = @info.get_image
     unless itype
       Plog.info "No image found for #{@file}" if @options[:verbose]
-      return false
+      return nil
     end
-    dfile = "tempout.#{itype}"
+    dfile = "#{tplname}.#{itype}"
     open(dfile, "w") do |fod|
       fod.write(image)
+    end
+    return dfile
+  end
+
+  def mk_thumbnail(ofile, size)
+    unless dfile = get_artwork("forthumbnail")
+      return false
     end
     Pf.system("convert '#{dfile}' -adaptive-resize #{size} '#{ofile}'",
         @options[:verbose])
     FileUtils.remove(dfile, :verbose=>true)
+    true
+  end
+
+  def set_properties(*args)
+    require 'yaml'
+
+    args.each do |assign|
+      name, value = assign.split(/=/)
+      next unless value
+      case name
+      when 'title'
+        @info.tag.title = value
+      when 'artist'
+        @info.tag.artist  = value
+      else
+        Plog.warn "Unknown property to set: #{name}"
+      end
+    end
+    @info.close
+    @info.to_yaml
+  end
+
+  def self.set_properties(*files)
+    files.each do |afile|
+      bname = File.basename(afile).sub(/\..mp3$/, '')
+      track, title, artist = bname.split(/\s*[-\.]\s*/)
+      next unless artist
+      if title =~ /\s*\(/
+        title = $`
+        composer = $'.sub(/\).*$/, '')
+      else
+        composer = nil
+      end
+      Plog.info "#{title} - #{artist} - #{composer} - #{track}"
+      mp3file = Mp3File.new(afile)
+      if mp3file.tag.title != title
+        mp3file.tag.title    = title
+        mp3file.tag.artist   = artist
+        mp3file.tag.track    = track.to_i
+        if composer
+          mp3file.tag.composer   = composer
+        end
+      end
+      mp3file.close
+    end
     true
   end
 end

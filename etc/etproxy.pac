@@ -26,5 +26,6 @@ function FindProxyForURL(url, host) {
     }
 
     //// Otherwise, go through the proxy
-    return "PROXY lxp6d199m0.etrade.com:6100";
+    //return "PROXY sys6w96m6.etrade.com:80";
+    return "PROXY poc1w80m7.etrade.com:8081; DIRECT";
 }

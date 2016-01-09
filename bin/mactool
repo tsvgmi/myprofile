@@ -48,50 +48,6 @@ case $oper in
     F_exec hdiutil makehybrid $ifile -o $ofile
     ;;
 
-  sync-media)
-    mediav="/Volumes/SANSA_E200/MUSIC:1800 /Volumes/THIENMUSIC/MUSIC:950"
-    #mediav="/Users/thienvuong/tmp2:100"
-    #plists=HighRate,NewMusic,Instruments,SoundTracks,Yanni
-    plists=iTuneMyWalkMan
-
-    ftypes= countatsync=yes ropt= imgonly= 
-    while getopts :iIp:v i; do
-      case $i in
-      p) plist=$OPTARG ;;
-      i) countatsync= ;;
-      I) imgonly=yes ;;
-      v) ropt="$ropt -$i" ;;
-      *) F_usageOper $oper ;;
-      esac
-    done
-    let j=$OPTIND-1; shift $j; OPTIND=0
-
-    for vol in $mediav; do
-      bdir=${vol%:*}
-      [ -d $bdir ] || F_abort "$bdir not found.  Connect device"
-    done
-    tmpf=$(F_tmpf 0)
-    tmpf=test.yml
-    [ "$countatsync" ] && ropt="$ropt -i1"
-    if [ ! "$imgonly" ]; then
-      if false; then
-        F_system macruby -S itunehelp.mrb $ropt sync_media -o $tmpf \
-          $plists $mediav || exit 1
-        F_system macruby -S itunehelp.mrb -cv copy_media $tmpf
-      else
-        F_rbrun itunehelp $ropt sync_media -o $tmpf \
-          $plists $mediav || exit 1
-        F_rbrun itunehelp -v copy_media $tmpf
-      fi
-    fi
-    cdir=~/.tool/images
-    [ -d $cdir ] || mkdir -p $cdir
-    cd ~/.tool
-    for vol in $mediav; do
-      F_rbrun itunehelp -cvC $cdir add_img ${vol%:*}
-    done
-    ;;
-
   mk-bridgesupport)
     [ $# -gt 0 ] || F_usageOper $oper
     app=$@
@@ -99,6 +55,10 @@ case $oper in
     F_system sdef "/Applications/$app.app" \
         | F_system sdp -fh --basename $sapp
     F_exec gen_bridge_metadata -c '-I.' $sapp.h >$sapp.bridgesupport
+    ;;
+
+  *.rb)
+    F_rbexec $oper $@
     ;;
 
   *)

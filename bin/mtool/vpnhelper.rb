@@ -9,6 +9,10 @@ require File.dirname(__FILE__) + "/../../etc/toolenv"
 require 'mtool/core'
 require 'yaml'
 
+def grep_cmd(cmd, ptn)
+  `#{cmd}`.split("\n").grep(ptn).first
+end
+
 class VpnHelper
   extendCli __FILE__
 
@@ -18,6 +22,7 @@ class VpnHelper
     if test(?f, CFILE)
       @config = YAML.load_file(CFILE)
     end
+    raise "#{CFILE} is not valid" unless @config
     @routes = @config[dest] || []
     if @routes.size <= 0
       Plog.error "No route specified for #{dest}"
@@ -25,11 +30,10 @@ class VpnHelper
   end
 
   def self.intf_addr(intf)
-    enip = `ifconfig #{intf}`.grep(/inet\s/)
-    if enip.size <= 0
+    unless enip = grep_cmd("ifconfig #{intf}", /inet\s/)
       return nil
     end
-    enip.first.split[1]
+    enip.split[1]
   end
 
 #=================================================================== split
@@ -40,45 +44,49 @@ Split the VPN by only move address range terminated to VPN to its interface
 and route the rest through regular interface
 *      vpnif: 
 =end
-    deftunnel = `netstat -nrf inet`.grep(/default.*#{vpnif}/)
-    if deftunnel.size <= 0
-      Plog.error "Tunnel #{vpnif} is not default route"
-      return false
+    Plog.info "Waiting for tunnel #{vpnif} to get assign default route"
+    while true
+      if deftunnel = grep_cmd("netstat -nrf inet", /default.*#{vpnif}/)
+        if deftunnel != /link/
+          Plog.info "Detect #{deftunnel}"
+          break
+        end
+      end
+      sleep(1)
     end
-    tunip = VpnHelper.intf_addr(vpnif)
+    tunip = deftunnel.split[1]
     unless tunip
       Plog.error "No tunnel #{vpnif} detected"
       return false
     end
-    gwip = nil
-    ['en0', 'en1'].each do |intf|
-      if (enip = VpnHelper.intf_addr(intf)) != nil
-        gwip = `netstat -nrf inet`.grep(/default.*#{intf}/).first
-        if gwip
-          gwip = gwip.split[1]
-          break
+    gwip  = nil
+    while !gwip do
+      ['en0', 'en1', 'en2', 'en3', 'en4', 'en5'].each do |intf|
+        next if (intf == vpnif)
+        if (enip = VpnHelper.intf_addr(intf)) != nil
+          if gwip = grep_cmd("netstat -nrf inet", /default.*#{intf}/)
+            gwip = gwip.split[1]
+          end
         end
       end
+      sleep(1) unless gwip
     end
     unless gwip
-      Plog.error "No regular interface with default gw detected. ???"
+      Plog.error "No non VPN interface with default gw detected. ???"
       return false
     end
-    cmds = vpnroutes(vpnif)
+    cmds = vpnroutes(vpnif, tunip)
     cmds << "route delete -net 0.0.0.0 #{tunip} 0.0.0.0"
     cmds << "route add -net 0.0.0.0 #{gwip} 0.0.0.0"
+    ENV.delete('LD_LIBRARY_PATH')
+    STDERR.puts cmds.inspect
     cmds.each do |acmd|
       Pf.system("sudo #{acmd}", 1)
     end
     true
   end
 
-  def vpnroutes(vpnif = "utun0")
-    tunip = VpnHelper.intf_addr(vpnif)
-    unless tunip
-      Plog.error "No tunnel #{vpnif} detected"
-      return []
-    end
+  def vpnroutes(vpnif, tunip)
     cmds = []
     @routes.each do |aroute|
       net, mask = aroute.split('/')
@@ -95,5 +103,4 @@ end
 if (__FILE__ == $0)
   VpnHelper.handleCli
 end
-
 
