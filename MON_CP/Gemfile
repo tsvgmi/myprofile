@@ -1,0 +1,6 @@
+source 'http://rubygems.org'
+
+gem 'chargepoint'
+gem 'rest-client'
+gem 'eventmachine'
+gem 'slack-ruby-bot'
