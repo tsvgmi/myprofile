@@ -8,8 +8,10 @@ require 'slack-ruby-bot'
 
 Config = YAML.load_file(ENV['HOME'] + "/etc/mon_cp.yml")
 
-Slack.configure do |config|
-  config.token = Config[:slack_api_token]
+if false
+  Slack.configure do |config|
+    config.token = Config[:slack_api_token]
+  end
 end
 
 class CpBot < SlackRubyBot::Bot
@@ -47,21 +49,23 @@ class Spots
   end
 
   def send_notification(msg)
-    unless @client
+    if false && !@client
       @client = Slack::Web::Client.new
       @client.auth_test
     end
 
     msg = "%s: %s" % [Time.now.strftime("%H:%M:%S"), msg]
     puts "\n" + msg
-    msg = msg.gsub(/\&/, '&amp;').gsub(/</, '&lt;').gsub(/>/, '&gt;')
-    @client.chat_postMessage(channel:'#chargepoint', text:msg, as_user: true)
+    if false
+      msg = msg.gsub(/\&/, '&amp;').gsub(/</, '&lt;').gsub(/>/, '&gt;')
+      @client.chat_postMessage(channel:'#chargepoint', text:msg, as_user: true)
+    end
   end
 
   def check_charge_spots
-    now    = Time.now
-    result = ChargePoint::API.get_charge_spots(@latitude, @longitude, 0.2)
-    result = result[0]['station_list']['summaries']
+    now     = Time.now
+    result  = ChargePoint::API.get_charge_spots(@latitude, @longitude, 0.2)
+    result  = result[0]['station_list']['summaries']
     changed = false
     result.each do |astation|
       sname  = astation['station_name'].last
@@ -118,13 +122,19 @@ $spots.send_notification("Starting to monitor")
 EM.run do
   $spots.check_charge_spots
   timer = EM.add_periodic_timer(15) do
-    $spots.check_charge_spots
-    STDOUT.print "."; STDOUT.flush
+    begin
+      $spots.check_charge_spots
+      STDOUT.print "."; STDOUT.flush
+    rescue => errmsg
+      p errmsg
+    end
   end
 
-  cpbot = SlackRubyBot::Server.new(token:Config[:slack_api_token])
-  cpbot.auth!
-  cpbot.start_async
+  if false
+    cpbot = SlackRubyBot::Server.new(token:Config[:slack_api_token])
+    cpbot.auth!
+    cpbot.start_async
+  end
 end
 
 __END__

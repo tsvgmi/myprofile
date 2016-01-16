@@ -269,7 +269,7 @@ command! Normedit      set guifont=Monaco:h12|color koehler
 command! Bigfont       set guifont=Monaco:h14
 command! Normfont      set guifont=Monaco:h12
 
-set guifont=Monaco:h11
+set guifont=Monaco:h12
 
 map ,af		:AddFold<CR>
 map ,fH		:FileHeader<CR>
@@ -307,10 +307,9 @@ highlight Folded guibg=#444444 guifg=#888888
 if $VIMCOLOR != ""
   execute "color " . $VIMCOLOR
 else
-  color koehler
-  "color xterm16
+  "color koehler
 "color darkblue
-"color pablo
+color pablo
 "color zellner
 "color evening
 set mouse=a
@@ -330,7 +329,7 @@ let g:miniBufExplMapCTabSwitchWindows = 1
 let g:miniBufExplUseSingleClick = 1
 let g:miniBufExplModSelTarget = 1
 
-color darkblue
+"color darkblue
 
 set ttymouse=xterm
 set number
@@ -387,4 +386,19 @@ command! -bang Smate redir @" | silent ls<bang> | redir END | echo " " |
  \ }
  \ <CR>
 
-Bundle 'wakatime/vim-wakatime'
+autocmd FileType ruby compiler ruby
+
+set nocompatible      " We're running Vim, not Vi!
+syntax on             " Enable syntax highlighting
+filetype on           " Enable filetype detection
+filetype indent on    " Enable filetype-specific indenting
+filetype plugin on    " Enable filetype-specific plugins
+
+"let g:buftabline_numbers=1
+"let g:buftabline_indicators=1
+
+let g:airline#extensions#tabline#enabled = 1
+let g:airline#extensions#tabline#show_tabs = 1
+"let g:airline#extensions#tabline#tab_nr_type = 1
+"let g:airline#extensions#tabline#buffer_idx_mode = 1
+let g:airline#extensions#tabline#buffer_nr_show = 1
