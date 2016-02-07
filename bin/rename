@@ -1,0 +1,23 @@
+#!/bin/bash
+
+if [ $# -lt 3 ]; then
+  echo "Usage: $0 fromptn toptn files ..."
+  exit 1
+fi
+fromptn=$1
+toptn=$2
+shift 2
+for sfile in "$@"; do
+  dfile=$(echo "$sfile" | sed "s/$fromptn/$toptn/g")
+  if [ "$dfile" = "$sfile" ]; then
+    echo "Target $dfile is the same as source $sfile"
+    continue
+  fi
+  if [ -e "$dfile" ]; then
+    echo "Target $dfile exist"
+    continue
+  fi
+  set -x
+  mv "$sfile" "$dfile"
+  set +x
+done
