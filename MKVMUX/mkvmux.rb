@@ -131,12 +131,14 @@ class MKVMux
     true
   end
 
-  KillPtn = Regexp.new(/(-KILLERS)?\[ettv\]|-GECKOS\[rarbg\]|(juggs|sam|xvid)\[ETRG\]|\[AC3\]|\[VTV\]|\[HIOb\]|ShAaNiG.com|-\s*(2hd|3lt0n|aqos|asap|bajskorv|bida|bito|cm8|dtech|ebx|encodeking|etrg|evo|excellence|fanta|fum|exvid|fingerblast|geckos|high|invincible|jyk|killers|kyr|legi0n|lol|maxspeed|mafiaking|micromkv|millenium|msd|p2p|playnow|psa|ptpower|qaac|rarbg|reenc|thgf|vicky)|(www.torrenting.com - )|www.torentz.3xforum.ro|(ganool|yify|juggs|ac3 titan|hevc|no1knows||reenc|repack|takiawase|\d+MB|web-dl)|(.2CH.x265.HEVC|.HDTV.HEVC.x265-RMTeam)/i)
+  KillPtn = Regexp.new(/(-KILLERS)?\[ettv\]|-GECKOS\[rarbg\]|(juggs|sam|xvid)\[ETRG\]|\[AC3\]|\[VTV\]|\[HIOb\]|ShAaNiG.com|-\s*(2hd|3lt0n|aqos|asap|bajskorv|bida|bito|cm8|dtech|ebx|encodeking|etrg|evo|excellence|fanta|fum|exvid|fingerblast|geckos|high|invincible|jyk|killers|kyr|legi0n|lol|maxspeed|mafiaking|micromkv|millenium|msd|p2p|playnow|psa|ptpower|qaac|rarbg|reenc|thgf|vicky)|(www.torrenting.com - )|www.torentz.3xforum.ro|(ganool|yify|juggs|ac3 titan|hevc|no1knows||reenc|repack|takiawase|\d+MB|web-dl)|(.2CH.x265.HEVC|.HDTV.HEVC.x265-RMTeam)/io)
+  KillPtn2 = Regexp.new(/[-\.](alterego|axxo|evo|etrg|fum|gerhd|hqclub|killers|lol|mkvcage|nezu|organic|rarbg|shaanig|tla|uav)/io)
 
   def self._clean_name(fname)
     dir, file = File.split(fname)
-    nfile = file.sub(KillPtn, '').gsub(/\.+/, '.').sub(/-$/, '').
+    nfile = file.sub(KillPtn, '').gsub(KillPtn2, '').gsub(/\.+/, '.').sub(/-$/, '').
         sub(/\[.*\]\s*/, '')
+    #p nfile
     "#{dir}/#{nfile.strip}"
   end
 

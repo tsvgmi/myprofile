@@ -58,6 +58,10 @@ cnoremap <ESC>b <S-Left>
 cnoremap <ESC>f <S-Right>
 cnoremap <ESC><C-H> <C-W>
 
+" Map to emtux split sequence
+map <C-E>- <C-W>s
+map <C-E>\| <C-W>v
+map <C-E>d <C-W>c
 
 nnoremap <Leader>t :TlistToggle<CR>
 map! <Leader>f <Plug>ShowFunc
@@ -154,13 +158,7 @@ map	<S-UP>		k
 imap	<S-DOWN>	<C-O>j
 imap	<S-UP>		<C-O>k
 
-"--------------------------------------------------- Other preferences ---
-map	+		o
-"map	+		_
-map 	<C-J>		<C-W>j<C-W>_
-map 	<C-K>		<C-W>k<C-W>_
 map	<C-N>		:/^\({\\|class\\|sub\\|proc\\|func\\|main\)<CR>z.
-"map	<C-P>		:?^\({\\|class\\|sub\\|proc\\|func\\|main\)<CR>z.
 map	<C-_>		:cs find f <C-R>=expand("<cfile>")<CR><CR>
 
 " yank/put support in windows
@@ -308,17 +306,16 @@ if $VIMCOLOR != ""
   execute "color " . $VIMCOLOR
 else
   "color koehler
-"color darkblue
-color pablo
-"color zellner
-"color evening
-set mouse=a
+  "color darkblue
+  "color pablo
+  "color zellner
+  "color evening
+  color torte
+  set mouse=a
 
-" Highlight the search pattern
-set hlsearch
-highlight Folded guibg=#444444 guifg=#888888
-
-" Take the : off the keyword pattern.  Does not work w/ ruby symbol
+  " Highlight the search pattern
+  set hlsearch
+  highlight Folded guibg=#444444 guifg=#888888
 endif
 set iskeyword=48-57,_,A-Z,a-z
 
@@ -328,8 +325,6 @@ let g:miniBufExplMapWindowNavArrows = 1
 let g:miniBufExplMapCTabSwitchWindows = 1
 let g:miniBufExplUseSingleClick = 1
 let g:miniBufExplModSelTarget = 1
-
-"color darkblue
 
 set ttymouse=xterm
 set number
@@ -394,11 +389,23 @@ filetype on           " Enable filetype detection
 filetype indent on    " Enable filetype-specific indenting
 filetype plugin on    " Enable filetype-specific plugins
 
-"let g:buftabline_numbers=1
-"let g:buftabline_indicators=1
+let g:miniBufExplMapWindowNavVim = 1 
+let g:miniBufExplMapWindowNavArrows = 1 
+let g:miniBufExplMapCTabSwitchBufs = 1 
+let g:miniBufExplModSelTarget = 1 
 
-let g:airline#extensions#tabline#enabled = 1
-let g:airline#extensions#tabline#show_tabs = 1
-"let g:airline#extensions#tabline#tab_nr_type = 1
-"let g:airline#extensions#tabline#buffer_idx_mode = 1
-let g:airline#extensions#tabline#buffer_nr_show = 1
+" MiniBufExpl Colors
+hi MBENormal               guifg=#808080 guibg=fg
+hi MBEChanged              guifg=#CD5907 guibg=fg
+hi MBEVisibleNormal        guifg=#5DC2D6 guibg=fg
+hi MBEVisibleChanged       guifg=#F1266F guibg=fg
+hi MBEVisibleActiveNormal  guifg=#A6DB29 guibg=fg
+hi MBEVisibleActiveChanged guifg=#F1266F guibg=fg
+
+let g:miniBufExplSortBy = "mru"
+
+" Saving/restore controlspace workspace
+let g:CtrlSpaceLoadLastWorkspaceOnStart = 1
+let g:CtrlSpaceSaveWorkspaceOnSwitch = 1
+let g:CtrlSpaceSaveWorkspaceOnExit = 1
+set hidden 

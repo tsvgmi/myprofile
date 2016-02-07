@@ -1,0 +1,10 @@
+source "http://rubygems.org"
+
+gem "activerecord"
+#gem "activerecord-sqlite3-adapter"
+gem "rb-appscript"
+gem "hpricot"
+gem "iconv"
+gem "ruby-mp3info"
+gem "hpricot"
+gem "mp4info", :git => "git://github.com/arbarlow/ruby-mp4info.git"

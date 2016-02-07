@@ -1,0 +1,43 @@
+#!/usr/bin/env ruby
+
+require 'capybara'
+
+myprefix = "123456"
+uname    = ENV['LOGNAME']
+securid  = ARGV.shift
+passwd   = ARGV.shift
+passwd ||= `security find-generic-password -gl Mystique 2>&1 1>/dev/null`.chomp.split[1].gsub(/"/, '')
+#puts passwd
+#exit
+
+if false
+Capybara.register_driver :selenium do |app|
+  Capybara::Selenium::Driver.new(app, :browser => :chrome)
+end
+end
+
+session = Capybara::Session.new(:selenium)
+
+if securid
+  session.visit "https://remote.etrade.com"
+  session.fill_in("login", with:uname)
+  session.fill_in("passwd1", with:passwd)
+  session.fill_in("passwd", with:"#{myprefix}#{securid}")
+  session.click_on("Log On")
+  session.click_on("OK")
+else
+  session.visit "https://citrix.etrade.com"
+  session.fill_in("login", with:uname)
+  session.fill_in("passwd", with:passwd)
+  session.click_on("Log On")
+end
+
+begin
+  session.click_link("Skip to Log on")
+rescue Capybara::ElementNotFound
+end
+
+session.click_link("ETrade Enterprise Applications")
+
+puts "Enterprise Apps starting up.  Wait ..."
+sleep(20)

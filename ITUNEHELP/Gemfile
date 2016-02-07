@@ -1,0 +1,8 @@
+source "http://rubygems.org"
+
+gem "rb-appscript"
+gem "rb-scpt"
+gem "sqlite3"
+gem "activerecord"
+gem "hpricot"
+
