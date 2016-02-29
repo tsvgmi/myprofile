@@ -58,10 +58,14 @@ cnoremap <ESC>b <S-Left>
 cnoremap <ESC>f <S-Right>
 cnoremap <ESC><C-H> <C-W>
 
-" Map to emtux split sequence
+" Map to emtux split sequence.  This won't work if vim is running under emtmux
 map <C-E>- <C-W>s
 map <C-E>\| <C-W>v
 map <C-E>d <C-W>c
+
+" Map to iterm split sequence.  This won't work if vim is running under iterm
+map <D-D> <C-W>s
+map <D-d> <C-W>v
 
 nnoremap <Leader>t :TlistToggle<CR>
 map! <Leader>f <Plug>ShowFunc
@@ -175,15 +179,25 @@ set wmh=0
 map 	 <Leader>- :only\|split<CR>
 " Maximize back windows + show all buffer tabs
 nmap     <Leader>0 :only\|bn\|bp<CR>
-nmap     <Leader>1 :1bu<CR>
-nmap     <Leader>2 :2bu<CR>
-nmap     <Leader>4 :4bu<CR>
-nmap     <Leader>5 :5bu<CR>
-nmap     <Leader>6 :6bu<CR>
-nmap     <Leader>7 :7bu<CR>
-nmap     <Leader>8 :8bu<CR>
-nmap     <Leader>9 :9bu<CR>
+nmap     <Leader>1 :tabn 1<CR>
+nmap     <Leader>2 :tabn 2<CR>
+nmap     <Leader>3 :tabn 3<CR>
+nmap     <Leader>4 :tabn 4<CR>
+nmap     <Leader>5 :tabn 5<CR>
+nmap     <Leader>6 :tabn 6<CR>
+nmap     <Leader>7 :tabn 7<CR>
+nmap     <Leader>8 :tabn 8<CR>
+nmap     <Leader>9 :tabn 9<CR>
 
+nmap     <D-1> :tabn 1<CR>
+nmap     <D-2> :tabn 2<CR>
+nmap     <D-3> :tabn 3<CR>
+nmap     <D-4> :tabn 4<CR>
+nmap     <D-5> :tabn 5<CR>
+nmap     <D-6> :tabn 6<CR>
+nmap     <D-7> :tabn 7<CR>
+nmap     <D-8> :tabn 8<CR>
+nmap     <D-9> :tabn 9<CR>
 
 nmap 	<M-C>	!!~/bin/vimfilt.rb % cbar<CR>
 nmap 	c	!!~/bin/vimfilt.rb % cbar<CR>

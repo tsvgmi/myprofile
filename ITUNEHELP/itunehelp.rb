@@ -690,7 +690,7 @@ module ITune
         #Plog.info atrack.artist
         #puts "Time: %6s" % [atrack.time]
         if otrack && (atrack.name_clean == otrack.name_clean) &&
-          ((atrack.track_time - otrack.track_time).abs <= 4)
+          ((atrack.track_time - otrack.track_time).abs <= 7)
           next if atrack.artist =~ /Vuong, Thien/
           puts atrack.name + " has duplicates.  Mark smaller one"
           puts "Rating: %8d - %8d" % [otrack.rating, atrack.rating]
