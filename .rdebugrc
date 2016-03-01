@@ -1,6 +1,0 @@
-set autoeval
-set forcestep on
-set basename on
-set autoreload
-set auto-reload
-set autolist
