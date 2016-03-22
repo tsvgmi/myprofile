@@ -48,3 +48,5 @@ export PATH=/Users/tvuong/google-cloud-sdk/bin:$PATH
 
 # The next line enables bash completion for gcloud.
 source /Users/tvuong/google-cloud-sdk/arg_rc
+
+test -e "${HOME}/.iterm2_shell_integration.bash" && source "${HOME}/.iterm2_shell_integration.bash"

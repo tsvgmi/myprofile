@@ -20,7 +20,8 @@ which could be used with many editors.
 =end
 #
 $: << ENV['HOME'] + "/myprofile/bin"
-require File.dirname(__FILE__) + "/../etc/toolenv"
+$: << ENV['HOME'] + "/myprofile"
+require "etc/toolenv"
 require 'mtool/core'
 
 # Various text filter processing

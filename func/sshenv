@@ -28,7 +28,7 @@ function sc0 {
   mssh run -t ~/emtools/bin/screens resume $@
 }
 
-function sconnect {
+function sc1 {
   typeset host=$1
   typeset oper=$2
   typeset proxyhost=$3

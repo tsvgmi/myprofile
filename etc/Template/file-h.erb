@@ -1,0 +1,27 @@
+<%
+  protectsym = "__" + ENV['ERB_ARG'].split('/').last.gsub(/[\.]/, '_').upcase + "__"
+%>/*************************************************************************
+ * File:        <%= ENV['ERB_ARG'] %>
+ * Created:     <%= Time.now %>
+ *
+ * Copyright (c) E*Trade - <%= Time.now.year %>.
+ * All Rights Reserved.
+ * Proprietary and Confidential Material.
+ *
+ * Description:
+ * $Id$
+ *************************************************************************/
+#ifndef <%= protectsym %>
+#define <%= protectsym %>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif                                  /* <%= protectsym %> */

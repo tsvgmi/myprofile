@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+
+PATH=$PATH:~/bin:~/emtools/bin:~/etfw2/bin
+ofile="$@"
+bfile=${ofile##*/}
+lfile=${ofile}
+{
+  set -x
+  case ${bfile%%.*} in
+  poc1w80m7|redmine*|sit105*)
+    ftitle=$(egrep "^h[1-9]\. " "$ofile" | head -1 | sed -e 's/ //g' -e 's/^h[0-9]\.//')
+    prefix=RM
+    ;;
+  wiki)
+    ftitle=$(egrep "^= " "$ofile" | head -1 | sed -e 's/[ =]//g')
+    prefix=MW
+    ;;
+  *)
+    ftitle=$(egrep "^h[1-9]\. " "$ofile" | head -1 | sed -e 's/ //g' -e 's/^h[0-9]\.//')
+    prefix=RM
+    ;;
+  esac
+  ftitle=$(echo $ftitle | sed 's!/!!g')
+  if [ "$ftitle" ]; then
+    lfile=/tmp/$prefix:$ftitle
+    rm -f $lfile
+    ln -s "$ofile" $lfile
+  fi
+  echo $@
+  /usr/local/bin/mvim --remote "$lfile"
+} 2>&1 | tee ~/test.log
