@@ -34,7 +34,7 @@ class VideoFile
 
     ic = Iconv.new('UTF-8//IGNORE', 'UTF-8')
 
-    ['srt', 'eng.srt', 'idx'].each do |sub|
+    ['srt', 'eng.srt', 'en.srt', 'idx'].each do |sub|
       subfile = "#{@bname}.#{sub}"
       if test(?f, subfile)
         if sub =~ /srt$/
@@ -178,6 +178,13 @@ class MKVMux
           FileUtils.remove(f, verbose:true)
         end
         next
+      when /RARBG.COM/
+        if options[:dryrun]
+          p f
+        else
+          FileUtils.remove(f, verbose:true)
+        end
+        next
       end
       if (nfile = _clean_name(f)) != f
         puts({f:f, nfile:nfile}.inspect)
@@ -185,6 +192,12 @@ class MKVMux
           FileUtils.move(f, nfile, verbose:true)
         end
       end
+    end
+    if options[:backup]
+      files = Find.find(dir).select do |f|
+        test(?f, f) && (f =~ /.(srt|bak)$/)
+      end
+      FileUtils.remove(files, verbose:true)
     end
     true
   end
@@ -250,6 +263,7 @@ end
 
 if (__FILE__ == $0)
   MKVMux.handleCli(
+    ['--backup', '-b', 0],
     ['--dryrun', '-n', 0],
     ['--force',  '-f', 0],
     ['--odir',   '-d', 1]

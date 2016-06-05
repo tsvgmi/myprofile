@@ -39,7 +39,7 @@ function sc1 {
     *m7|s2poc*m3)
       proxyhost=poc1w80m7.etrade.com
       ;;
-    *m3)
+    *m3|*m5)
       proxyhost=adm0m3.etrade.com
       ;;
     *)

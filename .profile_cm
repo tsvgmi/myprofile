@@ -7,7 +7,6 @@
 # Description: Common profile for all nodes
 # $Id$
 ############################################################################
-unset EM_TOOL_DEFINED EM_TOOL_DIR
 
 HOST=$(hostname)
 HOST=${HOST%%.*}
@@ -90,8 +89,8 @@ export PS1='%F{yellow}%h %m.%B%2~%b.%T%#%f '
 #export PS1='[\!.\u.\h] \W>'
 
 stty echoe
-set -o vi
-set -o ignoreeof
+set  -o vi
+set  -o ignoreeof
 
 if which shopt >/dev/null 2>&1; then
   shopt -s cdspell
@@ -133,62 +132,16 @@ if [ ! "$netlan" ]; then
   fi
 fi
 
-echo "Display is [$DISPLAY]"
+echo "Display is [$DISPLAY] ..."
 
-export CVSROOT=:pserver:$USER@cvsserver.etrade.com:2401/etrade/cvsserver/cvs
-# The smart option is dumber than the dumb option.  Don' clear sreen
 export LESS=X
 
 [ "$TERM" ] || export TERM=xterm
 [ "$TERM" = "rxvt" ] && export TERM=xterm
 
-if [ -d ~/selaf ]; then
-  CDPATH=$CDPATH:~/selaf:~/selaf/ats:~/selaf/ats/datasource
-fi
-if [ "$CLEARCASE_ROOT" ]; then
-  CDPATH=$CDPATH:/vob:/vob/frame:/vob/frame/src:/vob/frame/src/Products
-fi
-if /usr/bin/which vim >/dev/null 2>&1; then
-  export EDITOR=vim
-fi
-
-alias ib='cd $ET_INSTANCE_ROOT/bin'
-alias ic='cd $ET_INSTANCE_ROOT/config'
-alias il='cd $ET_INSTANCE_ROOT/logs'
-
-export ODBCINI=/etrade/tools/etc/odbc.ini
-export ODBCSYSINI=/etrade/tools/etc
-export FREETDSCONF=/etrade/tools/etc/freetds.conf
-
-[ -f ~/.ctierrc ] && . ~/.ctierrc
-[ -f ~/etc/profile ] && . ~/etc/profile
-
-if [ ! "$ET_ROOT" ]; then
-  export ET_ROOT=/etrade
-  case $OSTYPE in
-  solaris) PKGBASE=/etrade/pkgs ;;
-  *)       PKGBASE=/etrade/pkgs/linux/intel ;;
-  esac
-  export ET_OPENSRC_ROOT=$PKGBASE/opensrc/1.0
-  PATH=$PATH:$ET_OPENSRC_ROOT/bin
-fi
-
 export RUBYLIB=~/etfw2/lib
 if [ -x /etrade/tools/bin/ruby ]; then
   export RUBYLIB=$RUBYLIB:/etrade/tools/lib
-  #set -- $(rpm -ql selaf-gempak 2>/dev/null | head -1)
-  #if [ $# -gt 0 ]; then
-    #export GEM_HOME=$1
-    #export PATH=$PATH:$GEM_HOME/bin
-  #fi
-elif [ -x ~/tools/bin/ruby ]; then
-  export RUBYLIB=$RUBYLIB:~/tools/lib:~/tools/lib/ruby/1.8:~/tools/lib/ruby/site_ruby/1.8
-  case $OSTYPE in
-  solaris) rbostype=sparc-solaris2.9 ;;
-  linux)   rbostype=i686-linux ;;
-  linux65) rbostype=x86_64-linux ;;
-  esac
-  RUBYLIB=$RUBYLIB:~/tools/lib/ruby/1.8/$rbostype:~/tools/lib/ruby/site_ruby/1.8/$rbostype
 fi
 if ! /usr/bin/which ruby >/dev/null 2>&1; then
   for dir in /etrade/pkgs/linux/intel/ruby/1.8.4; do
@@ -196,30 +149,10 @@ if ! /usr/bin/which ruby >/dev/null 2>&1; then
   done
 fi
 
-eval $(ruby -S shhelper.rb vimFont)
-echo VIMFONT=$VIMFONT
+#eval $(ruby -S shhelper.rb vimFont)
+#echo VIMFONT=$VIMFONT
 
 tty=$(tty)
 export HISTFILE=~/.tool/bhist${tty##*/}
-
-if [ ! "$ET_ENVIRONMENT" ]; then
-  if [ -f ~/.tool/etenv-$HOST ]; then
-    echo "... Switching into etenv ..."
-    exec emtool etenv
-  else
-    if [ -f /etrade/tools/etc/bashswitch ]; then
-      . /etrade/tools/etc/bashswitch
-    elif [ -f etfw2/etc/bashswitch ]; then
-      . etfw2/etc/bashswitch
-    fi
-  fi
-fi
-
-if [ -f /usr/lib/libhoard.so ]; then
-  export LD_PRELOAD_32=/usr/lib/libhoard.so:/usr/lib/libdl.so
-fi
-if [ -f /usr/lib64/libhoard.so ]; then
-  export LD_PRELOAD_64=/usr/lib64/libhoard.so:/usr/lib64/libdl.so
-fi
 
 cd

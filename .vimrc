@@ -312,7 +312,8 @@ map <T-Down> :call FontAdjust(-1)<CR>
 
 syntax on
 
-" set mouse=a
+set mouse=a
+set mousefocus
 
 highlight Folded guibg=#444444 guifg=#888888
 
@@ -423,3 +424,4 @@ let g:CtrlSpaceLoadLastWorkspaceOnStart = 1
 let g:CtrlSpaceSaveWorkspaceOnSwitch = 1
 let g:CtrlSpaceSaveWorkspaceOnExit = 1
 set hidden 
+

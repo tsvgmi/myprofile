@@ -162,7 +162,7 @@ case $oper in
     ;;
 
   rsynergy)
-    open -a "Synergyd"
+    open -g -a "Synergyd"
     PATH=$PATH:/usr/local/bin
     growlnotify --appIcon Synergyd --message 'Synergy started'
     F_exec ssh tvuong@lxp6d199m0 bin/mpolohook synergy
@@ -193,9 +193,9 @@ case $oper in
       (
         f_location_control ETrade on
         f_killApp Opera iTunes jDownloader Plex.Media.Server \
-           Synergyd
+           Synergyd MightyText
         if f_isWorkingHour; then
-          open -a "Microsoft Communicator"
+          open -g -a "Cisco Jabber"
         fi
         open -a "Microsoft Outlook"
         F_surun $EM_MYPROG _killasroot TrendMicro
@@ -210,9 +210,9 @@ case $oper in
       (
         f_location_control ETrade on
         f_killApp Opera iTunes jDownloader Plex.Media.Server \
-           Synergyd VirtualBoxVM
+           Synergyd VirtualBoxVM MightyText WhatsChrome
         if f_isWorkingHour; then
-          open -a "Microsoft Communicator"
+          open -g -a "Cisco Jabber"
         fi
         open -a "Microsoft Outlook"
         F_surun $EM_MYPROG _killasroot TrendMicro
@@ -231,13 +231,15 @@ case $oper in
           f_location_control Home off
         fi
         f_killApp Microsoft.Messenger Microsoft.Communicator Microsoft.Outlook \
-            Synergyd
+            Synergyd Jabber
         F_surun $EM_MYPROG _killasroot TrendMicro
         f_delete10Net
         f_mount_nfs 192.168.6.1:/nfs/share_1 /mnt/share_1
         #osascript ~/tmp/sound.as
         rm -f ~/.ssh/master*
-        open -a "Plex Media Server"
+        open -g -a "Plex Media Server"
+        open -g -a "MightyText"
+        open -g -a "WhatsChrome"
         say -v Whisper home
       ) | tee -a ~/.tool/cptool-$oper.log
       ;;
@@ -245,9 +247,11 @@ case $oper in
       (
         f_location_control Auto on
         f_killApp Microsoft.Messenger Microsoft.Communicator Microsoft.Outlook \
-            Synergyd
+            Synergyd Jabber
         F_surun $EM_MYPROG _killasroot TrendMicro
-        open -a "Plex Media Server"
+        open -g -a "Plex Media Server"
+        open -g -a "MightyText"
+        open -g -a "WhatsChrome"
         f_delete10Net
         f_mount_nfs 192.168.6.1:/nfs/share_1 /mnt/share_1
         #osascript ~/tmp/sound.as
@@ -275,8 +279,10 @@ case $oper in
         f_killApp jDownloader Plex.Media.Server
         open -g -a 'Microsoft Outlook'
         if f_isWorkingHour; then
-          open -a "Microsoft Communicator"
+          open -g -a "Cisco Jabber"
+          open -g -a "WhatsChrome"
         fi
+        open -g -a "MightyText"
         f_mount_nfs 192.168.6.1:/nfs/share_1 /mnt/share_1
         #osascript ~/tmp/sound.as
         say -v Whisper split vpn
