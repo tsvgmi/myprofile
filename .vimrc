@@ -241,7 +241,11 @@ set ignorecase
 set smartcase
 set expandtab
 
-set viminfo='50,\"1000,:1,n~/.vim/viminfo
+if has('nvim')
+  set shada='50,\"1000,:1,n~/.vim/shada
+else
+  set viminfo='50,\"1000,:1,n~/.vim/viminfo
+end
 set cinkeys=0{,0},:,!,o,O,e
 
 set listchars=tab:»­,trail:­
@@ -281,7 +285,9 @@ command! Normedit      set guifont=Monaco:h12|color koehler
 command! Bigfont       set guifont=Monaco:h14
 command! Normfont      set guifont=Monaco:h12
 
-set guifont=Monaco:h12
+if !has('nvim')
+  set guifont=Monaco:h12
+end
 
 map ,af		:AddFold<CR>
 map ,fH		:FileHeader<CR>
@@ -341,7 +347,9 @@ let g:miniBufExplMapCTabSwitchWindows = 1
 let g:miniBufExplUseSingleClick = 1
 let g:miniBufExplModSelTarget = 1
 
-set ttymouse=xterm
+if !has('nvim')
+  set ttymouse=xterm
+end
 set number
 
 " Change cursor based on insert mode

@@ -15,7 +15,7 @@ VideoExt = Regexp.new(/\.(avi|divx|mp4|mkv|flv)$/)
 class VideoFile
   def initialize(vfile, options = {})
     @vfile   = vfile
-    @bname   = @vfile.sub(VideoExt, '')
+    @bname   = @vfile.sub(VideoExt, '').gsub("'", '')
     @options = options
     # Make this instance var so it survive during lifetime of Videofile
     @subfile = nil
@@ -131,23 +131,54 @@ class MKVMux
     true
   end
 
-  KillPtn = Regexp.new(/(-KILLERS)?\[ettv\]|-GECKOS\[rarbg\]|(juggs|sam|xvid)\[ETRG\]|\[AC3\]|\[VTV\]|\[HIOb\]|ShAaNiG.com|-\s*(2hd|3lt0n|aqos|asap|bajskorv|bida|bito|cm8|dtech|ebx|encodeking|etrg|evo|excellence|fanta|fum|exvid|fingerblast|geckos|high|invincible|jyk|killers|kyr|legi0n|lol|maxspeed|mafiaking|micromkv|millenium|msd|p2p|playnow|psa|ptpower|qaac|rarbg|reenc|thgf|vicky)|(www.torrenting.com - )|www.torentz.3xforum.ro|(ganool|yify|juggs|ac3 titan|hevc|no1knows||reenc|repack|takiawase|\d+MB|web-dl)|(.2CH.x265.HEVC|.HDTV.HEVC.x265-RMTeam)/io)
-  KillPtn2 = Regexp.new(/[-\.](alterego|axxo|evo|etrg|fum|gerhd|hqclub|killers|lol|mkvcage|nezu|organic|rarbg|shaanig|tla|uav)/io)
+  KillPtn = Regexp.new(/(-KILLERS)?\[ettv\]|-GECKOS\[rarbg\]|(juggs|sam|xvid)\[ETRG\]|\[AC3\]|\[VTV\]|\[HIOb\]|ShAaNiG.com|-\s*(2hd|3lt0n|aqos|asap|bajskorv|bida|bito|cm8|dtech|ebx|encodeking|etrg|evo|excellence|fanta|fum|exvid|fingerblast|geckos|high|invincible|jyk|killers|kyr|legi0n|lol|maxspeed|mafiaking|micromkv|millenium|msd|p2p|playnow|psa|ptpower|qaac|rarbg|reenc|thgf|vicky)|(www.torrenting.com - )|www.torentz.3xforum.ro|(ganool|juggs|ac3 titan|hevc|no1knows||reenc|repack|takiawase|\d+MB|web-dl)|(.2CH.x265.HEVC|.HDTV.HEVC.x265-RMTeam)/io)
+  KillPtn2 = Regexp.new(/[-\.](alterego|anoxmous|axxo|bdrip|bluray|brrip|dvdscr|evo|etrg|fum|gerhd|h264|hdrip|hdtv-fleet|hevc|hqclub|killers|lol|mkvcage|nezu|organic|proper|rarbg|rmteam|shaanig|tla|uav|vostfr|web-dl|webrip|x264|x265|x\.264|xvid)/io)
+  KillPtn3 = Regexp.new(/[-\.](\d+MB|720p|aac|ac3|batv|bdrip|bluray|bokutox|btchkek|cm8|crazy4ad|divx|dvdrip|fgt|foxm|haac|hdrip|hdtv|korsub|meteam|rccl|repack|screener|srigga|stuttershit|snd|sujaidr|sva|vyto|w4f|yify)/io)
 
   def self._clean_name(fname)
     dir, file = File.split(fname)
-    nfile = file.sub(KillPtn, '').gsub(KillPtn2, '').gsub(/\.+/, '.').sub(/-$/, '').
-        sub(/\[.*\]\s*/, '')
+    nfile = file.sub(KillPtn, '').gsub(KillPtn2, '').gsub(KillPtn3, '').gsub(/\.+/, '.').sub(/-$/, '').
+        sub(/\[.*\]\s*/, '').gsub("'", '')
     #p nfile
     "#{dir}/#{nfile.strip}"
   end
 
+  def self.flatten_dir(dir='.')
+    require 'yaml'
+
+    options = getOption
+    dirs    = {}
+    `find #{dir}`.split("\n").each do |d|
+      fd, fb = File.split(d)
+      dirs[fd] ||= []
+      next if fb =~ /DS_Store/o
+      dirs[fd] << fb
+    end
+    #dirs = dirs.to_a.sort_by{|a, b| a}
+    #STDERR.puts dirs.to_yaml
+    dirs.each do |dir, fs|
+      if fs.size > 1
+        puts({dir:dir, fs:fs[0]}.inspect)
+        next
+      end
+      if options[:dryrun]
+        puts({dir:dir, fs:fs}.inspect)
+      else
+        if fs.size == 1
+          FileUtils.move("#{dir}/#{fs[0]}", "#{dir}/..", verbose:true)
+        end
+        FileUtils.rm_rf(dir, verbose:true)
+      end
+    end
+    true
+  end
+  
   def self.clean_dir
     dir = "."
     options = getOption
 
-    Find.find(dir).select { |f|
-      (f !~ /Downloading/) && test(?d, f) && (f =~ /\//)
+    `find #{dir} -type f`.split("\n").select { |f|
+      (f !~ /Downloading/) && (f =~ /\//)
     }.each do |d|
       if (nd = _clean_name(d)) != d
         puts({d:d, nd:nd}.inspect)
@@ -157,9 +188,9 @@ class MKVMux
       end
     end
 
-    Find.find(dir).select do |f|
-      test(?f, f) && (f =~ /\//) && (f !~ /.part$/)
-    end.each do |f|
+    `find #{dir} -type f`.split("\n").select { |f|
+      (f =~ /\//) && (f !~ /.part$/)
+    }.each do |f|
       case f
       when /\.xx-srt$/
         bfile = $`
@@ -194,10 +225,12 @@ class MKVMux
       end
     end
     if options[:backup]
-      files = Find.find(dir).select do |f|
-        test(?f, f) && (f =~ /.(srt|bak)$/)
+      files = `find #{dir} -type f`.split("\n").select { |f|
+        (f =~ /.(srt|bak)$/)
+      }
+      if files.size > 0
+        FileUtils.remove(files, verbose:true)
       end
-      FileUtils.remove(files, verbose:true)
     end
     true
   end
@@ -231,9 +264,6 @@ class MKVMux
   end
 
   def self.move_to_media_dir(ptn=nil)
-    #mediadir = "/Volumes/My_Book/TV"
-    #mediadir = "/Volumes/WD_My_Book_1140_41/TV"
-    #mediadir = "/Volumes/share_1/TV"
     mediadir = "/mnt/share_1/TV"
     dir      = "."
     fptn     = {}

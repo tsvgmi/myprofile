@@ -64,7 +64,8 @@ module Cli
     obj = nil
     if opt[:class] || (imethods.size <= 0)
       (ARGV.length > 0) || self.cliUsage
-      result = self.send(*ARGV)
+      method = ARGV.shift.gsub(/-/, '_')
+      result = self.send(method, *ARGV)
     elsif block_given?
       result = yield opt
     # Class handle CLI instantiation?
@@ -73,11 +74,13 @@ module Cli
       (ARGV.length > 0) || self.cliUsage
       obj = self.cliNew
       (ARGV.length > 0) || self.cliUsage
-      result = obj.send(*ARGV)
+      method = ARGV.shift.gsub(/-/, '_')
+      result = obj.send(method, *ARGV)
     else
       (ARGV.length > 0) || self.cliUsage
       obj    = self.new(ARGV.shift)
-      result = obj.send(*ARGV)
+      method = ARGV.shift.gsub(/-/, '_')
+      result = obj.send(method, *ARGV)
     end
 
     # Class handle result?

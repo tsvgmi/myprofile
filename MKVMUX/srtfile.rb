@@ -50,6 +50,8 @@ module SrtFile
       new_content = []
       offset_ms   = offset_ms.to_i
       @content.each do |stime, etime, dialog|
+        #stime = (stime * 0.8).to_i
+        #etime = (etime * 0.8).to_i
         new_content << [stime+offset_ms, etime+offset_ms, dialog]
       end
       @content = new_content
@@ -78,9 +80,13 @@ EOF
   class Main
     extendCli __FILE__
 
+    # offset in ms
     def self.time_shift(ifile, offset, ofile=nil)
       options = getOption
       ofile ||= ifile.sub(/\.srt$/, '-new.srt')
+      if odir = options[:odir]
+        ofile = File.join(odir, File.basename(ofile))
+      end
       if offset =~ /^m/
         offset = $'.to_f * (-1000)
       else

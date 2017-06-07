@@ -73,11 +73,11 @@ for upath in $pathlist; do
   [ -d $upath/share/man ] && MANPATH=$MANPATH:$upath/share/man
 done
 
-for dir in ~/bin ~/emtools/bin ~/bin/mtool ~/etool/bin ~/etfw2/bin \
+for dir in ~/bin ~/emtools/bin ~/appcommon/bin ~/etfw2/bin \
         ~/etfw2/lib/pem ~/selaf/bin /usr/winbin; do
   [ -d $dir ] && PATH=$dir:$PATH
 done
-export CDPATH=.:$CDPATH:$HOME:$HOME/etool
+export CDPATH=.:$CDPATH:$HOME:$HOME/SRC:$HOME/etool
 
 if [ -f ~/func/common ]; then
   . ~/func/common

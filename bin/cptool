@@ -31,6 +31,18 @@ function f_killApp {
 }
 
 #==========================================================================
+# Function:    [f_umount]
+# Description: .
+#==========================================================================
+function f_umount {
+  typeset vol=$1
+
+  set -x
+  sudo umount -f $vol
+  set +x
+}
+
+#==========================================================================
 # Function:    [f_delete10Net]
 # Description: .
 #==========================================================================
@@ -56,26 +68,44 @@ function f_isWorkingHour {
 }
 
 #==========================================================================
-# Function:    [f_mount_nfs]
+# Function:    [f_mount_fs]
 # Description: .
 #==========================================================================
-function f_mount_nfs {
+function f_mount_fs {
   typeset src=$1
   typeset target=$2
-  typeset subnet=${src%:*}
+  typeset fstype=$3
+  typeset subnet=${src##*@}
   subnet=${subnet%.*}
 
   [ "$target" ] || target=/mnt/${src##*/}
+  [ "$fstype" ] || fstype=nfs
   if df $target | egrep $src; then
     F_logProgress "$target already mounted"
     return
   fi
   if ifconfig | fgrep $subnet ; then
-    [ -d $target ] || mkdir -p $target
     set -x
-    sudo mount -t nfs -o resvport,rw $src $target
+    [ -d $target ] || mkdir -p $target
     set +x
+    case $fstype in
+      nfs)
+        set -x
+        sudo mount -t nfs -o resvport,rw $src $target
+        set +x
+        ;;
+      smb)
+        set -x
+        #sudo mount -t smbfs //$src $target -o rw -o uid=$USER
+        sudo mount -o rw -t smbfs //$src $target
+        set +x
+        ;;
+      *)
+        F_logProgress "Unknown file type: $fstype"
+        ;;
+    esac
   fi
+  set +x
 }
 
 #==========================================================================
@@ -173,9 +203,20 @@ case $oper in
     src=$1
     target=$2
     [ "$target" ] || target=/mnt/${src##*/}
-    sudo umount $target
-    f_mount_nfs $1 $target
+    f_umount $target
+    f_mount_fs $src $target nfs
     ;;
+
+  mount-smb)
+    [ $# -ge 1 ] || F_usageOper $oper
+    src=$1
+    target=$2
+    [ "$target" ] || target=/mnt/${src##*/}
+    f_umount $target
+    set -x
+    f_mount_fs $src $target smb
+    ;;
+
 
   connect)
     for target in $*; do
@@ -186,6 +227,7 @@ case $oper in
   #Use: connect et|home|vpn|splitvpn
   #Des: Setup environment for different network location.
   _connect)
+    unset GEM_HOME GEM_PATH
     cd
     target=$1
     case $target in
@@ -193,7 +235,7 @@ case $oper in
       (
         f_location_control ETrade on
         f_killApp Opera iTunes jDownloader Plex.Media.Server \
-           Synergyd MightyText
+           Synergyd
         if f_isWorkingHour; then
           open -g -a "Cisco Jabber"
         fi
@@ -201,7 +243,7 @@ case $oper in
         F_surun $EM_MYPROG _killasroot TrendMicro
         f_delete10Net
         osascript -e "set Volume 0"
-        sudo umount /mnt/share_1
+        f_umount /mnt/share_1
         #osascript ~/tmp/nosound.as
         say -v Whisper vpn
       ) | tee -a ~/.tool/cptool-$oper.log
@@ -210,7 +252,8 @@ case $oper in
       (
         f_location_control ETrade on
         f_killApp Opera iTunes jDownloader Plex.Media.Server \
-           Synergyd VirtualBoxVM MightyText WhatsChrome
+          Synergyd VirtualBoxVM Viber \
+          Google.Drive VOX MusicManager
         if f_isWorkingHour; then
           open -g -a "Cisco Jabber"
         fi
@@ -218,7 +261,7 @@ case $oper in
         F_surun $EM_MYPROG _killasroot TrendMicro
         f_delete10Net
         osascript -e "set Volume 0"
-        sudo umount /mnt/share_1
+        f_umount /mnt/share_1
         #osascript ~/tmp/nosound.as
         say -v Whisper office
       ) | tee -a ~/.tool/cptool-$oper.log
@@ -234,12 +277,10 @@ case $oper in
             Synergyd Jabber
         F_surun $EM_MYPROG _killasroot TrendMicro
         f_delete10Net
-        f_mount_nfs 192.168.6.1:/nfs/share_1 /mnt/share_1
+        f_mount_fs 192.168.6.1:/nfs/share_1 /mnt/share_1
         #osascript ~/tmp/sound.as
         rm -f ~/.ssh/master*
         open -g -a "Plex Media Server"
-        open -g -a "MightyText"
-        open -g -a "WhatsChrome"
         say -v Whisper home
       ) | tee -a ~/.tool/cptool-$oper.log
       ;;
@@ -250,10 +291,8 @@ case $oper in
             Synergyd Jabber
         F_surun $EM_MYPROG _killasroot TrendMicro
         open -g -a "Plex Media Server"
-        open -g -a "MightyText"
-        open -g -a "WhatsChrome"
         f_delete10Net
-        f_mount_nfs 192.168.6.1:/nfs/share_1 /mnt/share_1
+        f_mount_fs 192.168.6.1:/nfs/share_1 /mnt/share_1
         #osascript ~/tmp/sound.as
         rm -f ~/.ssh/master*
         say -v Whisper auto
@@ -280,10 +319,8 @@ case $oper in
         open -g -a 'Microsoft Outlook'
         if f_isWorkingHour; then
           open -g -a "Cisco Jabber"
-          open -g -a "WhatsChrome"
         fi
-        open -g -a "MightyText"
-        f_mount_nfs 192.168.6.1:/nfs/share_1 /mnt/share_1
+        f_mount_fs 192.168.6.1:/nfs/share_1 /mnt/share_1
         #osascript ~/tmp/sound.as
         say -v Whisper split vpn
       ) | tee -a ~/.tool/cptool-$oper.log
