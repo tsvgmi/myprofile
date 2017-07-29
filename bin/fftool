@@ -20,10 +20,10 @@ case $oper in
   #@Use: harvest-cache [-k] [-s] [-w time] [-t sound|image] [filetype ....]
   harvest-cache)
     ftypes= ropt= browser=firefox
-    while getopts :b:knsS:t:w: i; do
+    while getopts :b:knsS:t:vw: i; do
       case $i in
       b) browser=$OPTARG ;;
-      [nks]) ropt="$ropt -$i" ;;
+      [nksv]) ropt="$ropt -$i" ;;
       [Sw])  ropt="$ropt -$i $OPTARG" ;;
       t)
         case $OPTARG in

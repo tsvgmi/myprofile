@@ -764,6 +764,11 @@ class Plog
       @@dotrace = false
     end
 
+    def dump_info(obj)
+      Plog.info(obj.inspect)
+    end
+
+
     def method_missing(symbol, *args)
       result = nil
       myLogs.each do |alog, tmp|

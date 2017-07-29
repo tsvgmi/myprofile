@@ -176,6 +176,18 @@ module MidFolder
       end
       result
     end
+
+    def self.sort_ext(ext='STL')
+      require 'yaml'
+
+      floc = {}
+      `find . -name '*#{ext}'`.split("\n").each do |f|
+        dir, fname = File.split(f)
+        floc[fname] ||= []
+        floc[fname] << dir
+      end
+      floc.to_yaml
+    end
   end
 end
 

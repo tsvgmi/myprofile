@@ -303,8 +303,9 @@ case $oper in
       (
         f_location_control svpn on
         connected=
+        F_logProgress "Waiting for 10.x ip address to show up"
         while [ ! "$connected" ]; do
-          for intf in en0 en1 en2 en3 en4; do
+          for intf in en0 en1 en2 en3; do
             if ifconfig $intf | egrep "inet.*10\.50\."; then
               F_logProgress "Detect VPN interface at $intf"
               rm -f ~/.ssh/master*

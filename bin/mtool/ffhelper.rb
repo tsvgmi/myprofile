@@ -39,7 +39,7 @@ class HarvestFile
   def get_dest_name(ddir)
     if @ftype == 'mp3'
       m3info = Mp3File.new(@sfile)
-      puts m3info.to_yaml if @options[:verbose]
+      puts m3info.inspect if @options[:verbose]
       fname  = m3info.tag['title'] || 'unknown'
       artist = m3info.tag['artist'] || 'unknown'
       artist = artist.sub(/,.*$/, '').strip
@@ -130,10 +130,16 @@ class HarvestFile
     tmpf.puts(new_list.join("\n"))
     tmpf.close
 
-    `cat #{tmpf.path} | xargs file`.split("\n").each do |line|
-      file, type = line.split(/:\s+/, 2)
-      @@filetypes[file] = type
+    fid = File.popen("xargs file < #{tmpf.path}")
+    while line = fid.gets
+      begin
+        file, type = line.split(/:\s+/, 2)
+        @@filetypes[file] = type
+      rescue => errmsg
+        p errmsg
+      end
     end
+    fid.close
 
     flist = current_files.select do |afile|
       @@filetypes[afile] =~ /#{FilePtn[ftype]}/

@@ -131,15 +131,20 @@ class MKVMux
     true
   end
 
-  KillPtn = Regexp.new(/(-KILLERS)?\[ettv\]|-GECKOS\[rarbg\]|(juggs|sam|xvid)\[ETRG\]|\[AC3\]|\[VTV\]|\[HIOb\]|ShAaNiG.com|-\s*(2hd|3lt0n|aqos|asap|bajskorv|bida|bito|cm8|dtech|ebx|encodeking|etrg|evo|excellence|fanta|fum|exvid|fingerblast|geckos|high|invincible|jyk|killers|kyr|legi0n|lol|maxspeed|mafiaking|micromkv|millenium|msd|p2p|playnow|psa|ptpower|qaac|rarbg|reenc|thgf|vicky)|(www.torrenting.com - )|www.torentz.3xforum.ro|(ganool|juggs|ac3 titan|hevc|no1knows||reenc|repack|takiawase|\d+MB|web-dl)|(.2CH.x265.HEVC|.HDTV.HEVC.x265-RMTeam)/io)
-  KillPtn2 = Regexp.new(/[-\.](alterego|anoxmous|axxo|bdrip|bluray|brrip|dvdscr|evo|etrg|fum|gerhd|h264|hdrip|hdtv-fleet|hevc|hqclub|killers|lol|mkvcage|nezu|organic|proper|rarbg|rmteam|shaanig|tla|uav|vostfr|web-dl|webrip|x264|x265|x\.264|xvid)/io)
-  KillPtn3 = Regexp.new(/[-\.](\d+MB|720p|aac|ac3|batv|bdrip|bluray|bokutox|btchkek|cm8|crazy4ad|divx|dvdrip|fgt|foxm|haac|hdrip|hdtv|korsub|meteam|rccl|repack|screener|srigga|stuttershit|snd|sujaidr|sva|vyto|w4f|yify)/io)
+  KillPtn = [
+    Regexp.new(/(-KILLERS)?\[ettv\]|-GECKOS\[rarbg\]|(juggs|sam|xvid)\[ETRG\]|\[AC3\]|\[VTV\]|\[HIOb\]|ShAaNiG.com|-\s*(2hd|3lt0n|aqos|asap|bajskorv|bida|bito|cm8|dtech|ebx|encodeking|etrg|evo|excellence|fanta|fum|exvid|fingerblast|geckos|high|invincible|jyk|killers|kyr|legi0n|lol|maxspeed|mafiaking|micromkv|millenium|msd|p2p|playnow|psa|ptpower|qaac|rarbg|reenc|thgf|vicky)|(www.torrenting.com - )|www.torentz.3xforum.ro|(ganool|juggs|ac3 titan|hevc|no1knows||reenc|repack|takiawase|\d+MB|web-dl)|(.2CH.x265.HEVC|.HDTV.HEVC.x265-RMTeam)/io),
+    Regexp.new(/[-\.](alterego|anoxmous|axxo|bdrip|bluray|brrip|dvdscr|evo|etrg|fum|gerhd|h264|hdrip|hdtv-fleet|hevc|hqclub|killers|lol|mkvcage|nezu|organic|proper|rarbg|rmteam|shaanig|tla|uav|vostfr|web-dl|webrip|x264|x265|x\.264|xvid)/io),
+    Regexp.new(/[-\.](\d+MB|720p|aac|ac3|batv|bdrip|bluray|bokutox|btchkek|cm8|crazy4ad|divx|dvdrip|fgt|foxm|haac|hdrip|hdtv|korsub|meteam|rccl|repack|screener|srigga|stuttershit|snd|sujaidr|sva|vyto|w4f|yify)/io),
+    Regexp.new(%r{Crazy4TV.com -\s*})
+  ]
 
   def self._clean_name(fname)
     dir, file = File.split(fname)
-    nfile = file.sub(KillPtn, '').gsub(KillPtn2, '').gsub(KillPtn3, '').gsub(/\.+/, '.').sub(/-$/, '').
-        sub(/\[.*\]\s*/, '').gsub("'", '')
-    #p nfile
+    nfile = file
+    KillPtn.each do |aptn|
+      nfile = nfile.sub(aptn, '')
+    end
+    nfile = nfile.gsub(/\.+/, '.').sub(/-$/, '').sub(/\[.*\]\s*/, '').gsub("'", '')
     "#{dir}/#{nfile.strip}"
   end
 
