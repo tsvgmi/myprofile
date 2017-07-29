@@ -1,33 +1,44 @@
 GIT
   remote: git://github.com/arbarlow/ruby-mp4info.git
-  revision: 7cde76dc34108fdbb4dc1b4c3bb3ef30c4da403e
+  revision: 227c4c24a651ba966696ec8a05f71b8e0fdbe2c6
   specs:
     mp4info (1.7.3)
 
 GEM
   remote: http://rubygems.org/
   specs:
-    activemodel (3.2.8)
-      activesupport (= 3.2.8)
-      builder (~> 3.0.0)
-    activerecord (3.2.8)
-      activemodel (= 3.2.8)
-      activesupport (= 3.2.8)
-      arel (~> 3.0.2)
-      tzinfo (~> 0.3.29)
-    activesupport (3.2.8)
-      i18n (~> 0.6)
-      multi_json (~> 1.0)
-    arel (3.0.2)
-    builder (3.0.4)
+    activemodel (5.1.2)
+      activesupport (= 5.1.2)
+    activerecord (5.1.2)
+      activemodel (= 5.1.2)
+      activesupport (= 5.1.2)
+      arel (~> 8.0)
+    activesupport (5.1.2)
+      concurrent-ruby (~> 1.0, >= 1.0.2)
+      i18n (~> 0.7)
+      minitest (~> 5.1)
+      tzinfo (~> 1.1)
+    arel (8.0.0)
     byebug (9.0.6)
+    childprocess (0.7.1)
+      ffi (~> 1.0, >= 1.0.11)
+    concurrent-ruby (1.0.5)
+    ffi (1.9.18)
     hpricot (0.8.6)
-    i18n (0.6.9)
+    i18n (0.8.6)
     iconv (1.0.4)
-    multi_json (1.8.2)
-    rb-appscript (0.6.1)
-    ruby-mp3info (0.8.3)
-    tzinfo (0.3.38)
+    mini_portile2 (2.2.0)
+    minitest (5.10.3)
+    nokogiri (1.8.0)
+      mini_portile2 (~> 2.2.0)
+    ruby-mp3info (0.8.10)
+    rubyzip (1.2.1)
+    selenium-webdriver (3.4.4)
+      childprocess (~> 0.5)
+      rubyzip (~> 1.0)
+    thread_safe (0.3.6)
+    tzinfo (1.2.3)
+      thread_safe (~> 0.1)
 
 PLATFORMS
   ruby
@@ -38,8 +49,9 @@ DEPENDENCIES
   hpricot
   iconv
   mp4info!
-  rb-appscript
+  nokogiri
   ruby-mp3info
+  selenium-webdriver
 
 BUNDLED WITH
-   1.11.2
+   1.15.3
