@@ -103,7 +103,7 @@ class HACAuto
       sdriver.close
     end
 
-    def _each_page(link, level=3)
+    def _each_page(link)
       page = 0
       _connect_site do |spage|
         while true
@@ -133,7 +133,7 @@ class HACAuto
     end
 
     def rate_user(user, level)
-      _each_page("/profile/posted/#{user}", level) do |spage|
+      _each_page("/profile/posted/#{user}") do |spage|
         spage.click_links('div.song-list a.song-title',
                           "#contribute-rating-control li:nth-child(#{level})")
       end
@@ -154,8 +154,9 @@ class HACAuto
     end
 
     def like_user(user, nlike=3)
-      nlike = nlike.to_i
-      _each_page("/profile/posted/#{user}", level) do |spage|
+      # Like is toggle.  2n-1 to get n likes
+      nlike = (nlike.to_i * 2)-1
+      _each_page("/profile/posted/#{user}") do |spage|
         spage.click_links('div.song-list a.song-title',
                           "#song-favorite-star-btn", nlike)
       end
