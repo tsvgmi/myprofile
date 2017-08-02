@@ -264,6 +264,7 @@ case $oper in
         f_umount /mnt/share_1
         #osascript ~/tmp/nosound.as
         say -v Whisper office
+        hproxy restart
       ) | tee -a ~/.tool/cptool-$oper.log
       ;;
     home|homewl)

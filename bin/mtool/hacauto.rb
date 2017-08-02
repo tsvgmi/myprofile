@@ -9,7 +9,6 @@
 require File.dirname(__FILE__) + "/../etc/toolenv"
 require 'selenium-webdriver'
 require 'nokogiri'
-require 'byebug'
 require 'mtool/core'
 
 class SDriver
@@ -62,13 +61,15 @@ class SPage
     @page = Nokogiri::HTML(@sdriver.page_source)
   end
 
-  def click_links(lselector, rselector)
+  def click_links(lselector, rselector, count=1)
     links = []
     @page.css(lselector).each do |asong|
       link = asong['href']
       @sdriver.goto(link)
       sleep(2)
-      @sdriver.click_and_wait(rselector)
+      1.upto(count) do
+        @sdriver.click_and_wait(rselector)
+      end
       sleep(2)
       links << link
     end
@@ -102,15 +103,14 @@ class HACAuto
       sdriver.close
     end
 
-    def rate_user(user, level)
+    def _each_page(link, level=3)
       page = 0
       _connect_site do |spage|
         while true
           offset = page * 10
-          spage.goto("/profile/posted/#{user}?offset=#{offset}")
-          links = spage.click_links('div.song-list a.song-title',
-                                    "#contribute-rating-control li:nth-child(#{level})")
-          if links.size <= 0
+          spage.goto("#{link}?offset=#{offset}")
+          links = yield spage
+          if !links || links.size <= 0
             break
           end
           page += 1
@@ -132,21 +132,35 @@ class HACAuto
       end
     end
 
-    def rate_rhythm(path)
-      page = 0
-      _connect_site do |spage|
-        while true
-          offset = page * 10
-          spage.goto("/rhythm/v/#{path}?offset=#{offset}")
-          links = spage.click_links('div.song-list a.song-title',
-                                    '#contribute-rating-control')
-          if links.size <= 0
-            break
-          end
-          page += 1
-        end
+    def rate_user(user, level)
+      _each_page("/profile/posted/#{user}", level) do |spage|
+        spage.click_links('div.song-list a.song-title',
+                          "#contribute-rating-control li:nth-child(#{level})")
       end
     end
+
+    def rate_rhythm(path)
+      _each_page("/rhythm/v/#{path}") do |spage|
+        spage.click_links('div.song-list a.song-title',
+                          "#contribute-rating-control li:nth-child(#{level})")
+      end
+    end
+
+    def rate_genre(path)
+      _each_page("/genre/v/#{path}") do |spage|
+        spage.click_links('div.song-list a.song-title',
+                          "#contribute-rating-control li:nth-child(#{level})")
+      end
+    end
+
+    def like_user(user, nlike=3)
+      nlike = nlike.to_i
+      _each_page("/profile/posted/#{user}", level) do |spage|
+        spage.click_links('div.song-list a.song-title',
+                          "#song-favorite-star-btn", nlike)
+      end
+    end
+
   end
 end
 
