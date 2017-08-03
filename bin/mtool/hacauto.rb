@@ -80,7 +80,6 @@ class SPage
 
   def goto(link)
     @sdriver.goto(link)
-    sleep(2)
     refresh
   end
 
