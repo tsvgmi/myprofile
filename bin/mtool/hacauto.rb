@@ -63,16 +63,14 @@ class SPage
 
   def find_and_click_links(lselector, rselector)
     links = @page.css(lselector).map {|asong| asong['href']}
-    click_links(link, rselector)
+    click_links(links, rselector)
   end
   
   def click_links(links, rselector)
     links.each do |link|
       goto(link)
-      sleep(2)
       @sdriver.click_and_wait(rselector)
       sleep(2)
-      links << link
     end
     links
   end
@@ -80,6 +78,7 @@ class SPage
 
   def goto(link)
     @sdriver.goto(link)
+    sleep(2)
     refresh
   end
 
@@ -163,6 +162,7 @@ class HACAuto
           next if iclasses.include?('starred')
           nlinks << sitem.css('.song-title')[0]['href']
         end
+        p({nlinks:nlinks})
         spage.click_links(nlinks, "#song-favorite-star-btn")
       end
     end
