@@ -133,25 +133,27 @@ class HACAuto
       end
     end
 
-    def rate_user(user, level)
-      _each_page("/profile/posted/#{user}") do |spage|
+    def _rate_with_path(path, level)
+      _each_page(path) do |spage|
         spage.find_and_click_links('div.song-list a.song-title',
                           "#contribute-rating-control li:nth-child(#{level})")
       end
+    end
+
+    def rate_user(user, level)
+      _rate_with_path("/profile/posted/#{user}", level)
     end
 
     def rate_rhythm(path, level=3)
-      _each_page("/rhythm/v/#{path}") do |spage|
-        spage.find_and_click_links('div.song-list a.song-title',
-                          "#contribute-rating-control li:nth-child(#{level})")
-      end
+      _rate_with_path("/rhythm/v/#{path}", level)
     end
 
     def rate_genre(path, level=3)
-      _each_page("/genre/v/#{path}") do |spage|
-        spage.find_and_click_links('div.song-list a.song-title',
-                          "#contribute-rating-control li:nth-child(#{level})")
-      end
+      _rate_with_path("/genre/v/#{path}", level)
+    end
+
+    def rate_artist(path, level=3)
+      _rate_with_path("/artist/#{path}", level)
     end
 
     def like_user(user, nlike=3)
