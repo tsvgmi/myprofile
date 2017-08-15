@@ -21,26 +21,26 @@ class SDriver
     sleep(1)
   end
 
-  def click_and_wait(selector)
+  def click_and_wait(selector, wtime=3)
     begin
-      puts "Click on #{selector}"
+      Plog.info "Click on #{selector}"
       @driver.find_element(:css, selector).click
-      sleep(2)
+      sleep(wtime) if wtime > 0
     rescue => errmsg
       errmsg
     end
   end
 
   def type(selector, data)
-    puts "Enter on #{selector}"
+    Plog.info "Enter on #{selector}"
     @driver.find_element(:css, selector).send_keys(data)
   end
 
   def goto(path)
     if path !~ /^https?:/io
-      path = "#{@url}/#{path}"
+      path = "#{@url}/#{path.sub(%r{^/}, '')}"
     end
-    puts "Goto #{path}"
+    Plog.info "Goto #{path}"
     @driver.navigate.to(path)
   end
 
@@ -61,16 +61,26 @@ class SPage
     @page = Nokogiri::HTML(@sdriver.page_source)
   end
 
-  def find_and_click_links(lselector, rselector)
+  def find_and_click_links(lselector, rselector, options={})
     links = @page.css(lselector).map {|asong| asong['href']}
-    click_links(links, rselector)
+    click_links(links, rselector, options)
   end
   
-  def click_links(links, rselector)
+  def click_links(links, rselector, options={})
+    if exclude_user = options[:exclude_user]
+      exclude_user = exclude_user.split(',')
+    end
     links.each do |link|
       goto(link)
-      @sdriver.click_and_wait(rselector)
-      sleep(2)
+      if exclude_user
+        auth_link = @page.css("div.song-poster-username a")[0]['href']
+        uname     = File.split(auth_link)[1]
+        if exclude_user.include?(uname)
+          Plog.info "Skipping with exclude user"
+          next
+        end
+      end
+      @sdriver.click_and_wait(rselector, 3)
     end
     links
   end
@@ -87,19 +97,25 @@ class SPage
   end
 end
 
+class SiteConnect
+  def self.connect_hac(options)
+    auth    = options[:auth] || 'thienv:kKtx75LUY9GA'
+    identity, password = auth.split(':')
+    sdriver = SDriver.new('https://hopamchuan.com')
+    sdriver.click_and_wait('#login-link', 5)
+    sdriver.type('#identity', identity)
+    sdriver.type('#password', password)
+    sdriver.click_and_wait('#submit-btn')
+    sdriver
+  end
+end
+
 class HACAuto
   extendCli __FILE__
 
   class << self
     def _connect_site
-      options = getOption
-      auth    = options[:auth] || 'thienv:kKtx75LUY9GA'
-      identity, password = auth.split(':')
-      sdriver = SDriver.new('https://hopamchuan.com')
-      sdriver.click_and_wait('#login-link')
-      sdriver.type('#identity', identity)
-      sdriver.type('#password', password)
-      sdriver.click_and_wait('#submit-btn')
+      sdriver = SiteConnect.connect_hac(getOption)
       yield SPage.new(sdriver)
       sdriver.close
     end
@@ -120,43 +136,55 @@ class HACAuto
     end
 
     def rate_today
+      options = getOption
       _connect_site do |spage|
         spage.find_and_click_links('a.hot-today-item-song',
-                          '#contribute-rating-control')
+                          '#contribute-rating-control', options)
       end
     end
 
     def rate_week
+      options = getOption
       _connect_site do |spage|
         spage.find_and_click_links('div#weekly-monthly-list a.song-title',
-                          '#contribute-rating-control')
+                          '#contribute-rating-control', options)
       end
     end
 
-    def _rate_with_path(path, level)
+    def rate_new
+      options = getOption
+      _connect_site do |spage|
+        spage.find_and_click_links('div#recent-list a.song-title',
+                          '#contribute-rating-control', options)
+      end
+    end
+
+    def _rate_with_path(path, level, options={})
       _each_page(path) do |spage|
         spage.find_and_click_links('div.song-list a.song-title',
-                          "#contribute-rating-control li:nth-child(#{level})")
+                          "#contribute-rating-control li:nth-child(#{level})",
+                                  options)
       end
     end
 
     def rate_user(user, level)
-      _rate_with_path("/profile/posted/#{user}", level)
+      _rate_with_path("/profile/posted/#{user}", level, getOption)
     end
 
     def rate_rhythm(path, level=3)
-      _rate_with_path("/rhythm/v/#{path}", level)
+      _rate_with_path("/rhythm/v/#{path}", level, getOption)
     end
 
     def rate_genre(path, level=3)
-      _rate_with_path("/genre/v/#{path}", level)
+      _rate_with_path("/genre/v/#{path}", level, getOption)
     end
 
     def rate_artist(path, level=3)
-      _rate_with_path("/artist/#{path}", level)
+      _rate_with_path("/artist/#{path}", level, getOption)
     end
 
     def like_user(user, nlike=3)
+      options = getOption
       _each_page("/profile/posted/#{user}") do |spage|
         nlinks = []
         spage.page.css(".song-item").each do |sitem|
@@ -165,7 +193,47 @@ class HACAuto
           nlinks << sitem.css('.song-title')[0]['href']
         end
         p({nlinks:nlinks})
-        spage.click_links(nlinks, "#song-favorite-star-btn")
+        spage.click_links(nlinks, "#song-favorite-star-btn", options)
+      end
+    end
+
+    def get_from_hav(url)
+      require 'open-uri'
+
+      fid    = open(url)
+      page   = Nokogiri::HTML(fid.read)
+      fid.close
+      links  = page.css('.ibar a')
+      {
+        lyric:  page.css('#lyric').text.strip,
+        title:  page.css('.ibar h3').text.strip,
+        artist: page.css('#fullsong a')[0].text.strip,
+        author: links[0].text,
+        genre:  links[1].text,
+        source: page.css('audio')[0].css('source')[0]['src'].strip,
+      }
+    end
+
+    def create_from_hav
+      require 'byebug'
+
+      _connect_site do |spage|
+        while true
+          STDERR.print "Enter URL to retrieve song (enter to quit): "
+          STDERR.flush
+          url = STDIN.gets.strip
+          break if url.empty?
+
+          info = get_from_hav(url)
+          spage.click_and_wait('#create-song-link')
+          spage.click_and_wait('#auto-caret-btn', 0)
+          spage.type('#song-name', info[:title])
+          spage.type('#song-lyric', info[:lyric])
+          spage.type('#song-authors', info[:author])
+          spage.type('#song-genres', info[:genre])
+          spage.type('#singer-names', info[:artist])
+          Plog.info "Review page to fill in remaining info and submit afterward"
+        end
       end
     end
   end
@@ -173,6 +241,7 @@ end
 
 if (__FILE__ == $0)
   HACAuto.handleCli(
-    ['--auth', '-a', 1],
+    ['--auth',         '-a', 1],
+    ['--exclude_user', '-x', 1],
   )
 end
