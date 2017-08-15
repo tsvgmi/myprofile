@@ -187,13 +187,14 @@ class HACAuto
       options = getOption
       _each_page("/profile/posted/#{user}") do |spage|
         nlinks = []
-        spage.page.css(".song-item").each do |sitem|
+        sitems = spage.page.css(".song-item")
+        sitems.each do |sitem|
           iclasses = sitem.css('.song-like')[0].attr('class').split
           next if iclasses.include?('starred')
           nlinks << sitem.css('.song-title')[0]['href']
         end
-        p({nlinks:nlinks})
         spage.click_links(nlinks, "#song-favorite-star-btn", options)
+        sitems
       end
     end
 
