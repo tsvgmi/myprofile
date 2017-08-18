@@ -4,94 +4,30 @@
 # Created:     Thu Mar 23 22:38:28 PST 2006
 # Description:
 ############################################################################
-case $(uname) in
-Linux)   OSTYPE=linux   ;;
-SunOS)   OSTYPE=solaris ;;
-CYGWIN*) OSTYPE=cygwin ;;
-Darwin)  OSTYPE=macos ;;
-esac
+UNAME=$(uname)
 
-#==========================================================================
-# Function:    [cd2]
-# Description: cd to with subdir after that.  Use for cd aliases
-# Use:         cd2 basedir subdir
-#==========================================================================
-function cd2 {
-  _cd $1/$2
+# Force autoload function to reload again
+function unsetf {
+  unset -f $1
+  autoload $1
 }
 
-#-------------------------------------------- Edit from a tag directory ---
-function cedtag {
-  \cd $1
-  if [ "$DISPLAY" ]; then
-    gvim -t $2
-  else
-    $EDITOR -t $2
+# Called at zsh dir change.   Support per dir history
+function chpwd {
+  fc -W
+  export HISTFILE=$HOME/.tool/hist-${PWD##*/}
+  export HISTSIZE=1000
+
+  # Switch to current dir conda environment
+  if [ -f conda.env ]; then
+    local cenv
+
+    [ "$CONDA_DEFAULT_ENV" ] && conda deactivate
+    export PYTHONPATH=$PWD/lib:$PYTHONPATH
+    cenv=$(grep name: conda.env | sed 's/^.* //')
+    conda activate $cenv
   fi
-  \cd ~-
-}
-
-#==========================================================================
-# Function:    [genalias]
-# Description: Generate alias list
-#==========================================================================
-function genalias {
-  typeset cfile= alopt= learnonly=
-  while getopts :fl i; do
-    case $i in
-    f) alopt="$alopt -$i" ;;
-    l) learnonly=yes ;;
-    esac
-  done
-  let j=$OPTIND-1; shift $j; OPTIND=0
-  #svn update ~/myprofile/.alias.yml
-  if [ "$learnonly" ]; then
-    cd
-    ruby -S alias.rb make2 $alopt .alias-common || return 1
-    realias
-    cd ~-
-  else
-    alias >~/.newalias
-    cd
-    ruby -S alias.rb make2 -n ~/.newalias $alopt .alias-common || return 1
-    realias
-    cd ~-
-  fi
-}
-
-#==========================================================================
-# Function:    [realias]
-# Description: Reload all aliases and common functions
-#==========================================================================
-function realias {
-  for file in ~/.alias-* ~/func/common ~/func/$OSTYPE; do
-    if [ -r $file ]; then
-      echo "+Loading $file"
-      . $file
-    fi
-  done
-}
-
-function l {
-  \ls -sFC $* | less -EX
-}
-
-#==========================================================================
-# Function:    [xtitle]
-# Description: .
-#==========================================================================
-function xtitle {
-  echo -n "]0;$@"
-}
-
-#---------------------------------------------------------- function : _cd
-# Purpose  : A customized 'cd' version to display essential info on the
-#	xterm title bar
-#-------------------------------------------------------------------------
-
-function xname {
-  #echo -n "]0;$*:$HOST:$TTY"
-  echo -n "]0;$*"
+  fc -R
 }
 
 function cls {
@@ -99,187 +35,8 @@ function cls {
   echo -n "[m"
 }
 
-function _sudo {
-  if [ -x /local/bin/sudo ]; then
-    /local/bin/sudo $@
-  else
-    \sudo $@
-  fi
+# Search for content in subversion dir
+function svngrep {
+  find . -type f | fgrep -v .svn | xargs -I % grep $@ '%'
 }
 
-function xvim {
-  xterm -rv -title "VIM:$@" -bg black -fg yellow -e vim $@ &
-}
-
-#--- gvim ---
-case $OSTYPE in
-cygwin)
-  export XEDITOR="cygtool gvim"
-  export GVIM=$XEDITOR
-  alias gvim=$XEDITOR
-  ;;
-*)
-  unalias gvim 2>/dev/null
-  set -- $(/usr/bin/which gvim 2>/dev/null)
-  if [ $? -eq 0 ]; then
-    export XEDITOR=$*
-    export GVIM=$XEDITOR
-  else
-    alias gvim=xvim
-  fi
-  ;;
-esac
-
-#==========================================================================
-# Function:    [mklog]
-# Description: Make with log
-# Use:         .
-#==========================================================================
-function mklog {
-  make $@ 2>&1 | tee make.log
-  echo "Log is in make.log"
-}
-
-#==========================================================================
-# Function:    [gvmake]
-# Description: .
-# Use:         .
-#==========================================================================
-function gvmake {
-  gvim -n -c "copen | make $@"
-}
-
-#==========================================================================
-# Function:    [nodisplay]
-# Description: Unset the diplay and mark it for further setting
-#==========================================================================
-function nodisplay {
-  export NODISPLAY=$DISPLAY
-  [ "$NODISPLAY" ] || NODISPLAY=yes
-  unset DISPLAY
-  echo "Display unset"
-}
-
-function ftpput {
-  typeset file=$1 dest=$2
-
-  [ "$dest" ] || return 1
-  set -x
-  curl -T $file --netrc ftp://$dest
-  rc=$?
-  set +x
-  return $rc
-}
-
-function setvimfont {
-  eval $(shhelper.rb vimFont "$@")
-}
-
-function terminal {
-  typeset count=${1:-1}
-  shift
-
-  if [ $# -gt 0 ]; then
-    export MRXVT_OPT=$@
-  else
-    set -- $MRXVT_OPT
-  fi
-  while [ $count -gt 0 ]; do
-    set -x
-    mrxvt -ls "$@" &
-    set +x
-    let count=$count-1
-  done
-}
-
-function cterm {
-  typeset count=${1:-1}
-
-  ruby -e '
-    1.upto(ARGV.shift.to_i) {|count|
-      value = "%02x%02x%02x" % [16+rand(80), 16+rand(80), 16+rand(80)]
-      bg = "-bg \\##{value}"
-      ENV["MRXVT_OPT"] = bg
-      cmd = "mrxvt #{bg} -ls &"
-      STDERR.puts "+ #{cmd}"
-      system cmd
-    }
-  ' $count
-}
-
-function l {
-  \ls -sFC $* | less -EX
-}
-
-function _sudo {
-  if /usr/bin/which etcmd >/dev/null 2>&1; then
-    etcmd -s $@
-  else
-    sudo $@
-  fi
-}
-
-function _rm {
-  if [ -d /etrade/.snapshots ]; then
-    \rm $@
-  else
-    qu.rb remove $@
-  fi
-}
-
-if ! /usr/bin/which pgrep >/dev/null 2>&1; then
-  function pgrep {
-    ps -ax | grep $@ | egrep -v "grep"
-  }
-  function pkill {
-    set -- $(ps -ax | grep "$@" | \
-             sed -e "/(grep|sed)/D" -e 's/^ +//' -e 's/ .*$//')
-    if [ $# -gt 0 ]; then
-      kill $@
-    fi
-  }
-fi
-alias rm=_rm
-
-function setview {
-  typeset view=$1
-
-  if [ ! "$view" ]; then
-    [ -f ~/.ccview ] && view=$(<~/.ccview)
-  else
-    echo $view >~/.ccview
-  fi
-  if [ ! "$view" ]; then
-    echo "+ No view specivied" >&2
-    return 1
-  fi
-  cleartool startview $view &&
-  exec cleartool setview -login $view
-}
-
-function growl {
-  echo -e $'\e]9;'${1}'\007'
-  return
-}
-
-function proxy {
-  (
-    . ~/.ssh/cnport.env
-    $@
-  )
-}
-
-function edx {
-  typeset prog=$1
-  typeset apath
-  shift
-
-  for apath in $path; do
-    if [ -x $apath/$prog ]; then
-      set -x
-      mvim $apath/$prog $@
-      set +x
-      break
-    fi
-  done
-}

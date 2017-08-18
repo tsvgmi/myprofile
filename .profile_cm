@@ -73,17 +73,14 @@ for upath in $pathlist; do
   [ -d $upath/share/man ] && MANPATH=$MANPATH:$upath/share/man
 done
 
-for dir in ~/bin ~/emtools/bin ~/appcommon/bin ~/etfw2/bin \
-        ~/etfw2/lib/pem ~/selaf/bin /usr/winbin; do
-  [ -d $dir ] && PATH=$dir:$PATH
+for dir in ~/bin ~/emtools/bin ~/emtools/common/bin; do
+  [ -d $dir ] && PATH=$PATH:$dir
 done
-export CDPATH=.:$CDPATH:$HOME:$HOME/SRC:$HOME/etool
+export CDPATH=.:$CDPATH:$HOME:$HOME/SRC
 
-if [ -f ~/func/common ]; then
-  . ~/func/common
-  realias
-fi
-[ -f ~/func/sshenv ] && . ~/func/sshenv
+for func in common sshenv; do
+  [ -f ~/myprofile/func/$func ] && . ~/myprofile/func/$func
+done
 
 export PS1='%F{yellow}%h %m.%B%2~%b.%T%#%f '
 #export PS1='[\!.\u.\h] \W>'

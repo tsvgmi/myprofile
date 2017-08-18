@@ -82,6 +82,7 @@ and route the rest through regular interface
     STDERR.puts cmds.inspect
     cmds.each do |acmd|
       Pf.system("sudo #{acmd}", 1)
+      sleep(2)
     end
     true
   end

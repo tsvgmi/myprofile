@@ -205,7 +205,7 @@ module Cli
 
   # Similar to ksh select functionality.  Select a member from an
   # input list
-  def self.select(alist, aprompt)
+  def self.select(alist, aprompt=nil)
     maxwidth = 10
     alist.each do |entry|
       if entry.size > maxwidth
@@ -229,8 +229,12 @@ module Cli
         end
         $stderr.puts
       end
-      $stderr.print "#{aprompt}: "
-      ans = $stdin.gets
+      if block_given?
+        ans = yield
+      else
+        $stderr.print "#{aprompt}: "
+        ans = $stdin.gets
+      end
       return nil unless ans
       ans.chomp!
       next if (ans == '')
@@ -678,14 +682,25 @@ end
 
 require 'logger'
 class PLogger < Logger
-  Format2 = "%s %s - [%s] %s\n"
+  Format2    = "%s %s - [%s] %s\n"
+  @@__clevel = 0
+  @@__slevel = nil
   def format_message(severity, timestamp, progname, msg)
-    script = caller[6].sub(/:in .*$/, '').sub(/^.*\//, '')
+    # Look like this changes from diff versions.  So we need to detect
+    unless @@__slevel
+      @@__slevel = caller.index{|r| r =~ /`method_missing/} + 1
+    end
+    @@__slevel ||= 5
+    script = caller[@@__slevel+@@__clevel].sub(/:in .*$/, '').sub(/^.*\//, '')
     if timestamp.respond_to?(:strftime)
       Format2 % [severity[0..0], timestamp.strftime("%y/%m/%d %T"), script, msg]
     else
       Format2 % [severity[0..0], timestamp, script, progname]
     end
+  end
+
+  def self.set_clevel(level)
+    @@__clevel = level
   end
 end
 
@@ -718,11 +733,9 @@ class Plog
     end
 
     def addLogger(*args)
-      @@xglog.each do |alog, aname|
-        if aname == args[0]
-          p "Repeat log"
-          return alog
-        end
+      if @@xglog.find {|alog, aname| aname == args[0]}
+        p "Repeat log"
+        return alog
       end
       newlog = PLogger.new(*args)
       newlog.level = ENV['T_LOGSEVERITY'] ?
@@ -765,9 +778,16 @@ class Plog
     end
 
     def dump_info(obj)
+      PLogger.set_clevel(1)
       Plog.info(obj.inspect)
+      PLogger.set_clevel(0)
     end
 
+    def dump_error(obj)
+      PLogger.set_clevel(1)
+      Plog.error(obj.inspect)
+      PLogger.set_clevel(0)
+    end
 
     def method_missing(symbol, *args)
       result = nil

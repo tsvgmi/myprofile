@@ -1,0 +1,43 @@
+#==========================================================================
+# Function:    [hsearch]
+# Description: Searching of my history
+#==========================================================================
+function hsearch {
+  local ld=${PWD##*/}
+  local sall
+
+  while getopts :ad: i; do
+    case $i in
+      a) sall=yes ;;
+      d) ld=$OPTARG ;;
+    esac
+  done
+  let j=$OPTIND-1; shift $j; OPTIND=0
+
+  local pattern=$@
+  if [ "$sall" ]; then
+    set -- $(echo $HOME/.tool/hist-*)
+  else
+    set -- $HOME/.tool/hist-$ld
+  fi
+  ruby -e '
+    pattern = Regexp.new(ARGV.shift)
+    cmdset  = {}
+    while file = ARGV.shift
+      next unless test(?f, file)
+      fid = File.open(file)
+      while line = fid.gets do
+        next unless line[0] == ":"
+        line = line.encode("UTF-8", invalid: :replace)
+        tmp, ts, stat, cmd = line.chomp.split(/[:;]/, 4)
+        next unless cmd =~ pattern
+        next if cmdset[cmd]
+        cmdset[cmd] = true
+        time = Time.at(ts.to_i)
+        puts "%s %10.10s | %s" % [time.strftime("%Y-%m-%dT%H:%M:%S"),
+          File.basename(file).sub(/^hist-/o, ""), cmd]
+      end
+    end
+  ' "$pattern" "$@" | sort | cut -c1-256
+}
+

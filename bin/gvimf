@@ -1,4 +1,0 @@
-#!/bin/bash
-PATH=$PATH:~/emtools/bin
-exec gvim -f $@
-#exec gvim $@

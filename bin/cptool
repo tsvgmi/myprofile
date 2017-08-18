@@ -8,11 +8,23 @@
 #######################################################################
 PATH=$PATH:/sbin:/usr/sbin
 
+function f_shutdown_vms {
+#==========================================================================
+# Function:    [f_shutdown_vms]
+# Description: .
+#==========================================================================
+  typeset vm
+
+  for vm in $*; do
+    VBoxManage controlvm $vm savestate
+  done
+}
+
+function f_killApp {
 #======================================================================
 # Function:    [f_killApp]
 # Description: .
 #======================================================================
-function f_killApp {
   typeset app pidlist
 
   pidlist=
@@ -24,22 +36,24 @@ function f_killApp {
   done
   if [ "$pidlist" ]; then
     set -x
-    kill $pidlist
+    kill -1 $pidlist
     set +x
     sleep 1
   fi
 }
 
+function f_umount {
 #==========================================================================
 # Function:    [f_umount]
 # Description: .
 #==========================================================================
-function f_umount {
-  typeset vol=$1
-
-  set -x
-  sudo umount -f $vol
-  set +x
+  for vol in $*; do
+    if mount | egrep $vol; then
+      set -x
+      sudo umount -f $vol &
+      set +x
+    fi
+  done
 }
 
 #==========================================================================
@@ -56,6 +70,31 @@ function f_delete10Net {
   fi
 }
 
+function wait_for_subnets {
+  typeset found subnet subnets
+  
+  subnets=$@
+  F_logProgress "Waiting for subnets $subnets"
+  while true; do
+    found=yes
+    for subnet in $subnets; do
+      ifconfig | fgrep $subnet
+      [ $? -eq 0 ] || found=
+    done
+    [ "$found" ]  && break
+    sleep 3
+  done
+  if [ "$found" ]; then
+    return 0
+  else
+    return 1
+  fi
+}
+
+#==========================================================================
+# Function:    [f_isWorkingHour]
+# Description: .
+#==========================================================================
 function f_isWorkingHour {
   typeset dow=$(date +%u)
   if [ "$dow" -ge 1 -a "$dow" -le 5 ]; then
@@ -67,11 +106,11 @@ function f_isWorkingHour {
   return 1
 }
 
+function f_mount_fs {
 #==========================================================================
 # Function:    [f_mount_fs]
 # Description: .
 #==========================================================================
-function f_mount_fs {
   typeset src=$1
   typeset target=$2
   typeset fstype=$3
@@ -84,20 +123,26 @@ function f_mount_fs {
     F_logProgress "$target already mounted"
     return
   fi
+  F_logProgress "Mounting $target as $fstype"
   if ifconfig | fgrep $subnet ; then
-    set -x
-    [ -d $target ] || mkdir -p $target
-    set +x
     case $fstype in
       nfs)
+        [ -d $target ] || mkdir -p $target
         set -x
         sudo mount -t nfs -o resvport,rw $src $target
         set +x
         ;;
       smb)
+        tmpf=/tmp/smbfs.as
         set -x
-        #sudo mount -t smbfs //$src $target -o rw -o uid=$USER
-        sudo mount -o rw -t smbfs //$src $target
+        cat >$tmpf <<EOF
+tell application "Finder"
+  open location "smb://$src"
+end tell
+EOF
+cat $tmpf
+        osascript $tmpf
+        rm -f $tmpf
         set +x
         ;;
       *)
@@ -108,11 +153,11 @@ function f_mount_fs {
   set +x
 }
 
+function f_location_control {
 #==========================================================================
 # Function:    [f_location_control]
 # Description: .
 #==========================================================================
-function f_location_control {
   typeset location=$1
   typeset state=$2
 
@@ -125,6 +170,23 @@ function f_location_control {
   sleep 3
 }
 
+function f_startJabber {
+#==========================================================================
+# Function:    [f_startJabber]
+# Description: .
+#==========================================================================
+  pkill Jabber
+  if f_isWorkingHour; then
+    (
+      delay=60
+      sleep $delay
+      F_logProgress "Starting Jabber after $delay secs" >&2
+      pkill -f Jabber
+      open -g -a "Cisco Jabber"
+    ) &
+  fi
+}
+
 #------------------------------------------------ Begin of script ---
 #------------------------------------------------ Begin of script ---
 #------------------------------------------------ Begin of script ---
@@ -132,51 +194,6 @@ function f_location_control {
 F_subCommand $*
 oper=$1; shift
 case $oper in
-
-#@Use: synergy [host]
-#@Des: Running synergy
-#=begin
-# This detects where you're logged in from (using SSH) and run a client
-# connect to the server you're from.  This allow laptop to ssh connect
-# to a Unix ws and have it connected to the current ip address
-#
-# If host is specified, it ssh to host first before run.  This allows
-# running this command on the laptop and have the WS connected to it
-# w/o having to ssh in.
-#=end
-  synergy)
-    dossh= ropt= user=$LOGNAME
-    while getopts :su: i; do
-      case $i in
-      s) dossh=yes ropt="$ropt -$i" ;;
-      u) user=$OPTARG ;;
-      *) F_usageOper $oper ;;
-      esac
-    done
-    let j=$OPTIND-1; shift $j; OPTIND=0
-    rhost=$1
-    if [ "$rhost" -a "$rhost" != "$EM_HOST" ]; then
-      F_exec ssh $user@$rhost bin/cptool $oper $ropt -u $LOGNAME
-    else
-      set -- $SSH_CLIENT
-      [ $# -gt 0 ] || F_abort "You must logon from ssh to invoke this"
-      fromip=$1
-      pgrep -f 'X .*:0'
-      if [ $? -ne 0 ]; then
-        F_abort "X windows not started" $LINENO
-      fi
-      F_system pkill -9 synergyc && F_wait 1
-      F_logProgress "Turn off screen saver"
-      DISPLAY=:0 F_system xset -dpms
-      if [ "$dossh" ]; then
-        F_system ssh -f -N -L localhost:24800:$fromip:24800 $user@$fromip
-        F_exec synergyc --display :0 localhost
-      else
-        F_exec synergyc --display :0 $fromip
-      fi
-    fi
-    ;;
-
   splitvpn)
     [ $# -ge 2 ] || F_usageOper $oper
     dest=$1 vpnif=$2
@@ -189,13 +206,6 @@ case $oper in
     sudo kextunload /System/Library/Extensions/CiscoVPN.kext
     sleep 1
     sudo kextload /System/Library/Extensions/CiscoVPN.kext
-    ;;
-
-  rsynergy)
-    open -g -a "Synergyd"
-    PATH=$PATH:/usr/local/bin
-    growlnotify --appIcon Synergyd --message 'Synergy started'
-    F_exec ssh tvuong@lxp6d199m0 bin/mpolohook synergy
     ;;
 
   mount-nfs)
@@ -217,11 +227,77 @@ case $oper in
     f_mount_fs $src $target smb
     ;;
 
-
   connect)
     for target in $*; do
-      $0 _connect $target
+      if [ $target == s ]; then
+        F_logProgress "Waiting current location to stabilize"
+        sleep 10
+      else
+        $0 _connect $target
+      fi
     done
+    ;;
+
+  mount-smbs)
+    addr=1
+    vols="Torrents:T1 Music Movies TV Voice"
+    while getopts :a:v:-: i; do
+      if [ "$i" = "-" ]; then
+        i="${OPTARG%%=*}" OPTARG="${OPTARG#$i}" OPTARG="${OPTARG#=}" i=-$i
+      fi
+      case $i in
+      a|-addr) addr=$OPTARG ;;
+      v|-vols) vols=$OPTARG ;;
+      *)       F_usageOper $oper ;;
+      esac
+    done
+    let i=$OPTIND-1; shift $i; OPTIND=0
+    for vol in $vols; do
+      svol=${vol%:*}
+      tvol=${vol#*:}
+      f_mount_fs home@192.168.29.$addr/$svol /Volumes/$tvol smb
+    done
+    exit 0
+    ;;
+
+  _setup_app_by_location)
+    [ $# -ge 1 ] || F_usageOper $oper
+    target=$1
+    case $target in
+    vpn|et|etwl|etrade|home-vpn|auto)
+      f_killApp iTunes Plex.Media.Server Viber Google.Drive VOX MusicManager 
+      f_killApp Outlook Evernote
+      f_shutdown_vms Windows.10-64 Ubuntu-132
+      f_startJabber
+      F_surun $EM_MYPROG _killasroot X.TrendMicro
+      f_delete10Net
+      osascript -e "set Volume 0"
+      f_umount /mnt/usb0 /Volumes/{Torrents,Music,Movies,TV}
+      open https://channele.corp.etradegrp.com
+      #open -a "Microsoft Outlook"
+      ;;
+    home)
+      f_killApp Jabber
+      F_surun $EM_MYPROG _killasroot
+      f_delete10Net
+      $0 mount-smbs
+      open -g -a "Plex Media Server"
+      ;;
+    svpn)
+      f_killApp iTunes Plex.Media.Server Viber Google.Drive VOX MusicManager Outlook
+      f_startJabber
+      # Outlook / 365 does not work with svpn
+      f_delete10Net
+      osascript -e "set Volume 0"
+      f_umount /mnt/usb0 /Volumes/{Torrents,Music,Movies,TV}
+      $0 mount-smbs Voice
+      open https://channele.corp.etradegrp.com
+      ;;
+    *)
+      F_abort "Unknown app to stop/start target: $target"
+      ;;
+    esac
+    rm -f ~/.ssh/master*
     ;;
 
   #Use: connect et|home|vpn|splitvpn
@@ -231,107 +307,68 @@ case $oper in
     cd
     target=$1
     case $target in
-    vpn)
-      (
-        f_location_control ETrade on
-        f_killApp Opera iTunes jDownloader Plex.Media.Server \
-           Synergyd
-        if f_isWorkingHour; then
-          open -g -a "Cisco Jabber"
-        fi
-        open -a "Microsoft Outlook"
-        F_surun $EM_MYPROG _killasroot TrendMicro
-        f_delete10Net
-        osascript -e "set Volume 0"
-        f_umount /mnt/share_1
-        #osascript ~/tmp/nosound.as
-        say -v Whisper vpn
-      ) | tee -a ~/.tool/cptool-$oper.log
+    vpn|et|etwl|etrade)
+      f_location_control Automatic on
+      sudo ifconfig en0 up            # Wired
+      sudo ifconfig en3 up            # Wired
+      wait_for_subnets 10.
+      $0 _setup_app_by_location $target
       ;;
-    et|etwl|etrade)
-      (
-        f_location_control ETrade on
-        f_killApp Opera iTunes jDownloader Plex.Media.Server \
-          Synergyd VirtualBoxVM Viber \
-          Google.Drive VOX MusicManager
-        if f_isWorkingHour; then
-          open -g -a "Cisco Jabber"
-        fi
-        open -a "Microsoft Outlook"
-        F_surun $EM_MYPROG _killasroot TrendMicro
-        f_delete10Net
-        osascript -e "set Volume 0"
-        f_umount /mnt/share_1
-        #osascript ~/tmp/nosound.as
-        say -v Whisper office
-        hproxy restart
-      ) | tee -a ~/.tool/cptool-$oper.log
+    # No connection to work
+    home)
+      f_location_control Automatic on
+      sudo ifconfig en3 up            # Wired
+      sudo ifconfig en0 down          # Wireless
+      sleep 3
+      wait_for_subnets 192.168.29
+      $0 _setup_app_by_location $target
       ;;
-    home|homewl)
-      (
-        if [ "$target" = homewl ]; then
-          f_location_control Home on
-        else
-          f_location_control Home off
-        fi
-        f_killApp Microsoft.Messenger Microsoft.Communicator Microsoft.Outlook \
-            Synergyd Jabber
-        F_surun $EM_MYPROG _killasroot TrendMicro
-        f_delete10Net
-        f_mount_fs 192.168.6.1:/nfs/share_1 /mnt/share_1
-        #osascript ~/tmp/sound.as
-        rm -f ~/.ssh/master*
-        open -g -a "Plex Media Server"
-        say -v Whisper home
-      ) | tee -a ~/.tool/cptool-$oper.log
+    # VPN from home (no split)
+    home-vpn)
+      f_location_control HomeVPN on
+      sudo ifconfig en3 down        # Wired
+      sudo ifconfig en0 up          # Wireless
+      sleep 3
+      wait_for_subnets 10.
+      $0 _setup_app_by_location $target
       ;;
     auto)
-      (
-        f_location_control Auto on
-        f_killApp Microsoft.Messenger Microsoft.Communicator Microsoft.Outlook \
-            Synergyd Jabber
-        F_surun $EM_MYPROG _killasroot TrendMicro
-        open -g -a "Plex Media Server"
-        f_delete10Net
-        f_mount_fs 192.168.6.1:/nfs/share_1 /mnt/share_1
-        #osascript ~/tmp/sound.as
-        rm -f ~/.ssh/master*
-        say -v Whisper auto
-      ) | tee -a ~/.tool/cptool-$oper.log
+      f_location_control Automatic on
+      $0 _setup_app_by_location $target
       ;;
 
-    splitvpn|svpn)
-      (
-        f_location_control svpn on
-        connected=
-        F_logProgress "Waiting for 10.x ip address to show up"
-        while [ ! "$connected" ]; do
-          for intf in en0 en1 en2 en3; do
-            if ifconfig $intf | egrep "inet.*10\.50\."; then
-              F_logProgress "Detect VPN interface at $intf"
-              rm -f ~/.ssh/master*
-              F_system $EM_MYPROG splitvpn etrade $intf
-              connected=true
-              break
-            fi
-          done
-          sleep 1
+    svpn)
+      sayword="split-v-p-n"
+      f_location_control svpn on
+      sudo ifconfig en3 up
+      sudo ifconfig en0 up
+      sleep 3
+      connected=
+      F_logProgress "Waiting for 10.x ip address to show up"
+      while [ ! "$connected" ]; do
+        for intf in en0 en1 en2 en3; do
+          if ifconfig $intf | egrep "inet.*10\.50\."; then
+            F_logProgress "Detect VPN interface at $intf"
+            rm -f ~/.ssh/master*
+            F_system $EM_MYPROG splitvpn etrade $intf
+            connected=true
+            break
+          fi
         done
-        f_killApp jDownloader Plex.Media.Server
-        open -g -a 'Microsoft Outlook'
-        if f_isWorkingHour; then
-          open -g -a "Cisco Jabber"
-        fi
-        f_mount_fs 192.168.6.1:/nfs/share_1 /mnt/share_1
-        #osascript ~/tmp/sound.as
-        say -v Whisper split vpn
-      ) | tee -a ~/.tool/cptool-$oper.log
+        sleep 1
+      done
+      $0 _setup_app_by_location $target
+
+      # Another try
+      F_system $EM_MYPROG splitvpn etrade $intf
       ;;
 
     *)
       F_abort "Unknown connection node: $target"
       ;;
     esac
+    [ "$sayword" ] || sayword=$target
+    say $sayword
     rm -f ~/.ssh/master*
     echo $target >~/.ssh/last_loc.dat
     ;;
@@ -339,8 +376,6 @@ case $oper in
   #------------------ Kill off all non-essential app to preserve battery ---
   lowpower)
     f_killApp MicrosoftKeyboardHelper Microsoft.Database.Daemon \
-	EyeTV.Helper Glims.Agent Little.Snitch.UIAgent \
-	MarcoPolo Synergyd
     ;;
 
   _killasroot)

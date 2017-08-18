@@ -24,39 +24,138 @@ function hcd {
   _cd $path
 }
 
+#==========================================================================
+# Function:    [sc0]
+# Description: Run screehns directly
+#==========================================================================
 function sc0 {
-  mssh run -t ~/emtools/bin/screens resume $@
+  mssh screens $@
 }
 
+#==========================================================================
+# Function:    [sc1]
+# Description: Run screen on an intermediate host
+#==========================================================================
 function sc1 {
-  typeset host=$1
-  typeset oper=$2
-  typeset proxyhost=$3
+  typeset host rhost phost
 
-  [ "$oper" ] || oper=resume
-  if [ ! "$proxyhost" ]; then
-    case ${host%%.*} in
-    *m7|s2poc*m3)
-      proxyhost=poc1w80m7.etrade.com
-      ;;
-    *m3|*m5)
-      proxyhost=adm0m3.etrade.com
+  host=$1
+  case $host in
+  *@*)
+   rhost=${host%@*}
+   phost=${host#*@}
+   iterm_profile Non-Production
+   mssh screens -j $phost $rhost
+   ;;
+  mock*)
+    iterm_profile Mock
+    mssh screens -J $@ ;;
+  *m[35]|*[78]07m7)
+    iterm_profile Production
+    mssh screens -J $@ ;;
+  *)
+    iterm_profile Non-Production
+    mssh screens -P $@ ;;
+  esac
+  iterm_profile Default
+}
+
+#==========================================================================
+# Function:    [sc2]
+# Description: .
+#==========================================================================
+function sc2 {
+  typeset scopt= i j
+
+  while getopts :v-: i; do
+    if [ "$i" = "-" ]; then
+      i="${OPTARG%%=*}" OPTARG="${OPTARG#$i}" OPTARG="${OPTARG#=}" i=-$i
+    fi
+    case $i in
+    v|-pval)  scopt="$scopt --pval" ;;
+    *)        F_usageOper $oper ;;
+    esac
+  done
+  let j=$OPTIND-1; shift $j; OPTIND=0
+  case $1 in
+  *m[0-9]|*m[0-9][0-9])
+    sc1 $1
+    ;;
+  *)
+    # Function call is susceptible for space in args.  So we eval
+    eval scem $scopt $@
+    ;;
+  esac
+}
+
+#==========================================================================
+# Function:    [iterm_profile]
+# Description: .
+#==========================================================================
+function iterm_profile {
+  typeset profile=$1
+
+  print "\x1b]1337;SetProfile=${profile}\x07"
+}
+
+#==========================================================================
+# Function:    [scem]
+# Description: ssh to an instance
+#==========================================================================
+function scem {
+  typeset args i j pval
+
+  while getopts :v-: i; do
+    if [ "$i" = "-" ]; then
+      i="${OPTARG%%=*}" OPTARG="${OPTARG#$i}" OPTARG="${OPTARG#=}" i=-$i
+    fi
+    case $i in
+    v|-pval)  pval=yes ;;
+    *)        F_usageOper $oper ;;
+    esac
+  done
+  let j=$OPTIND-1; shift $j; OPTIND=0
+
+  if [ $# -gt 0 ]; then
+    typeset inst=$1
+    typeset env=$2
+    typeset phost=$3
+    [ "$env" ] || env=adm
+    if [ "$pval" ]; then
+      args="-i. --property=INC_COMPONENT=$inst -e $env"
+    else
+      args="-i $inst -e $env"
+    fi
+    case $env in
+    adm|prd|dr|mock)
+      iterm_profile Production
+      if [ "$phost" ]; then
+        eval mssh screens -j $phost $args
+      else
+        eval mssh screens -J $args
+      fi
       ;;
     *)
-      proxyhost=lxdm19m7.etrade.com
+      iterm_profile Non-Production
+      if [ "$phost" ]; then
+        eval mssh screens -j $phost $args
+      else
+        eval mssh screens -P $args
+      fi
       ;;
     esac
+  else
+    iterm_profile Production
+    mssh screens -P -is $sargs
   fi
-  mssh run -th tvuong@$proxyhost emtools/bin/screens $oper $@
+  set +x
+  iterm_profile Default
 }
 
+#==========================================================================
+# Function:    [stmux]
+# Description: .
+#==========================================================================
 function stmux {
-  typeset host=$1
-  typeset proxyhost
-
-  case $host in
-  *m3) proxyhost=dcube1w110m3 ;;
-  *)   proxyhost=poc1w80m7 ;;
-  esac
-  ssh -t tvuong@$proxyhost emtools/bin/emtmux resume $@
+  mssh screens -P -t $@
 }

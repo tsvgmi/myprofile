@@ -1,0 +1,71 @@
+---
+Layout/HashAlignment:
+  EnforcedHashRocketStyle: table
+  EnforcedColonStyle: table
+
+Layout/LineLength:
+  Max: 100
+
+Lint/Debugger:
+  Enabled: false
+
+Metrics/AbcSize:
+  Max: 80
+
+Metrics/BlockLength:
+  Max: 66
+
+Metrics/BlockNesting:
+  Max: 5
+
+Metrics/ClassLength:
+  Max: 1000
+
+Metrics/CyclomaticComplexity:
+  Max: 28
+
+Metrics/MethodLength:
+  Max: 66
+
+Metrics/ModuleLength:
+  Max: 500
+
+Metrics/PerceivedComplexity:
+  Max: 30
+
+Naming/HeredocDelimiterNaming:
+  Enabled: false
+
+Naming/VariableNumber:
+  Enabled: false
+
+Security/YAMLLoad:
+  Enabled: false
+
+Style/TrailingCommaInArrayLiteral:
+  EnforcedStyleForMultiline: consistent_comma
+
+Style/TrailingCommaInHashLiteral:
+  EnforcedStyleForMultiline: consistent_comma
+
+Style/Documentation:
+  Enabled: false
+
+Style/HashEachMethods:
+  Enabled: false
+
+Style/HashSyntax:
+  EnforcedStyle: ruby19_no_mixed_keys
+  EnforcedShorthandSyntax: never
+
+Style/NumericPredicate:
+  Enabled: false
+
+Style/SlicingWithRange:
+  Enabled: false
+
+Style/UnpackFirst:
+  Enabled: false
+
+Style/ZeroLengthPredicate:
+  Enabled: false

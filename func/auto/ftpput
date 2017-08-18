@@ -1,0 +1,11 @@
+function ftpput {
+  local file=$1 dest=$2
+
+  [ "$dest" ] || return 1
+  set -x
+  curl -T $file --netrc ftp://$dest
+  rc=$?
+  set +x
+  return $rc
+}
+

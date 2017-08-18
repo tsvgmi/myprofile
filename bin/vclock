@@ -1,0 +1,54 @@
+app= mod=
+while getopts :a:m-: i; do
+  if [ "$i" = "-" ]; then
+    i="${OPTARG%%=*}" OPTARG="${OPTARG#$i}" OPTARG="${OPTARG#=}" i=-$i
+  fi
+  case $i in
+    a|-app) app="$OPTARG" ;;
+    m|-mod) mod=true ;;
+    *)      F_usageOper $oper ;;
+  esac
+done
+let i=$OPTIND-1; shift $i; OPTIND=0
+
+[ $# -gt 0 ] || exit 1
+sfile=$HOME/.vclock-$LOGNAME.in
+if [ "$mod" ]; then
+  echo $* >>$sfile
+else
+  echo $* >$sfile
+fi
+
+SCRIPT=$(cat <<EOD
+  height = 370
+  puts "<html>"
+  ARGV.each_with_index do |time, index|
+    time, note = time.split("/", 2)
+    if time !~ /am|pm/
+      if time.to_i >= 12 || time.to_i < 7
+        time += "pm"
+      else
+        time += "am"
+      end
+    end
+    note ||= "Clock%20#{index}"
+    time = Time.parse(time).strftime("%H:%M")
+    path = "#time=#{time}&sound=cuckoo&loop=1&title=#{note}"
+    puts "<iframe src=https://vclock.com/#{path} width=32% height=#{height} width=30%>"
+    puts "</iframe>"
+  end
+  xtras = (ARGV.size + 2)/3*3 - ARGV.size
+  (1..xtras).each do |index|
+    puts "<iframe src=https://vclock.com/#enabled=0 width=32% height=#{height}></iframe>"
+  end
+  puts "</html>"
+EOD)
+
+ofile=$HOME/.vclock-$LOGNAME.html
+ruby -rtime -e "$SCRIPT" $(<$sfile) | tee $ofile
+set -x
+if [ "$app" ]; then
+  open -a "$app" $ofile
+else
+  open $ofile
+fi

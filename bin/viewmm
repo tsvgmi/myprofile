@@ -1,0 +1,102 @@
+#!/usr/bin/env bash
+############################################################################
+# File:        /Users/tvuong/bin/editmm
+# Author:      tvuong
+# Created:     2023-02-02 18:16:47 -0800
+# Copyright (c) E*Trade - 2023.
+# Description:
+# $Id$
+############################################################################
+
+#==========================================================================
+# Function:    [gen_htm2]
+# Description: .
+#==========================================================================
+function gen_htm2 {
+  typeset refresh=$1 htfile=$2
+  shift 2
+  typeset files=$@
+  typeset changed
+
+  changed=
+  for file in $files; do
+    if [ ! -f $htfile -o $file -nt $htfile ]; then
+      changed="changed $file"
+      break
+    fi
+  done
+  [ "$changed" ] || return
+
+  echo "*** $changed change.  Regen $htfile at $(date)" >&2
+  if [ "$refresh" ]; then
+    meta="<meta http-equiv=refresh content=$refresh>"
+  fi
+  cat >$htfile <<EOF
+<html>
+  $meta
+<body>
+EOF
+  for file in $files; do
+    echo '<pre class="mermaid">' >>$htfile
+    cat $file >>$htfile
+    echo '</pre>' >>$htfile
+  done
+  cat >>$htfile <<EOF
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@9/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ startOnLoad: true, securityLevel: 'loose' });
+  </script>
+</body>
+</html>
+EOF
+}
+
+#==========================================================================
+# Function:    [show_usage]
+# Description: .
+#==========================================================================
+function show_usage {
+  cat >&2 <<EOF
+Usage: $0 [--edit] [--refresh=] mermaid_file ...
+
+View/edit mermaid files (should have extension .mm)
+
+--edit     Also open vim editor to edit
+--refresh= How often to refresh webpage.  Default to 30 seconds
+EOF
+  exit 1
+}
+
+edit= refresh=30
+while getopts :er:-: i; do
+  if [ "$i" = "-" ]; then
+    i="${OPTARG%%=*}" OPTARG="${OPTARG#$i}" OPTARG="${OPTARG#=}" i=-$i
+  fi
+  case $i in
+    e|-edit)    edit=yes ;;
+    r|-refresh) refresh=$OPTARG ;;
+    *)          show_usage ;;
+  esac
+done
+let i=$OPTIND-1; shift $i; OPTIND=0
+
+files=$@
+
+htfile=editmm-$$.html
+
+trap "rc=$?; set -x; rm $htfile; exit $rc"  SIGHUP SIGINT SIGTERM EXIT
+
+rm -f $htfile
+gen_htm2 $refresh $htfile $files
+open $htfile
+
+[ "$edit" ] && mvim $files
+
+let endtime=$SECONDS+3600
+
+while [ $SECONDS -lt $endtime ]; do
+  gen_htm2 $refresh $htfile $files
+  sleep 3
+done
+echo "*** Quit monitoring of changes ***"
+

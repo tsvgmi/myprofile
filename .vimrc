@@ -1,4 +1,4 @@
-source $HOME/.vim/vundle.vim
+"source $HOME/.vim/vundle.vim
 
 " ========================================================================
 " This file usually is named "$HOME/vimrc".
@@ -433,3 +433,4 @@ let g:CtrlSpaceSaveWorkspaceOnSwitch = 1
 let g:CtrlSpaceSaveWorkspaceOnExit = 1
 set hidden 
 
+set noincsearch

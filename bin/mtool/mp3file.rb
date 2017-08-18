@@ -15,6 +15,7 @@ class Mp4File
     # it locally
     require 'mtool/mp4info'
 
+    @file    = file
     @options = options
     @mp4info = MP4Info.open(file)
   end
@@ -40,6 +41,7 @@ class Mp3File
   def initialize(file, options = {})
     require 'mp3info'
 
+    @file    = file
     @options = options
     begin
       @mp3info = Mp3Info.open(file, :encoding => 'utf-8')
@@ -74,6 +76,19 @@ class Mp3File
       [itype, imgdata[hdrsize..-1]]
     else
       [nil, nil]
+    end
+  end
+
+  def rename
+    title  = (@mp3info.tag.title || '').strip
+    artist = (@mp3info.tag.artist || '').strip
+    ofile  = "#{title}-#{artist}.mp3"
+    if ofile == '-.mp3'
+      Plog.warn "No MP3 metadata found to rename.  Skip #{@file}"
+      nil
+    else
+      FileUtils.move(@file, ofile, verbose:true)
+      ofile
     end
   end
 end
@@ -134,11 +149,21 @@ class Mp3Shell
     @info.to_yaml
   end
 
+  def self.rename(*files)
+    Plog.info(files)
+    files.map do |afile|
+      Mp3File.new(afile).rename
+    end
+  end
+
   def self.set_properties(*files)
     files.each do |afile|
       bname = File.basename(afile).sub(/\..mp3$/, '')
       track, title, artist = bname.split(/\s*[-\.]\s*/)
-      next unless artist
+      unless artist
+        Plog.warn "File #{bname} needs to be in format track-title-artist.mp3"
+        next
+      end
       if title =~ /\s*\(/
         title = $`
         composer = $'.sub(/\).*$/, '')

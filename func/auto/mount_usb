@@ -1,0 +1,15 @@
+function mount_usb {
+  local drive=${1%:}
+  local mp=/mnt/$drive
+
+  if mount | grep $mp; then
+    echo "Drive $drive already mounted" >&2
+    ls $mp
+    return
+  fi
+
+  [ -d $mp ] || sudo mkdir $mp
+  echo "Mounting $drive on $mp" >&2
+  sudo mount -t drvfs ${drive}: $mp
+  ls $mp
+}

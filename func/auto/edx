@@ -1,0 +1,17 @@
+# Edit an executable file
+
+function edx {
+  local prog=$1
+  local apath oifs
+  shift
+
+  editor=${XEDITOR:-$EDITOR}
+  for apath in $path; do
+    [ -x $apath/$prog ] || continue
+    set -x
+    $editor $apath/$prog $@
+    set +x
+    break
+  done
+}
+

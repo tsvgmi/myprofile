@@ -34,9 +34,8 @@ PATH=$PATH:/usr/local/bin:/usr/local/sbin
 
 CDPATH=$CDPATH:~/work:~/projects
 
-. ~/.rvm/scripts/rvm
-
-export PATH="$HOME/.rvm/bin:$PATH" # Add RVM to PATH for scripting
+#. ~/.rvm/scripts/rvm
+#export PATH="$HOME/.rvm/bin:$PATH" # Add RVM to PATH for scripting
 
 export PATH="$HOME/.rbenv/bin:$PATH"
 eval "$(rbenv init -)"
@@ -50,3 +49,5 @@ export PATH=/Users/tvuong/google-cloud-sdk/bin:$PATH
 source /Users/tvuong/google-cloud-sdk/arg_rc
 
 test -e "${HOME}/.iterm2_shell_integration.bash" && source "${HOME}/.iterm2_shell_integration.bash"
+
+export PATH="$HOME/.cargo/bin:$PATH"

@@ -1,0 +1,53 @@
+#!/bin/bash
+
+# Simulate the open in mac on WSL.  However, also direct to use
+# Windows app with WSL path if applicable
+#
+function f_winexec {
+  typeset app=$1
+  shift
+  prog=$(locate --basename $app.exe | fgrep "/$app.exe" | \
+    grep -v 'Recycle.Bin' | tee /dev/tty | head -1)
+  echo "$prog $@" >>~/debug.log
+  "$prog" "$@" &
+}
+
+oopt=
+while getopts :g i; do
+  case $i in
+    g) oopt="$oopt -$i" ;;
+  esac
+done
+let i=$OPTIND-1; shift $i; OPTIND=0
+file=$1
+case $file in
+https:*|http:*)
+  url=$(echo $1 | \
+    sed -e "s,^file:///,file:////wsl.localhost/$WSL_DISTRO_NAME/,")
+  shift
+  f_winexec msedge $url $@
+  ;;
+
+*.html)
+  file=$1
+  [ "$file" = "${file#/}" ] && file=$PWD/$file
+  url=file:////wsl.localhost/${WSL_DISTRO_NAME}${file}
+  echo $url
+  f_winexec msedge $url
+  ;;
+
+*.md)
+  f_winexec Typora $@
+  ;;
+*.m4a-notworking)
+  file=$(echo $1 | sed -e "s,/mnt/voice,//TM-AC1900-E038/Voice,")
+  shift
+  set -x
+  f_winexec MediaPlayer $file $@
+  sleep 30
+  ;;
+*)
+  echo "***** Unsupported file: $file" >&2
+  sleep 1
+  ;;
+esac

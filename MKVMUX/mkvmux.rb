@@ -10,7 +10,7 @@ require 'mtool/core'
 require 'iconv'
 require 'find'
 
-VideoExt = Regexp.new(/\.(avi|divx|mp4|mkv|flv)$/)
+VideoExt = Regexp.new(/\.(avi|divx|mp4|mkv|flv)$/io)
 
 class VideoFile
   def initialize(vfile, options = {})
@@ -99,10 +99,13 @@ class MKVMux
   end
 
   def self.merge_subtitle(mdir=".")
-    options = getOption
-    ptn     = options[:ptn] || ""
-    cmd     = "find #{mdir} -name '*#{ptn}*'"
+    options  = getOption
+    ptn      = options[:ptn] || ""
+    cmd      = "find #{mdir} -name '*#{ptn}*'"
+    skiplist = options[:skipfile] ? File.read(options[:skipfile]).split("\n") : []
     `#{cmd}`.split("\n").sort.each do |afile|
+      bdir, bfile = File.split(afile)
+      next if skiplist.include?(bfile)
       next unless VideoExt.match(afile)
       video  = VideoFile.new(afile, options)
       ofile  = video.mkv_file
@@ -134,18 +137,27 @@ class MKVMux
   KillPtn = [
     Regexp.new(/(-KILLERS)?\[ettv\]|-GECKOS\[rarbg\]|(juggs|sam|xvid)\[ETRG\]|\[AC3\]|\[VTV\]|\[HIOb\]|ShAaNiG.com|-\s*(2hd|3lt0n|aqos|asap|bajskorv|bida|bito|cm8|dtech|ebx|encodeking|etrg|evo|excellence|fanta|fum|exvid|fingerblast|geckos|high|invincible|jyk|killers|kyr|legi0n|lol|maxspeed|mafiaking|micromkv|millenium|msd|p2p|playnow|psa|ptpower|qaac|rarbg|reenc|thgf|vicky)|(www.torrenting.com - )|www.torentz.3xforum.ro|(ganool|juggs|ac3 titan|hevc|no1knows||reenc|repack|takiawase|\d+MB|web-dl)|(.2CH.x265.HEVC|.HDTV.HEVC.x265-RMTeam)/io),
     Regexp.new(/[-\.](alterego|anoxmous|axxo|bdrip|bluray|brrip|dvdscr|evo|etrg|fum|gerhd|h264|hdrip|hdtv-fleet|hevc|hqclub|killers|lol|mkvcage|nezu|organic|proper|rarbg|rmteam|shaanig|tla|uav|vostfr|web-dl|webrip|x264|x265|x\.264|xvid)/io),
-    Regexp.new(/[-\.](\d+MB|720p|aac|ac3|batv|bdrip|bluray|bokutox|btchkek|cm8|crazy4ad|divx|dvdrip|fgt|foxm|haac|hdrip|hdtv|korsub|meteam|rccl|repack|screener|srigga|stuttershit|snd|sujaidr|sva|vyto|w4f|yify)/io),
-    Regexp.new(%r{Crazy4TV.com -\s*})
+    Regexp.new(/[-_\.](\d+MB|720p|aac|ac3|batv|bdrip|bluray|bokutox|btchkek|cm8|crazy4ad|divx|dvdrip|fgt|foxm|haac|hdrip|hdtv|korsub|meteam|rccl|repack|screener|srigga|stuttershit|snd|sujaidr|sva|vyto|w4f|yify|web-convoy|web-strife|reenc-prime|fqm|ctu|2hd)/io),
+    Regexp.new(%r{Crazy4TV.com -\s*|720p.*$}io)
   ]
 
   def self._clean_name(fname)
     dir, file = File.split(fname)
-    nfile = file
-    KillPtn.each do |aptn|
-      nfile = nfile.sub(aptn, '')
+    if (file.start_with?('.') || !file.include?('.'))
+      return nil
     end
+    *fs, ext  = file.split('.')
+    nfile     = fs.join('.')
+    if false
+      KillPtn.each do |aptn|
+        nfile = nfile.sub(aptn, '')
+      end
+    end
+    nfile = nfile.sub(/(19|20)\d{2}.(s\d+e\d+).*$/io, '\\2')
+    nfile = nfile.sub(/((19|20)\d{2}\)?).*$/, '\\1')
+    nfile = nfile.sub(/(s\d+e\d+).*$/io, '\\1')
     nfile = nfile.gsub(/\.+/, '.').sub(/-$/, '').sub(/\[.*\]\s*/, '').gsub("'", '')
-    "#{dir}/#{nfile.strip}"
+    "#{dir}/#{nfile.strip}.#{ext}"
   end
 
   def self.flatten_dir(dir='.')
@@ -154,26 +166,25 @@ class MKVMux
     options = getOption
     dirs    = {}
     `find #{dir}`.split("\n").each do |d|
+      next if d =~ /^#{dir}\/TV/
       fd, fb = File.split(d)
       dirs[fd] ||= []
       next if fb =~ /DS_Store/o
       dirs[fd] << fb
     end
-    #dirs = dirs.to_a.sort_by{|a, b| a}
-    #STDERR.puts dirs.to_yaml
     dirs.each do |dir, fs|
       if fs.size > 1
         puts({dir:dir, fs:fs[0]}.inspect)
         next
       end
-      if options[:dryrun]
+      if options[:dryrun] || fs[0] =~ /\.part$/
         puts({dir:dir, fs:fs}.inspect)
-      else
-        if fs.size == 1
-          FileUtils.move("#{dir}/#{fs[0]}", "#{dir}/..", verbose:true)
-        end
-        FileUtils.rm_rf(dir, verbose:true)
+        next
       end
+      if fs.size == 1
+        FileUtils.move("#{dir}/#{fs[0]}", "#{dir}/..", verbose:true)
+      end
+      FileUtils.rm_rf(dir, verbose:true)
     end
     true
   end
@@ -185,7 +196,8 @@ class MKVMux
     `find #{dir} -type f`.split("\n").select { |f|
       (f !~ /Downloading/) && (f =~ /\//)
     }.each do |d|
-      if (nd = _clean_name(d)) != d
+      next unless (nd = _clean_name(d))
+      if nd != d
         puts({d:d, nd:nd}.inspect)
         unless options[:dryrun]
           FileUtils.move(d, nd, verbose:true)
@@ -222,7 +234,8 @@ class MKVMux
         end
         next
       end
-      if (nfile = _clean_name(f)) != f
+      next unless (nfile = _clean_name(f))
+      if nfile != f
         puts({f:f, nfile:nfile}.inspect)
         unless options[:dryrun]
           FileUtils.move(f, nfile, verbose:true)
@@ -265,29 +278,73 @@ class MKVMux
       end
       dfile = "#{ddir}/#{s2file}"
     end
+    Plog.info("#{sfile} => #{dfile || ddir}")
     _movefile(sfile, dfile || ddir, options)
   end
 
-  def self.move_to_media_dir(ptn=nil)
-    mediadir = "/mnt/share_1/TV"
-    dir      = "."
-    fptn     = {}
+  def self.move_to_movie_dir(movie_dir, ptn=nil)
+    options   = getOption
+    dir       = Dir.pwd
+    ptn       = Regexp.new(ptn)
+    movie_dir = File.expand_path(movie_dir)
     Plog.info "Getting names for files matching #{ptn}"
-    Dir.glob("#{mediadir}/*").each do |f|
-      d, file = File.split(f)
-      fptn[f] = Regexp.new(/#{file.gsub(' ', '.')}/i)
+
+    Find.find(dir).each do |sfile|
+      fdir, ffile = File.split(sfile)
+      next if !ptn.match(sfile) || (ffile !~ /((20|19)\d{2})/o)
+      next if fdir.start_with?(movie_dir) || ffile.start_with?('.')
+      dyear = $1
+      ddir  = "#{movie_dir}/#{dyear}"
+      FileUtils.mkdir_p(ddir, verbose:true) unless test(?d, ddir)
+      _movefile(sfile, ddir, options)
     end
-    options = getOption
-    files = Find.find(dir).select do |f|
-      if test(?f, f)
-        (f =~ /\//) && (f !~ /(DS_Store|\.part)/o) &&
-                (!ptn || f =~ /#{ptn}/io)
-      else
+    true
+  end
+
+  TV_SHOWS = [
+    'Better Call Saul',
+    'Big Little Lies',
+    'Brooklyn Nine Nine',
+    'Curb Your Enthusiasm',
+    'Game of Thrones',
+    'Grace And Frankie',
+    'Homeland',
+    'Louie',
+    'Master Of None',
+    'Rectify',
+    'Sense 8',
+    'The Americans',
+    'The Big Bang Theory',
+    'The Good Wife',
+    'The Handmaids Tale',
+    'The Middle',
+    'The West Wing',
+    'Veep',
+    'Vice Principals',
+    'Youre The Worst',
+  ]
+  def self.move_to_tv_dir(tv_dir, ptn=nil)
+    options   = getOption
+    dir       = Dir.pwd
+    ddir_ptns = {}
+    tv_dir    = File.expand_path(tv_dir)
+    Plog.info "Getting names for files matching #{ptn}"
+
+    TV_SHOWS.each do |tv_show|
+      f = "#{tv_dir}/#{tv_show}"
+      ddir_ptns[f] = Regexp.new(/#{tv_show.gsub(' ', '.')}/i)
+    end
+
+    to_move_files = Find.find(dir).select do |f|
+      if f.start_with?(tv_dir) || File.basename(f).start_with?('.')
         false
+      else
+        test(?f, f) && (f !~ /(DS_Store|\.part)/o) && (!ptn || f =~ /#{ptn}/io)
       end
     end
-    files.each do |f|
-      fptn.each do |dir, ptn|
+
+    to_move_files.each do |f|
+      ddir_ptns.each do |dir, ptn|
         next unless ptn.match(f)
         _move_to_season_dir(f, dir, options)
       end
@@ -298,10 +355,11 @@ end
 
 if (__FILE__ == $0)
   MKVMux.handleCli(
-    ['--backup', '-b', 0],
-    ['--dryrun', '-n', 0],
-    ['--force',  '-f', 0],
-    ['--odir',   '-d', 1]
+    ['--backup',    '-b', 0],
+    ['--dryrun',    '-n', 0],
+    ['--force',     '-f', 0],
+    ['--odir',      '-d', 1],
+    ['--skipfile',  '-s', 1],
   )
 end
 
