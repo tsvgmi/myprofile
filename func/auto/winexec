@@ -6,18 +6,18 @@
 function winexec {
   local app=$1
   shift
-  local args="$@"
   local appmap=$HOME/.tool/winapp.dat
   local prog
 
-  [ -f $appmap ] || touch $appmap
+  [[ -f $appmap ]] || touch $appmap
   prog=$(egrep "^${app} " $appmap | sed -e "s/^${app} \+//")
-  if [ ! "$prog" ]; then
+  if [[ ! "$prog" ]]; then
     prog=$(locate --basename $app.exe | grep -v 'Recycle.Bin' | head -1)
     echo "$app is found at $prog" >&2
     echo "Remember to add it into $appmap if correct" >&2
     echo "$app $prog" >&2
   fi
-  "$prog" "$args" &
+  set -x
+  nohup "$prog" $@ &
 }
 

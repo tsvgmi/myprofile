@@ -13,9 +13,9 @@ HOST=${HOST%%.*}
 [ "$USER" ] || USER=$LOGNAME
 
 # Keep track of where I logged on from.
-lrec=$(who am i)
-[ "$lrec" ] && echo "$HOST: $(who am i)"  >>~/lastlogin.dat
-[ -f ~/lastlogin.dat ] && tail ~/lastlogin.dat
+#lrec=$(who am i)
+#[ "$lrec" ] && echo "$HOST: $(who am i)"  >>~/lastlogin.dat
+#[ -f ~/lastlogin.dat ] && tail ~/lastlogin.dat
 
 # Setting OSTYPE based on current OS
 case $(uname) in
@@ -104,33 +104,6 @@ case $1 in
 *)   remip=$1 ;;
 esac
 
-netlan=yes
-if [ "$remip" ]; then
-# This will hang if DNS server is down or no internet access ....
-  set -- $(host $HOST)
-  myip=$4
-
-  netlan=
-  case $myip in
-  10.21.*|10.152.*)        # lxp6d
-    case $remip in
-    10.21.*|10.85.*|127.0.*)      # lxp6d, mb45-
-      netlan=yes ;;
-    esac
-    ;;
-  esac
-fi
-
-if [ ! "$netlan" ]; then
-  if [ "$DISPLAY" ]; then
-    echo "Clear display from $DISPLAY"
-    export ODISPLAY=$DISPLAY
-    unset DISPLAY
-  fi
-fi
-
-echo "Display is [$DISPLAY] ..."
-
 export LESS=X
 
 [ "$TERM" ] || export TERM=xterm
@@ -150,6 +123,7 @@ fi
 #echo VIMFONT=$VIMFONT
 
 tty=$(tty)
-export HISTFILE=~/.tool/bhist${tty##*/}
+export HISTFILE=~/.tool/hist-${PWD##*/}
 
-cd
+pwd
+#cd

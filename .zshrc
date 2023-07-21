@@ -1,8 +1,6 @@
-HERE=$PWD
-source ~/.profile_cm
-
 # If you come from bash you might have to change your $PATH.
-# export PATH=$HOME/bin:/usr/local/bin:$PATH
+#export PATH=/bin:/usr/bin:/usr/local/bin:$HOME/bin:$PATH
+export PATH=/bin:/usr/bin:/usr/local/bin:/home/linuxbrew/.linuxbrew/bin:$HOME/bin
 
 # Path to your oh-my-zsh installation.
 export ZSH="$HOME/.oh-my-zsh"
@@ -11,7 +9,7 @@ export ZSH="$HOME/.oh-my-zsh"
 # load a random theme each time oh-my-zsh is loaded, in which case,
 # to know which specific one was loaded, run: echo $RANDOM_THEME
 # See https://github.com/ohmyzsh/ohmyzsh/wiki/Themes
-ZSH_THEME="robbyrussell"
+[ "$ZSH_THEME" ] || ZSH_THEME="robbyrussell"
 
 # Set list of themes to pick from when loading at random
 # Setting this variable when ZSH_THEME=random will cause zsh to load
@@ -73,23 +71,47 @@ ZSH_THEME="robbyrussell"
 # Custom plugins may be added to $ZSH_CUSTOM/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(git)
+plugins=(git bundler rbenv ruby)
 
 source $ZSH/oh-my-zsh.sh
 
-eval "$(rbenv init - zsh)"
+# User configuration
 
-bindkey -v
-# Search backwards and forwards with a pattern
-bindkey -M vicmd '/' history-incremental-pattern-search-backward
-bindkey -M vicmd '?' history-incremental-pattern-search-forward
+# export MANPATH="/usr/local/man:$MANPATH"
 
-# set up for insert mode too
-bindkey -M viins '^R' history-incremental-pattern-search-backward
-bindkey -M viins '^F' history-incremental-pattern-search-forward
+# You may need to manually set your language environment
+# export LANG=en_US.UTF-8
 
-PATH=./bin:./common/bin:./emtools/bin:$PATH
-PATH="/usr/local/opt/postgresql@15/bin:$PATH"
+# Compilation flags
+# export ARCHFLAGS="-arch x86_64"
+
+# Set personal aliases, overriding those provided by oh-my-zsh libs,
+# plugins, and themes. Aliases can be placed here, though oh-my-zsh
+# users are encouraged to define aliases within the ZSH_CUSTOM folder.
+# For a full list of active aliases, run `alias`.
+#
+# Example aliases
+# alias zshconfig="mate ~/.zshrc"
+# alias ohmyzsh="mate ~/.oh-my-zsh"
+
+set -o vi
+
+source ~/myprofile/.profile_cm
+source ~/myprofile/func/common
+
+CDPATH=$CDPATH:$HOME:$HOME/SRC:$HOME/thien-win
+
+export GOROOT=/usr/local/go
+export GOPATH=$HOME/go
+
+PATH=$PATH:$GOPATH/bin:$GOROOT/bin
+PATH=./bin:./common/bin:./node_modules/.bin:$PATH:~/SRC/devtool/bin
+
+fpath=($fpath ~/func/auto)
+autoload $(echo ~/func/auto/*)
+
+export EDITOR=vim
+export XEDITOR=gvim
 
 autoload -Uz vcs_info
 precmd() { vcs_info }
@@ -99,9 +121,11 @@ zstyle ':vcs_info:git:*' formats '%b'
 
 export PROMPT='%F{yellow}%h %y %1d%f [${vcs_info_msg_0_}]%# '
 
-alias srctree="open -a SourceTree ."
+source ~/.aliases
 
-test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh" || true
+# For miniconda
+eval "$(/home/tvuong/miniconda3/bin/conda shell.zsh hook)"
 
-cd $HERE
+# For rbenv
+eval "$(~/.rbenv/bin/rbenv init - zsh)"
 

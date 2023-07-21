@@ -1,0 +1,43 @@
+windows:
+  - name:   Smule
+    root:   ~/SRC/hacauto
+    layout: even-vertical
+    focus:  true
+    panes:
+      - commands:
+          - xrun smuleauto.rb play --logfile=smule.log --download=/mnt/d/SMULE THV_13
+        focus: true
+      - commands:
+          - tail -f smule.log &
+      - commands:
+          - cd ~/SRC/playlist
+          - xrun smulelist.rb
+  - name:   Python
+    root:   ~/SRC/hacauto-py
+    layout: even-vertical
+    panes:
+      - commands:
+          - conda activate orm
+      - commands:
+          - conda activate orm
+  - name:   Playlist-Dev
+    root:   ~/SRC/playlist
+    layout: even-vertical
+    panes:
+      - commands:
+      - commands:
+  - name: VUE
+    root: ~/SRC/vite-ruby
+    layout: even-vertical
+    panes:
+      - commands:
+      - commands:
+  - name: Kubenetes
+    root: ~/SRC/Kube
+    layout: even-vertical
+    panes:
+      - commands:
+      - commands:
+            
+
+

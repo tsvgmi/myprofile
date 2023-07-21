@@ -16,17 +16,18 @@ function unsetf {
 function chpwd {
   fc -W
   export HISTFILE=$HOME/.tool/hist-${PWD##*/}
-  export HISTSIZE=1000
+  export HISTSIZE=256
 
   # Switch to current dir conda environment
   if [ -f conda.env ]; then
     local cenv
 
     [ "$CONDA_DEFAULT_ENV" ] && conda deactivate
-    export PYTHONPATH=$PWD/lib:$PYTHONPATH
+    [ -d $PWD/lib ] && export PYTHONPATH=$PWD/lib:$PYTHONPATH
     cenv=$(grep name: conda.env | sed 's/^.* //')
     conda activate $cenv
   fi
+
   fc -R
 }
 

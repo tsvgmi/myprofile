@@ -1,0 +1,6 @@
+alias vim=nvim
+
+alias gvim="winexec gvim"
+alias code="winexec code"
+alias nvim-qt="winexec nvim-qt"
+alias neovide="winexec neovide"

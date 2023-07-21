@@ -6,15 +6,28 @@
 function f_winexec {
   typeset app=$1
   shift
-  prog=$(locate --basename $app.exe | fgrep "/$app.exe" | \
-    grep -v 'Recycle.Bin' | tee /dev/tty | head -1)
+  prog=$(locate --basename $app.exe | egrep "/$app.exe$" | \
+    grep -v 'Recycle.Bin' | head -1)
   echo "$prog $@" >>~/debug.log
+  set -x
   "$prog" "$@" &
 }
 
-oopt=
-while getopts :g i; do
+function winfile {
+  typeset ufile=$1
+
+  case $ufile in
+    /*) ;;
+    .)  ufile=$PWD ;;
+    *)  ufile=$PWD/$ufile ;;
+  esac
+  echo $ufile | sed -e "s,^,//wsl.localhost/${WSL_DISTRO_NAME},"
+}
+
+oopt= app=
+while getopts :a:g i; do
   case $i in
+    a) app=$OPTARG ;;
     g) oopt="$oopt -$i" ;;
   esac
 done
@@ -28,26 +41,35 @@ https:*|http:*)
   f_winexec msedge $url $@
   ;;
 
-*.html)
-  file=$1
-  [ "$file" = "${file#/}" ] && file=$PWD/$file
-  url=file:////wsl.localhost/${WSL_DISTRO_NAME}${file}
-  echo $url
-  f_winexec msedge $url
+*.html|*.mp3)
+  url=file://$(winfile $1)
+  [ "$app" ] || app=msedge
+  f_winexec $app $url
   ;;
 
 *.md)
-  f_winexec Typora $@
+  [ "$app" ] || app=Typora
+  f_winexec $app $@
   ;;
+
 *.m4a-notworking)
   file=$(echo $1 | sed -e "s,/mnt/voice,//TM-AC1900-E038/Voice,")
   shift
+  [ "$app" ] || app=MediaPlayer
   set -x
-  f_winexec MediaPlayer $file $@
+  f_winexec $app $file $@
   sleep 30
   ;;
+
 *)
-  echo "***** Unsupported file: $file" >&2
-  sleep 1
+  if [ ! "$app" ]; then
+    [ -d "$1" ] && app=explorer
+    if [ ! "$app" ]; then
+      echo "***** Unsupported file: $file" >&2
+      exit 1
+    fi
+  fi
+  url=file://$(winfile $1)
+  f_winexec $app $url
   ;;
 esac

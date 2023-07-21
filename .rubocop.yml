@@ -42,6 +42,9 @@ Naming/VariableNumber:
 Security/YAMLLoad:
   Enabled: false
 
+Style/FormatStringToken:
+  Enabled: false
+
 Style/TrailingCommaInArrayLiteral:
   EnforcedStyleForMultiline: consistent_comma
 
@@ -49,6 +52,9 @@ Style/TrailingCommaInHashLiteral:
   EnforcedStyleForMultiline: consistent_comma
 
 Style/Documentation:
+  Enabled: false
+
+Style/FormatString:
   Enabled: false
 
 Style/HashEachMethods:

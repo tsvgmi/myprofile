@@ -1,11 +1,14 @@
+# Mount a usb drive from windows.
 function mount_usb {
   local drive=${1%:}
   local mp=/mnt/$drive
 
+  # Check if drive already mounted
   if mount | grep $mp; then
     echo "Drive $drive already mounted" >&2
-    ls $mp
-    return
+    df $mp | grep $mp && return
+    echo "But $mp is not accessible.  Retry" >&2
+    sudo umount $mp
   fi
 
   [ -d $mp ] || sudo mkdir $mp
