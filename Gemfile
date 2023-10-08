@@ -1,19 +1,14 @@
-source "http://rubygems.org"
+source 'http://rubygems.org'
 
-gem "activerecord"
-#gem "activerecord-sqlite3-adapter"
-#gem "rb-appscript"
-gem "hpricot"
-gem "iconv"
-gem "ruby-mp3info"
-gem "mp4info", :git => "https://github.com/arbarlow/ruby-mp4info.git"
-gem "byebug"
-gem "selenium-webdriver"
-gem "nokogiri"
+gem 'activerecord'
+gem 'chargepoint'
+gem 'eventmachine'
+gem 'hpricot'
+gem 'micromidi'
+gem 'mp4info', git: 'https://github.com/arbarlow/ruby-mp4info.git'
+gem 'nokogiri'
+gem 'rest-client'
+gem 'slack-ruby-bot'
+gem 'xmlhasher'
+gem "mp3info"
 
-gem "midi"
-gem "progress_bar"
-gem "chargepoint"
-gem "rest-client"
-gem "eventmachine"
-gem "slack-ruby-bot"

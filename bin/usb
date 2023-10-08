@@ -1,0 +1,147 @@
+#!/bin/env bash
+############################################################################
+# File:        /home/tvuong/bin/mount_usb
+# Author:      tvuong
+# Created:     2024-02-17 16:39:15 -0800
+# Copyright (c) Thien H Vuong - 2024.
+# Description:
+# $Id$
+############################################################################
+
+#==========================================================================
+# Function:    [f_logMsg]
+# Description: .
+#==========================================================================
+function f_logMsg {
+  typeset type=$1
+  shift
+  typeset date=$(date +%d-%H:%M:%S)
+
+  typeset file=${BASH_SOURCE[1]##*/}
+  typeset line=${BASH_LINENO[0]}
+
+  echo "$type $date $file.$line $$ $@" >&2
+}
+
+#==========================================================================
+# Function:    [winrun]
+# Description: .
+#==========================================================================
+function f_winrun {
+  PATH=$WINPATH cmd.exe /C $@ 2>/dev/null | sed -e 's/\r//g'
+}
+
+oper=$1; shift
+case $oper in
+  #@Use: mount drive [ident]
+  #@Des: Mount a USB drive with identifier
+  mount)
+    drive=$1
+    ident=$2
+    pmp=/mnt/$drive
+    lmp=/mnt/$ident
+
+    if ! mountpoint $pmp >/dev/null 2>&1; then
+      f_logMsg I "Mount $drive to $pmp" 
+      [ -d $pmp ] || sudo mkdir $pmp
+      sudo mount -t drvfs ${drive}: $pmp
+    fi
+
+    # Try to find out if it is a different name
+    if [[ ! "$ident" ]]; then
+      set -- $(ls -a $pmp/.ID.* 2>/dev/null)
+      if [[ $# -le 0 ]]; then
+        f_logMsg E "No device identification on $pmp"
+        ls -a $pmp
+        exit 1
+      fi
+      ident=${1##*/.ID.}
+      lmp=/mnt/$ident
+    fi
+
+    # At this point, name is either specified or discovered
+    if [ ! -L $lmp ]; then
+      sudo rm -f $lmp
+      sudo ln -s $pmp $lmp
+    fi
+
+    if [ -f $lmp/.ID.$ident ]; then
+      f_logMsg I "$drive mounted and link to $lmp"
+
+      # In case a different logical drive also point to it
+      for file in /mnt/*; do
+        [ -L $file ] || continue
+        [[ "$file" == "$lmp" ]] && continue
+
+        link=$(readlink $file)
+        if [[ "$link" == $pmp ]]; then
+          set -x
+          sudo rm -f $file
+          set +x
+        fi
+      done
+    else
+      set -- $(ls -a $lmp/.ID.* 2>/dev/null)
+      if [[ $# -gt 0 ]]; then
+        fident=$1
+        f_logMsg W "Mount $pmp already mounted but ident mismatched as $fident"
+        sudo rm -f $lmp
+        exit 1
+      fi
+      f_logMsg I "No ident found on device - mark it"
+      touch $lmp/.ID.$ident
+    fi
+    ;;
+
+#@Use: check
+#@Des: Check current inventory of USB (mounted on windows and linux)
+  check)
+    for dir in $(ls /mnt/*/.ID.* 2>/dev/null); do
+      echo $dir
+      df $dir
+    done
+    ident=$1
+    drives=
+    for drive in $(f_winrun wmic logicaldisk get name | fgrep ':'); do
+      if [[ "$ident" ]]; then
+        set -- $(f_winrun dir ${drive}.ID.* | grep -i .ID.$ident)
+      else
+        set -- $(f_winrun dir ${drive}.ID.* | fgrep .ID.)
+      fi
+      did=$5
+      [[ "$did" ]] || continue
+      echo "${drive}  $did"
+    done
+    ;;
+
+  *)
+    if which usb.rb && [[ $# -gt 0 ]]; then
+      roper=$(echo $oper | tr '-' '_')
+      exec usr.rb $roper "$@"
+    fi
+    emman.rb gen-use $0
+    if which usb.rb; then
+      f_logMsg I "Also support sending command to usb.rb"
+      usb.rb help
+    fi
+    ;;
+esac
+exit 0
+
+__END__
+
+=head1 NAME
+usb - Helper script to support usb operations
+
+=head1 SYNOPSIS
+General form: usb operation [options] [parameters]
+
+  * usb check
+  * usb mount drive [ident]
+
+=head1 DESCRIPTION
+
+This contains various utilities to support use of usb stick
+
+=head1 OPERATIONS
+

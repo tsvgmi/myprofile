@@ -208,9 +208,6 @@ EOF
               rescue => errmsg
                 Plog.error errmsg
               end
-            when /^b/i
-              require 'byebug'
-              byebug
             when /^u/
               htones = $'.split('/').map{|sno| ToneSetting.sound(sno.strip)}
               midiplay.sselect(upper:htones)

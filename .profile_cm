@@ -125,5 +125,5 @@ fi
 tty=$(tty)
 export HISTFILE=~/.tool/hist-${PWD##*/}
 
-pwd
+#pwd
 #cd

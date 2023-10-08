@@ -1,6 +1,11 @@
-alias vim=nvim
+for exec in ~/bin/*.exe; do
+  cmd=${exec##*/}
+  cmd=${cmd%.exe}
+  eval "alias $cmd='winwrap $cmd'"
+done
 
-alias gvim="winexec gvim"
-alias code="winexec code"
-alias nvim-qt="winexec nvim-qt"
-alias neovide="winexec neovide"
+alias vim=nvim
+alias emman="emman.rb format --search"
+
+alias splitv="tmux split-window -v"
+alias dshell="docker run --rm -it --entrypoint=sh"
