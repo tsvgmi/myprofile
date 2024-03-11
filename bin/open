@@ -3,11 +3,19 @@
 # Simulate the open in mac on WSL.  However, also direct to use
 # Windows app with WSL path if applicable
 #
+
+#BROWSER=msedge
+BROWSER=vivaldi
+
 function f_winexec {
   typeset app=$1
   shift
   prog=$(locate --basename $app.exe | egrep "/$app.exe$" | \
     grep -v 'Recycle.Bin' | head -1)
+  if [ ! "$prog" ]; then
+    echo "$app not found" 2>&1
+    exit 1
+  fi
   echo "$prog $@" >>~/debug.log
   set -x
   "$prog" "$@" &
@@ -15,13 +23,25 @@ function f_winexec {
 
 function winfile {
   typeset ufile=$1
+  typeset fpath
 
   case $ufile in
     /*) ;;
     .)  ufile=$PWD ;;
     *)  ufile=$PWD/$ufile ;;
   esac
-  echo $ufile | sed -e "s,^,//wsl.localhost/${WSL_DISTRO_NAME},"
+  fpath=$(realpath $ufile)
+  case $fpath in
+    # Native windows but mounted in WSL - revert to windows
+    /mnt/*)
+      fpath=$(echo $fpath | ruby -pe '$_.sub!(%r{/mnt/(.)}, "\\1:")')
+      ;;
+    # Native WSL, need to change path to wsl
+    *)
+      fpath=$(echo $fpath | sed -e "s,^,//wsl.localhost/${WSL_DISTRO_NAME},")
+      ;;
+  esac
+  echo $fpath
 }
 
 oopt= app=
@@ -38,27 +58,18 @@ https:*|http:*)
   url=$(echo $1 | \
     sed -e "s,^file:///,file:////wsl.localhost/$WSL_DISTRO_NAME/,")
   shift
-  f_winexec msedge $url $@
+  f_winexec $BROWSER $url $@
   ;;
 
-*.html|*.mp3)
+*.html|*.mp3|*.pdf|*.png|*.jpeg|*.svg)
   url=file://$(winfile $1)
-  [ "$app" ] || app=msedge
+  [ "$app" ] || app=$BROWSER
   f_winexec $app $url
   ;;
 
 *.md)
   [ "$app" ] || app=Typora
   f_winexec $app $@
-  ;;
-
-*.m4a-notworking)
-  file=$(echo $1 | sed -e "s,/mnt/voice,//TM-AC1900-E038/Voice,")
-  shift
-  [ "$app" ] || app=MediaPlayer
-  set -x
-  f_winexec $app $file $@
-  sleep 30
   ;;
 
 *)
@@ -69,7 +80,7 @@ https:*|http:*)
       exit 1
     fi
   fi
-  url=file://$(winfile $1)
-  f_winexec $app $url
+  lpath=file://$(winfile $1)
+  f_winexec $app $lpath
   ;;
 esac

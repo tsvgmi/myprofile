@@ -5,15 +5,14 @@ filetype off                  " required
 set rtp+=~/.vim/bundle/Vundle.vim
 
 call vundle#begin()
-Plugin 'VundleVim/Vundle.vim'
-Plugin 'zefei/vim-wintabs'
+Plugin 'https://github.com/zefei/vim-wintabs'
+Plugin 'https://github.com/preservim/nerdtree'
 call vundle#end()
 
 filetype plugin on
 filetype plugin indent on
 
-set   ttyfast
-" ========================================================================
+" ===================================================
 "
 " Command line (colon mode) mappings
 " valid names are:  <Up> <Down> <Left> <Right> <Home> <End> 
@@ -33,9 +32,6 @@ map <C-E>-  <C-W>s
 map <C-E>\| <C-W>v
 map <C-E>d  <C-W>c
 
-nnoremap <Leader>t :TlistToggle<CR>
-map! <Leader>f <Plug>ShowFunc
-
 "
 " DOS keyboard mapping for cursor keys
 "
@@ -46,24 +42,8 @@ imap <ESC>OB  <Down>
 imap <ESC>[5~ <PageUp>
 imap <ESC>[6~ <PageDown>
 
-"
-"
-" Enable editing of gzipped files.  This comes straight from the vim
-" distribution and it served me well.
-"   uncompress them after reading
-"   compress them before writing, undone after writing
-"   binary mode is needed when writing gzipped files
-autocmd BufRead *.gz set bin|%!gunzip
-autocmd BufRead *.gz set nobin
-autocmd BufWritePre *.gz %!gzip
-autocmd BufWritePre *.gz set bin
-autocmd BufWritePost *.gz undo|set nobin
-autocmd FileReadPost *.gz set bin|'[,']!gunzip
-autocmd FileReadPost set nobin
-
 " Disable slow process in network volume
 autocmd BufReadPre //* :NoMatchParen
-"
 
 "--------------------------------------------- So it behaves like crisp ---
 "<F7>	Begin of macro (must use 'q' to terminate macro)
@@ -72,7 +52,7 @@ autocmd BufReadPre //* :NoMatchParen
 "<F6>	Replace
 "<A-N>	Next buffer
 "<A-P>	Previous buffer
-"<A-B>	List buffers
+"<A-B>	List uffers
 "<A-W>	Write file/region
 "<A-D>	Delete line
 "<A-U>	Undo
@@ -90,10 +70,6 @@ imap 	<F5>	<C-O>/
 map 	<F6>	:s/
 imap 	<F6>	<C-O>:s/
 imap	<S-F5>	<C-O>n
-map 	î 	:bn
-imap 	î 	<C-O>:bn
-map 	ð 	:bp
-imap 	ð 	<C-O>:bp
 "map 	â 	:buffers
 map 	<M-b> 	:buffers<CR>
 map 	b 	:buffers<CR>
@@ -140,32 +116,6 @@ set wmh=0
 "------------------------------------------- Quick switching of buffers ---
 " Maximize and split the window
 map 	 <Leader>- :only\|split<CR>
-" Maximize back windows + show all buffer tabs
-nmap     <Leader>0 :only\|bn\|bp<CR>
-nmap     <Leader>1 :tabn 1<CR>
-nmap     <Leader>2 :tabn 2<CR>
-nmap     <Leader>3 :tabn 3<CR>
-nmap     <Leader>4 :tabn 4<CR>
-nmap     <Leader>5 :tabn 5<CR>
-nmap     <Leader>6 :tabn 6<CR>
-nmap     <Leader>7 :tabn 7<CR>
-nmap     <Leader>8 :tabn 8<CR>
-nmap     <Leader>9 :tabn 9<CR>
-
-nmap     <D-1> :tabn 1<CR>
-nmap     <D-2> :tabn 2<CR>
-nmap     <D-3> :tabn 3<CR>
-nmap     <D-4> :tabn 4<CR>
-nmap     <D-5> :tabn 5<CR>
-nmap     <D-6> :tabn 6<CR>
-nmap     <D-7> :tabn 7<CR>
-nmap     <D-8> :tabn 8<CR>
-nmap     <D-9> :tabn 9<CR>
-
-nmap 	<M-C>	!!~/bin/vimfilt % cbar<CR>
-nmap 	c	!!~/bin/vimfilt % cbar<CR>
-map	,in	ma/^}<CR>:'a,.!tclIndent<CR>
-map	,fl	:g/^\(proc\\|sub\\|func\)/p
 
 "<A-C> Indented shell comment start
 "---------------------------------------------------------------------------
@@ -183,16 +133,7 @@ imap  	<F4>	<C-O>:cn<CR>
 map  	<S-F4>	:cp<CR>
 imap  	<F4>	<C-O>:cn<CR>
 
-"---------------------------------------------- Remote editing support ---
-":wr	Save file to remote machine
-"-------------------------------------------------------------------------
-cab	wr	wa\|!sshedit.rb putremote %<CR>
-
 set ttyfast
-
-cmap ,wr	!sshedit.rb putremote %<CR>:bd<CR>
-
-"highlight Normal guibg=White guifg=Black
 syntax on
 
 set smartindent
@@ -212,8 +153,14 @@ highlight NonText guifg=#ff4444
 set fo=croq
 set comments=:#--- 
 
+if has("unix")
+  let g:init_file="~/.config/nvim/init.vim"
+else
+  let g:init_file="~/AppData/Local/nvim/init.vim"
+endif
+
 autocmd!
-autocmd BufWritePost ~/AppData/Local/nvim/init.vim source ~/AppData/Local/nvim/init.vim
+execute 'autocmd BufWritePost ' . g:init_file . ' source ' . g:init_file
 
 set uc=0
 set autoread
@@ -222,39 +169,34 @@ set sidescrolloff=4
 set foldlevel=10
 set foldcolumn=2
 
-command! -range AlignColumn1 <line1>,<line2>!wsl /home/tvuong/bin/winwrap vimfilt.rb ac 1
-command! -range AlignColumn2 <line1>,<line2>!wsl /home/tvuong/bin/winwrap vimfilt.rb ac 2
-command! -range AlignColumn3 <line1>,<line2>!wsl /home/tvuong/bin/winwrap vimfilt.rb ac 3
-command! -range AlignColumn <line1>,<line2>!wsl /home/tvuong/bin/winwrap winwrap vimfilt.rb ac 
-command! -range AlignEqual <line1>,<line2>!wsl /home/tvuong/bin/winwrap vimfilt.rb ae
-command! -range FmtComment <line1>,<line2>!~/bin/vimfilt % fmtcmt
-command! -range FmtHaml    <line1>,<line2>!~/bin/vimfilt % fmt_haml
-command! -range FuncHeader <line1>,<line2>!~/bin/vimfilt % funcHeader
+function! WslWrap(command)
+  execute '!wsl bash ~/winbin/wslwrap ' . a:command
+endfunction
 
-command! FileHeader	0r!~/bin/vimfilt % fileTemplate
+function! VimFilt(cmd) range
+  execute a:firstline . ',' . a:lastline . '!wsl ~/winbin/wslwrap vimfilt.rb ' . a:cmd
+endfunction
 
-" Switch directory - clean current buffers
-command! -nargs=1 Sdir %bd | cd <args>
-
-map ,fH		:FileHeader<CR>
-map ,#          $50a 51\|C# 
-vmap ,a1c	:AlignColumn1<CR>
-vmap ,a2c	:AlignColumn2<CR>
-vmap ,a3c	:AlignColumn3<CR>
-vmap ,ac	:AlignColumn<CR>
-vmap ,ae	:AlignEqual<CR>
-vmap ,cb        !~/bin/vimfilt % cbar<CR>
-vmap ,cf	:FmtComment<CR>
-vmap ,hf	:FmtHaml<CR>
-vmap ,fh	:FuncHeader<CR>
+map  ,fH  0r!wsl ~/winbin/wslwrap vimfilt.rb file_template '%:p'<CR>
+map  ,#   $50a 51\|C#
+vmap ,a1c :call VimFilt("align_column 1")<CR>
+vmap ,a2c :call VimFilt("align_column 2")<CR>
+vmap ,a3c :call VimFilt("align_column 3")<CR>
+vmap ,a3c :call VimFilt("align_column 4")<CR>
+vmap ,ac  :call VimFilt("align_column")<CR>
+vmap ,ae  :call VimFilt("align_equal")<CR>
+vmap ,cb  :call VimFilt("cbar")<CR>
+vmap ,cf  :call VimFilt("fmt_cmt")<CR>
+vmap ,fh  :call VimFilt("func_header")<CR>
+vmap ,fG  :call VimFilt("gen_use '%:p'")<CR>
 
 " Open current file in new window
 map <C-N> :!gvim %<CR><CR>:bd<CR>
 
 " Map alt-z to fold alternate
-map <BS>	za
-map <C-BS>	zM
-map <M-BS>	zR
+map <BS>   za
+map <C-BS> zM
+map <M-BS> zR
 
 map <Up>   gk
 map <Down> gj
@@ -265,15 +207,15 @@ function! MapBoth(keys, rhs)
 endfunction
 
 " Tab selection mapping
-call MapBoth('<M-1>', ':tabn 1<CR>')
-call MapBoth('<M-2>', ':tabn 2<CR>')
-call MapBoth('<M-3>', ':tabn 3<CR>')
-call MapBoth('<M-4>', ':tabn 4<CR>')
-call MapBoth('<M-5>', ':tabn 5<CR>')
-call MapBoth('<M-6>', ':tabn 6<CR>')
-call MapBoth('<M-7>', ':tabn 7<CR>')
-call MapBoth('<M-8>', ':tabn 8<CR>')
-call MapBoth('<M-9>', ':tabn 9<CR>')
+call MapBoth('<M-1>', ':WintabsGo 1<CR>')
+call MapBoth('<M-2>', ':WintabsGo 2<CR>')
+call MapBoth('<M-3>', ':WintabsGo 3<CR>')
+call MapBoth('<M-4>', ':WintabsGo 4<CR>')
+call MapBoth('<M-5>', ':WintabsGo 5<CR>')
+call MapBoth('<M-6>', ':WintabsGo 6<CR>')
+call MapBoth('<M-7>', ':WintabsGo 7<CR>')
+call MapBoth('<M-8>', ':WintabsGo 8<CR>')
+call MapBoth('<M-9>', ':WintabsGo 9<CR>')
 
 syntax on
 
@@ -285,20 +227,13 @@ highlight Folded guibg=#444444 guifg=#888888
 if $VIMCOLOR != ""
   execute "color " . $VIMCOLOR
 else
-  "color koehler
-  "color darkblue
-  "color pablo
-  "color zellner
-  "color evening
-  color torte
-  set mouse=a
-
-  " Highlight the search pattern
-  set hlsearch
-  highlight Folded guibg=#444444 guifg=#888888
+  colorscheme darkblue
 endif
-set iskeyword=48-57,_,A-Z,a-z
+set colorcolumn=82
 
+set hlsearch
+highlight Folded guibg=#444444 guifg=#888888
+set iskeyword=48-57,_,A-Z,a-z
 set tags=tags,TAGS
 set number
 
@@ -307,22 +242,19 @@ autocmd FileType go     setlocal ts=4 sw=4 expandtab! list
 autocmd FileType python setlocal ts=2 sw=2 expandtab list foldmethod=indent
 autocmd FileType ruby   setlocal ts=2 sw=2 expandtab list norelativenumber nocursorline re=1 foldmethod=manual
 
-set nocompatible      " We're running Vim, not Vi!
 syntax on             " Enable syntax highlighting
 filetype on           " Enable filetype detection
 filetype indent on    " Enable filetype-specific indenting
 filetype plugin on    " Enable filetype-specific plugins
 
 set noincsearch
-set colorcolumn=82
-colorscheme darkblue
 
-let ruby_fold = 1
-let ruby_foldable_groups = 'def class module for if case'
-let ruby_minlines = 100
+"let ruby_fold = 1
+"let ruby_foldable_groups = 'def class module for if case'
+"let ruby_minlines = 100
 
-let g:is_bash = 1
-let g:sh_fold_enabled = 1
+"let g:is_bash = 1
+"let g:sh_fold_enabled = 1
 
 hi Comment guifg=#AAFFAA
 
@@ -331,11 +263,11 @@ set directory^=$HOME/tmp
 set backupdir^=$HOME/tmp
 
 if has("gui_running")
-  "Copy
+  " Copy
   nnoremap <C-c> "+y  " Normal (must follow with an operator)
   xnoremap <C-c> "+y  " Visual
 
-  "Paste
+  " Paste
   "nnoremap <C-v> "+p  " Normal
   noremap! <C-v> <C-r>+
   inoremap <C-v> <C-r>+
@@ -352,15 +284,41 @@ map <C-W>o <Plug>(wintabs_only_window)
 command! Tabc WintabsCloseVimtab
 command! Tabo WintabsOnlyVimtab
 
-" Set font to 10 as default
-"set guifont=Consolas:h10:cANSI:qDRAFT
-set guifont=Consolas:h10
-let s:fontsize = 10
-function! AdjustFontSize(amount)
-  let s:fontsize = s:fontsize+a:amount
-  :execute "GuiFont! Consolas:h" . s:fontsize
-endfunction
+if exists("g:NERDTreeDirArrowExpandable")
+  nnoremap <C-n> :NERDTree<CR>
+  nnoremap <C-t> :NERDTreeToggle<CR>
+  command! -nargs=1 Sdir %bd | cd ../<args> | NERDTree | wincmd p
+else
+  command! -nargs=1 Sdir %bd | cd ../<args>
+endif
 
+" Neovide Customization
+if exists("g:neovide")
+  let g:neovide_transparency = 0.8
+  let g:neovide_hide_mouse_when_typing = v:true
+  set guifont=CaskaydiaCove\ Nerd\ Font\ Mono,Consolas,Lucida\ Console:h10
+  let s:fontscale = 1.0
+  function! AdjustFontSize(amount)
+    let s:fontscale = s:fontscale + (a:amount/10.0)
+    let g:neovide_scale_factor = s:fontscale
+  endfunction
+else
+  let s:fontname = "CaskaydiaCove\\ Nerd\\ Font\\ Mono"
+  let s:fontsize = 10
+  :execute "set guifont=" . s:fontname . ":h" . s:fontsize
+  function! AdjustFontSize(amount)
+    let s:fontsize = s:fontsize+a:amount
+    :execute "set guifont=" . s:fontname . ":h" . s:fontsize
+  endfunction
+endif
 noremap <C-=> :call AdjustFontSize(1)<CR>
 noremap <C--> :call AdjustFontSize(-1)<CR>
 
+" If current file is on WSL FS, exbit is cleared.  So we have to reset
+" blindly for now
+autocmd BufWritePost * call WslWrap("chmod +x '%:p'")
+
+map ,vv :execute "edit "   . stdpath('config') . "/init.vim"<CR>
+map ,vs :execute "source " . stdpath('config') . "/init.vim"<CR>
+
+echo "Init file loaded from " . stdpath('config')

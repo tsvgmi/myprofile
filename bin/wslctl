@@ -1,0 +1,52 @@
+#!/bin/env bash
+. ${0%/*}/../etc/tool.env
+############################################################################
+# File:        /home/tvuong/bin/mount_usb
+# Author:      tvuong
+# Created:     2024-02-17 16:39:15 -0800
+# Copyright (c) Thien H Vuong - 2024.
+# Description:
+# $Id$
+############################################################################
+
+oper=$1; shift
+case $oper in
+  #@Use: restart-x
+  #@Des: Restart the X-windows support
+  #
+  # Sometimes X just lose communication - either X windows or sound streaming
+  restart-x)
+    which wsl.exe || F_fatal "No wsl.exe found"
+    set -- $(wsl.exe --system pgrep -l weston 2>/dev/null)
+    if [[ $# -ge 2 ]]; then
+      F_logMsg W "Killing x-server to allow for automatic restart"
+      pid=$1
+      set -x
+      exec wsl.exe --system kill $pid
+    else
+      F_logMsg E "weston (x-service) not found"
+    fi
+    ;;
+
+  *)
+    emman.rb gen-use $0
+    ;;
+esac
+exit 0
+
+__END__
+
+=head1 NAME
+wslctl - Helper script to support wsl operations
+
+=head1 SYNOPSIS
+General form: wslctl operation [options] [parameters]
+
+  * wslctl restart-x
+
+=head1 DESCRIPTION
+
+This contains various utilities to support use of WSL interoperation
+
+=head1 OPERATIONS
+

@@ -1,0 +1,15 @@
+#==========================================================================
+# Function:    [tmuxteam]
+# Description: Run a teamocil session with tmux
+#==========================================================================
+function tmuxteam {
+  typeset session=$1
+
+  if [[ "$TMUX" ]]; then
+    teamocil $session
+  else
+    tmux new-session -d -s tmuxteam
+    tmux send-keys -t tmuxteam "teamocil $session" C-m
+    tmux attach -t tmuxteam
+  fi
+}

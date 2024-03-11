@@ -1,5 +1,8 @@
+#echo "in zshrc - $PWD"
+here=$PWD
+
 # If you come from bash you might have to change your $PATH.
-#export PATH=/bin:/usr/bin:/usr/local/bin:$HOME/bin:$PATH
+[ "$WINPATH" ] || export WINPATH=$PATH
 export PATH=/bin:/usr/bin:/usr/local/bin:/home/linuxbrew/.linuxbrew/bin:$HOME/bin
 
 # Path to your oh-my-zsh installation.
@@ -101,7 +104,7 @@ source ~/myprofile/func/common
 
 CDPATH=$CDPATH:$HOME:$HOME/SRC:$HOME/thien-win
 
-export GOROOT=/usr/local/go
+#export GOROOT=/usr/local/go
 export GOPATH=$HOME/go
 
 PATH=$PATH:$GOPATH/bin:$GOROOT/bin
@@ -111,7 +114,7 @@ fpath=($fpath ~/func/auto)
 autoload $(echo ~/func/auto/*)
 
 export EDITOR=vim
-export XEDITOR=gvim
+#export XEDITOR=gvim
 
 autoload -Uz vcs_info
 precmd() { vcs_info }
@@ -129,3 +132,22 @@ eval "$(/home/tvuong/miniconda3/bin/conda shell.zsh hook)"
 # For rbenv
 eval "$(~/.rbenv/bin/rbenv init - zsh)"
 
+[ "$TMUX_PANE" -o "$VSCODE_INJECTION" ] || cd
+
+export HISTSIZE=50000
+export SAVEHIST=50000
+setopt SHARE_HISTORY
+setopt INC_APPEND_HISTORY
+
+autoload -U +X bashcompinit && bashcompinit
+complete -o nospace -C /home/linuxbrew/.linuxbrew/Cellar/terraform/1.5.7/bin/terraform terraform
+
+if [ -d ~/PKG/spark ]; then
+  export SPARK_HOME=~/PKGS/spark
+  export PYSPARK_DRIVER_PYTHON=jupyter
+  export PYSPARK_DRIVER_PYTHON_OPTS='notebook'
+  PATH=$PATH:$SPARK_HOME/bin
+fi
+
+export WSL_UTF8=1
+export WSLENV=$WSLENV:WSL_UTF8

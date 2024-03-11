@@ -5,7 +5,6 @@ require 'restclient'
 require 'yaml'
 require 'eventmachine'
 require 'slack-ruby-bot'
-    require 'byebug'
 
 Config = YAML.load_file(ENV['HOME'] + "/etc/mon_cp.yml")
 
@@ -42,7 +41,6 @@ class Spots
   attr_reader :history, :uselist
 
   def initialize(cp_credentials, latitude, longitude)
-    byebug
     ChargePoint::API.authenticate(cp_credentials)
     @latitude, @longitude = latitude, longitude
     @wset    = {}

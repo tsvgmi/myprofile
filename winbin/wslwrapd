@@ -1,0 +1,39 @@
+#!/bin/env bash
+. ${0%/*}/app.env
+############################################################################
+# File:        /home/tvuong/myprofile/winbin/wslwrap
+# Author:      tvuong
+# Created:     2024-03-07 10:19:43 -0800
+# Copyright (c) Thien H. Vuong
+# Description:
+#   Wrapper to setup environment to run script from windows env
+#   using wsl prefix
+# $Id$
+############################################################################
+
+# trap "rc=$?; /bin/rm $TMPDIR/wsl-$$-* 2>/dev/null; exit $rc" INT QUIT KILL TERM EXIT HUP
+
+dir=$(F_toWslPath $1)
+cmd=$2
+shift 2
+
+cd $dir
+
+newargs=
+for arg in $@; do
+  case $arg in
+  *wsl.localhost*)
+    arg=$(F_toWslPath $arg)
+    ;;
+  [A-Z]:*)
+    arg=$(F_toWslPath $arg)
+    ;;
+  *-utf8|*-utf16|*-utf)
+    arg=$(F_toWslPath $arg)
+    ;;
+  esac
+  newargs="$newargs $arg"
+done
+
+eval $cmd $newargs
+exit $?

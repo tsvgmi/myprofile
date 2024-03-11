@@ -14,9 +14,11 @@ function unsetf {
 
 # Called at zsh dir change.   Support per dir history
 function chpwd {
-  fc -W
+  [ "$HISTFILE" ] && fc -W $HISTFILE
+  fc -p
   export HISTFILE=$HOME/.tool/hist-${PWD##*/}
-  export HISTSIZE=256
+  export HISTSIZE=1000
+  export SAVEHIST=50000
 
   # Switch to current dir conda environment
   if [ -f conda.env ]; then
@@ -28,7 +30,7 @@ function chpwd {
     conda activate $cenv
   fi
 
-  fc -R
+  [ "$HISTFILE" ] && fc -R $HISTFILE
 }
 
 function cls {
@@ -41,3 +43,13 @@ function svngrep {
   find . -type f | fgrep -v .svn | xargs -I % grep $@ '%'
 }
 
+function logMsg {
+  typeset type=$1
+  shift
+  typeset date=$(date +%d-%H:%M:%S)
+
+  typeset file=${BASH_SOURCE[1]##*/}
+  typeset line=${BASH_LINENO[0]}
+
+  echo "$type $date $file.$line $$ $@" >&2
+}

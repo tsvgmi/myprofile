@@ -1,0 +1,61 @@
+#!/bin/bash
+#
+# A wrapper to enable use of Windows exec while running on WSL (Linux)
+# It changes path as seen by WSL to equivalent path in Windows,  The
+# normal use is
+#
+# 1. Create a symlink of the app name to this script
+# 2. Make a symlink of the windows .exe to the same .exe on the same dir
+#
+
+#==========================================================================
+# Function:    [winpath]
+# Description: Convert a WSL (unix) path to a windows path
+#==========================================================================
+function winpath {
+  typeset upath=$1
+
+  case $upath in
+    # Native windows but mounted in WSL - revert to windows
+    /mnt/*)
+      echo $upath | ruby -pe '$_.sub!(%r{/mnt/(.)}, "\\1:")'
+      ;;
+    *)
+      [ -f $upath ] && upath=$(realpath $upath)
+      echo "//wsl.localhost/${WSL_DISTRO_NAME}${upath}"
+      ;;
+  esac
+}
+
+exname=${0##*/}
+if [[ $exname == "winwrap" ]]; then
+  exname=$1
+  shift
+fi
+path=$1
+shift 
+
+path_mode=
+case $exname in
+  chrome|vivaldi|edge)
+    path_mode=url
+    ;;
+esac
+
+case $path in
+  # Convert WSL based path to windows accessible path
+  file:*)
+    [ "$path" ] && path=$(winpath ${path#file:/})
+    ;;
+  -*)
+    ;;
+  *)
+    [ "$path" ] && path=$(winpath $path)
+    ;;
+esac
+[ "$path_mode" -a "$path" ] && path=$file://$path
+
+PATH=$WINPATH:$PATH
+
+set -x
+exec $exname.exe $path $@

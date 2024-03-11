@@ -5,13 +5,10 @@ windows:
     focus:  true
     panes:
       - commands:
-          - xrun smuleauto.rb play --logfile=smule.log --download=/mnt/d/SMULE THV_13
+          - xrun smuleauto.rb play THV_13
         focus: true
       - commands:
           - tail -f smule.log &
-      - commands:
-          - cd ~/SRC/playlist
-          - xrun smulelist.rb
   - name:   Python
     root:   ~/SRC/hacauto-py
     layout: even-vertical
@@ -26,12 +23,20 @@ windows:
     panes:
       - commands:
       - commands:
-  - name: VUE
-    root: ~/SRC/vite-ruby
+  - name: react-win
+    root: ~/winhome/SRC
     layout: even-vertical
     panes:
       - commands:
+          - exec powershell.exe
       - commands:
+          - exec powershell.exe
+#  - name: VUE
+#    root: ~/SRC/vite-ruby
+#    layout: even-vertical
+#    panes:
+#      - commands:
+#      - commands:
   - name: Kubenetes
     root: ~/SRC/Kube
     layout: even-vertical
