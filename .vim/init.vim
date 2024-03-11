@@ -1,47 +1,64 @@
-" == START OF VUNDLE ===
+"######################################################################
+" File:        /home/tvuong/.config/nvim/init.vim
+" Author:      tvuong
+" Created:     2024-03-12 10:03:09 -0700
+" Copyright (c) Thien H. Vuong
+" Description:
+" Key Mapping Limitation:
+"   vim maybe starting behind other apps which intercept keys before it
+"   get to it.  In particular
+"   - Windows based terminal: <C-c><, C-v>, <C-1>-<C-9>
+"   - Tmux: <M-1>-<M-9>
+"######################################################################
+
 set nocompatible              " be iMproved, required
 filetype off                  " required
 
 "-- Self maintenance first --
 if has("nvim")
   if has("unix")
-    let g:init_file="~/.config/nvim/init.vim"
+    let g:config_path="~/.config/nvim"
   else
-    let g:init_file="~/AppData/Local/nvim/init.vim"
+    let g:config_path="~/AppData/Local/nvim"
   endif
+  let g:init_file=g:config_path . "/init.vim"
+  let g:nv_init=g:config_path . "/init.nvim"
 else
   let g:init_file="~/.vimrc"
 endif
-let g:config_dir="~/.vim"
 
 autocmd!
-execute 'autocmd BufWritePost ' . g:init_file . ' source ' . g:init_file
+execute 'autocmd! BufWritePost ' . g:init_file . ' source ' . g:init_file
+
+function! SourceIfExists(file)
+  if filereadable(expand(a:file))
+    exe 'source' a:file
+  endif
+endfunction
+
 map ,vv :execute "edit "   . g:init_file<CR>
 map ,vs :execute "source " . g:init_file<CR>
-
-"set rtp+=~/.vim/autoload
-"set rtp+=~/.vim/autoload,~/.vim/bundle/Vundle.vim
 
 "-- Plugins --
 " I cannot autoload this somehow, so it must be sourced manually
 source ~/.vim/autoload/plug.vim
 call plug#begin('~/.vim/plugged')
+
+" Basic editing
 Plug 'tpope/vim-surround'
 Plug 'zefei/vim-wintabs'
+"Plug 'preservim/nerdtree'
 
-Plug 'preservim/nerdtree'
-
-" Development/Coding
+" Language support
+Plug 'pangloss/vim-javascript'
 Plug 'leafgarland/typescript-vim'
 Plug 'maxmellon/vim-jsx-pretty'
-Plug 'pangloss/vim-javascript'
 Plug 'jparise/vim-graphql'
 
+" This must be here since plugin block can only be defined once
 if has("nvim")
   Plug 'neoclide/coc.nvim', {'branch': 'release'}
-  if has("unix") <= 0
-    Plug 'glacambre/firenvim', {'do': {_ -> firenvim#install(0)}}
-  end
+  Plug 'glacambre/firenvim', {'do': {_ -> firenvim#install(0)}}
 endif
 call plug#end()
 
@@ -67,10 +84,9 @@ if empty($TMUX)
   map <C-E>-  <C-W>s
   map <C-E>\| <C-W>v
   map <C-E>c  <C-W>c
-else
-  map <C-W>-  <C-W>s
-  map <C-W>\| <C-W>v
 endif
+map <C-W>-  <C-W>s
+map <C-W>\| <C-W>v
 
 "
 " DOS keyboard mapping for cursor keys
@@ -85,86 +101,32 @@ imap <ESC>[6~ <PageDown>
 " Disable slow process in network volume
 autocmd BufReadPre //* :NoMatchParen
 
-"--------------------------------------------- So it behaves like crisp ---
-"<F7>	Begin of macro (must use 'q' to terminate macro)
-"<F8>	Playback of macro
-"<F5>	Search
-"<F6>	Replace
-"<A-N>	Next buffer
-"<A-P>	Previous buffer
-"<A-B>	List uffers
-"<A-W>	Write file/region
-"<A-D>	Delete line
-"<A-U>	Undo
-"<A-X>	Quit
-"<A-E>	Edit file
-"<A-R>	Read file
-"<A-Y>	Yank region
-"--------------------------------------------------------------------------
-map 	<F7> 	qz
-map 	<F8> 	@z
-imap 	<F7> 	<C-O>qz
-imap 	<F8> 	<C-O>@z
-map 	<F5>	/
-imap 	<F5>	<C-O>/
-map 	<F6>	:s/
-imap 	<F6>	<C-O>:s/
-imap	<S-F5>	<C-O>n
-"map 	â 	:buffers
-map 	<M-b> 	:buffers<CR>
-map 	b 	:buffers<CR>
-map 	<M-t> 	:tj /
-map 	t 	:tj /
-imap 	â 	<C-O>:buffers
-map 	÷	:w
-imap 	÷	<C-O>:w
-map 	ë	D
-imap 	ë	<C-O>D
-map 	ä	dd
-imap 	ä	<C-O>dd
-map 	õ	u
-imap 	õ	<C-O>u
-map	ø	:q<CR>
-imap	ø	<C-O>:q<CR>
-map	å	:e 
-imap	å	<C-O>:e 
-map	ò	:r 
-imap	ò	<C-O>:r 
-map	í	v
-imap	í	<C-O>v
-map	ì	V
-imap	ì	<C-O>V
-map	ù	y
-imap	ù	<C-O>y
-map	<S-DOWN>	j
-map	<S-UP>		k
-imap	<S-DOWN>	<C-O>j
-imap	<S-UP>		<C-O>k
+function! MapMeta(mkey, rhs)
+  let l:skey = "<M-" . a:mkey . ">"
+  execute 'nmap' l:skey a:rhs
+  execute 'imap' l:skey '<C-o>' . a:rhs
+  
+  " This should check for tmux, but I also enable so have the
+  " same key pattern for but tmux and non (easy to remember_
 
-map     <M-Right>       :tabnext<CR>
-map     <M-Left>        :tabprev<CR>
+  let l:tmkey = "<leader>" . a:mkey
+  execute 'nmap' l:tmkey a:rhs
+  execute 'imap' l:tmkey '<C-o>' . a:rhs
+endfunction
+
+call MapMeta('b', ':buffers<CR>')
+call MapMeta('t', ':tj /')
 
 set wmh=0
 
-"------------------------------------------- Quick switching of buffers ---
+"--------------------------------------- Quick switching of buffers ---
 " Maximize and split the window
 map 	 <Leader>- :only\|split<CR>
 
 "<A-C> Indented shell comment start
-"---------------------------------------------------------------------------
+"-----------------------------------------------------------------------
 imap	ã	.<BS>#---  ---<BS><BS><BS>i
 map	c	40A <ESC>41\|C#<Space>
-
-"--------------------------------------------- For navigation with make ---
-"Cannot map anything start with <ESC> as it will be a problem for
-"macro playback if a slow <ESC> is really needed
-"<F4>	Go to next error/warning
-"<S-F4>	Go to previous error/warning
-"------------------------------------------------------------------------- 
-map  	<F4>	:cn<CR>
-imap  	<F4>	<C-O>:cn<CR>
-map  	<S-F4>	:cp<CR>
-imap  	<F4>	<C-O>:cn<CR>
 
 set ttyfast
 syntax on
@@ -194,83 +156,6 @@ set sidescrolloff=4
 set foldlevel=10
 set foldcolumn=2
 
-if has("nvim")
-"============================================================
-lua << EOF
-function _G.has(feature)
-  return vim.api.nvim_eval("has('" .. feature .. "')")
-end
-
--- Build range prefix for vim command
-function _G._ranger(with_range)
-  local firstline, lastline, result
-
-  if with_range == 0 then
-    return "0r"
-  elseif with_range == 9 then
-    return "0r"
-  elseif with_range == 1 then
-    firstline = vim.api.nvim_buf_get_mark(0, "<")[1]
-    lastline  = vim.api.nvim_buf_get_mark(0, ">")[1]
-    return string.format("%d,%d", firstline, lastline)
-  end
-  return ""
-end
-
--- Run an external Linux command
-function _G._wslprefix(with_range)
-  local result, cwd
-  result = _ranger(with_range) .. "!"
-  if has("unix") <= 0 then
-    cwd    = vim.fn.getcwd()
-    result = result .. "wsl ~/winbin/wslwrapd '" .. cwd .. "' "
-  end
-  return result
-end
-
--- Run an external Linux command after switching to local dir
-function _G.wsl(command)
-  vim.cmd(_wslprefix() .. command)
-end
-
-function _G.gen_use()
-  vimfilt("gen_use '%:p'")
-end
-
-function _G.rubocop(flag)
-  flag = flag and flag or "a"
-  vim.cmd(_wslprefix() .. "rubocop -" .. flag .. ' ' .. "'%:p'")
-end
-
-function _G.mktags()
-  vim.cmd(_wslprefix() .. "devtool mktags")
-end
-
--- New editor window on same file
-function _G.new_editor()
-  vim.cmd(_wslprefix() .. "neovide '%:p'")
-end
-
--- Run the external filter vimfilt.rb for range
-function _G.vimfilt(args)
-  vim.cmd(_wslprefix(1) .. "vimfilt.rb " .. args)
-end
-
-EOF
-
-map  ,fH  :lua vim.cmd(_wslprefix(0) .. "vimfilt.rb file_template '%:p'")<CR>
-map  ,#   $50a 51\|C#
-vmap ,a1c :lua vimfilt("align_column 1")<CR>
-vmap ,a2c :lua vimfilt("align_column 2")<CR>
-vmap ,a3c :lua vimfilt("align_column 3")<CR>
-vmap ,a3c :lua vimfilt("align_column 4")<CR>
-vmap ,ac  :lua vimfilt("align_column")<CR>
-vmap ,ae  :lua vimfilt("align_equal")<CR>
-vmap ,cb  :lua vimfilt("cbar")<CR>
-vmap ,cf  :lua vimfilt("fmt_cmt")<CR>
-vmap ,fh  :lua vimfilt("func_header")<CR>
-
-endif
 
 " Map alt-z to fold alternate
 map <BS>   za
@@ -280,21 +165,15 @@ map <M-BS> zR
 map <Up>   gk
 map <Down> gj
 
-function! MapBoth(keys, rhs)
-  execute 'nmap' a:keys a:rhs
-  execute 'imap' a:keys '<C-o>' . a:rhs
-endfunction
-
-" Tab selection mapping
-call MapBoth('<M-1>', ':WintabsGo 1<CR>')
-call MapBoth('<M-2>', ':WintabsGo 2<CR>')
-call MapBoth('<M-3>', ':WintabsGo 3<CR>')
-call MapBoth('<M-4>', ':WintabsGo 4<CR>')
-call MapBoth('<M-5>', ':WintabsGo 5<CR>')
-call MapBoth('<M-6>', ':WintabsGo 6<CR>')
-call MapBoth('<M-7>', ':WintabsGo 7<CR>')
-call MapBoth('<M-8>', ':WintabsGo 8<CR>')
-call MapBoth('<M-9>', ':WintabsGo 9<CR>')
+call MapMeta('1', ':WintabsGo 1<CR>')
+call MapMeta('2', ':WintabsGo 2<CR>')
+call MapMeta('3', ':WintabsGo 3<CR>')
+call MapMeta('4', ':WintabsGo 4<CR>')
+call MapMeta('5', ':WintabsGo 5<CR>')
+call MapMeta('6', ':WintabsGo 6<CR>')
+call MapMeta('7', ':WintabsGo 7<CR>')
+call MapMeta('8', ':WintabsGo 8<CR>')
+call MapMeta('9', ':WintabsGo 9<CR>')
 
 syntax on
 
@@ -333,16 +212,17 @@ hi Comment guifg=#AAFFAA
 
 set foldmethod=syntax
 
+" register + is primary cut/paste
 if has("windows")
   " yank/put support in windows
-  map     <C-c>           "+y
-  map     <C-P>           "+p
+  map     <C-y>           "+y
+  map     <C-p>           "+p
 else
   " Only for GUI. For Non-GUI, input is controlled by terminal program
   if has("gui_running")
     "Copy
-    nnoremap <C-c> "+y  " Normal (must follow with an operator)
-    xnoremap <C-c> "+y  " Visual
+    nnoremap <C-y> "+y  " Normal (must follow with an operator)
+    xnoremap <C-y> "+y  " Visual
 
     "Paste
     noremap! <C-p> "+p
@@ -383,63 +263,17 @@ endif
 noremap <C-=> :call AdjustFontSize(1)<CR>
 noremap <C--> :call AdjustFontSize(-1)<CR>
 
-augroup MyVimEnter
-  autocmd!
-  autocmd VimEnter * if exists("g:NERDTree")
-  autocmd VimEnter *   nnoremap <C-n> :NERDTree<CR>
-  autocmd VimEnter *   nnoremap <C-d> :NERDTreeToggle<CR>
-  autocmd VimEnter *   command! -nargs=1 Sdir %bd | cd ../<args> | NERDTree | wincmd p
-  autocmd VimEnter * endif
-augroup END
 
-" If current file is on WSL FS, exec bit is cleared.  So we have to reset
-" blindly for now
-if has("nvim") && !has("unix")
-  lua << EOF
-    -- Windows based edit will remove the exec bit on WSL.  Have to fix it
-    function _G.fix_mode()
-      local path = vim.fn.expand('%:p')
-      local fext = path:match("^.+%.(.*)$")
-      if path:find('wsl.localhost') and
-            \ (fext == '' or fext == 'rb') then
-        wsl("chmod +x '" .. path .. "'")
-      end
-    end
-EOF
+if has("nvim")
+  let g:nv_init=g:config_path . "/init.nvim"
+  call SourceIfExists(g:nv_init)
 
-  autocmd BufWritePost * lua fix_mode()
+  " This must be here because init.nvim does not reset autocmd
+  " so would accumulate this definition
+  "
+  if !has("unix")
+    autocmd BufWritePost * lua fix_mode()
+  endif
 endif
 
-if match(&runtimepath, 'coc') != -1
-  " Coc extensions
-  let g:coc_global_extensions = ['coc-tsserver']
-
-  " Remap keys for applying codeAction to the current line.
-  nmap <leader>ac  <Plug>(coc-codeaction)
-  " Apply AutoFix to problem on the current line.
-  nmap <leader>qf  <Plug>(coc-fix-current)
-
-  " GoTo code navigation.
-  nmap <silent> gd <Plug>(coc-definition)
-  nmap <silent> gy <Plug>(coc-type-definition)
-  nmap <silent> gi <Plug>(coc-implementation)
-  nmap <silent> gr <Plug>(coc-references)
-endif
-
-lua << EOF
-  vim.g.firenvim_config = {
-      globalSettings = { alt = "all" },
-      localSettings = {
-          [".*"] = {
-              cmdline  = "neovim",
-              content  = "text",
-              priority = 0,
-              selector = "textarea",
-              takeover = "never"
-          }
-      }
-  }
-EOF
-
-"echo "Init file loaded from " . g:init_file
-
+"echo "Loading " . g:init_file

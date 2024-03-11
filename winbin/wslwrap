@@ -14,7 +14,21 @@
 
 # trap "rc=$?; /bin/rm $TMPDIR/wsl-$$-* 2>/dev/null; exit $rc" INT QUIT KILL TERM EXIT HUP
 
+[ "$OLDPWD" ] && cd $OLDPWD
+while getopts :d:-: i; do
+  if [[ "$i" = "-" ]]; then
+    i="${OPTARG%%:*}" OPTARG="${OPTARG#$i:}" i=-$i
+  fi
+  case $i in
+  d|-dir) cd $(F_toWslPath "$OPTARG") ;;
+  *)      F_usageOper $oper ;;
+  esac
+done
+let i=$OPTIND-1; shift $i; OPTIND=0
+
+[[ $# -gt 0 ]] || F_usageOper $oper
 cmd=$1
+
 shift
 
 newargs=

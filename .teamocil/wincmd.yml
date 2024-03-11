@@ -1,0 +1,14 @@
+name: wincmd
+windows:
+  - name: cmd
+    layout: even-horizontal
+    panes:
+      - exec cmd.exe
+  - name: powershell
+    layout: even-horizontal
+    panes:
+      - exec powershell.exe
+  - name: pwsh
+    layout: even-horizontal
+    panes:
+      - exec pwsh.exe

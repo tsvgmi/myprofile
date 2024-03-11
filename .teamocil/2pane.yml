@@ -1,7 +1,9 @@
+name: 2pane
 windows:
   - name: sample-two-panes
-    root: ~/SRC/hacauto
-    layout: even-horizontal
+    root: ~/SRC
+    layout: even-vertical
     panes:
-      - git status
-      - pwd
+      - commands:
+      - commands:
+

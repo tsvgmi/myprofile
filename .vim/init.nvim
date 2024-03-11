@@ -1,0 +1,152 @@
+"######################################################################
+" File:        /home/tvuong/.config/nvim/init.nvim
+" Author:      tvuong
+" Created:     2024-03-12 10:02:26 -0700
+" Copyright (c) Thien H. Vuong
+" Description:
+" $Id$
+"######################################################################
+
+execute 'autocmd! BufWritePost ' . g:nv_init . ' source ' . g:nv_init
+map ,2vv :execute "edit "   . g:nv_init<CR>
+map ,2vs :execute "source " . g:nv_init<CR>
+
+"============================================================
+lua << EOF
+function _G.has(feature)
+  return vim.api.nvim_eval("has('" .. feature .. "')")
+end
+
+-- Build range prefix for vim command
+function _G._ranger(with_range)
+  local firstline, lastline, result
+
+  if with_range == 0 then
+    return "0r"
+  elseif with_range == 9 then
+    return "0r"
+  elseif with_range == 1 then
+    firstline = vim.api.nvim_buf_get_mark(0, "<")[1]
+    lastline  = vim.api.nvim_buf_get_mark(0, ">")[1]
+    return string.format("%d,%d", firstline, lastline)
+  end
+  return ""
+end
+
+-- Run an external Linux command after switching to local dir
+function _G.wsl(command, with_range)
+  local result, cwd
+  prefix = _ranger(with_range) .. "!"
+  --
+  -- Note since vim call cmd.exe to run and cmd.exe does not
+  -- recognize UNC path, if I'm on a WSL path, current dir won't be
+  -- passed correctly so I have to send along
+  --
+  if has("unix") <= 0 then
+    cwd    = vim.fn.getcwd()
+    prefix = prefix .. "wsl ~/winbin/wslwrap -d '" .. cwd .. "' "
+  end
+
+  vim.cmd(prefix .. command)
+end
+
+function _G.rubocop(flag)
+  flag = flag or "a"
+  wsl("rubocop -" .. flag .. ' ' .. "'%:p'")
+end
+
+function _G.mktags()
+  wsl("devtool mktags")
+end
+
+-- New editor window on same file
+function _G.new_editor()
+  wsl("winwrap neovide '%:p'")
+end
+
+-- Run the external filter vimfilt.rb for range
+function _G.vimfilt(args, with_range)
+  with_range = with_range or 1
+  wsl("vimfilt.rb " .. args, with_range)
+end
+
+function _G.gen_use()
+  vimfilt("gen_use '%:p'")
+end
+EOF
+
+map  ,fH  :lua vimfilt("file_template '%:p'", 0)<CR>
+map  ,#   $50a 51\|C#
+vmap ,a1c :lua vimfilt("align_column 1")<CR>
+vmap ,a2c :lua vimfilt("align_column 2")<CR>
+vmap ,a3c :lua vimfilt("align_column 3")<CR>
+vmap ,a3c :lua vimfilt("align_column 4")<CR>
+vmap ,ac  :lua vimfilt("align_column")<CR>
+vmap ,ae  :lua vimfilt("align_equal")<CR>
+vmap ,cb  :lua vimfilt("cbar")<CR>
+vmap ,cf  :lua vimfilt("fmt_cmt")<CR>
+vmap ,fh  :lua vimfilt("func_header")<CR>
+
+"augroup MyVimEnter
+"  autocmd!
+"  autocmd VimEnter * if exists("g:NERDTree")
+"  autocmd VimEnter *   echo "Enable mapping for NERDTree"
+"  autocmd VimEnter *   nnoremap <C-n> :NERDTree<CR>
+"  autocmd VimEnter *   nnoremap <C-d> :NERDTreeToggle<CR>
+"  autocmd VimEnter *   command! -nargs=1 Sdir %bd | cd ../<args> | NERDTree | wincmd p
+"  autocmd VimEnter * endif
+"augroup END
+
+" If current file is on WSL FS, exec bit is cleared.  So we have to reset
+" blindly for now
+if !has("unix")
+  lua << EOF
+    -- Windows based edit will remove the exec bit on WSL.  Have to fix it
+    function _G.fix_mode()
+      local path = vim.fn.expand('%:p')
+      local base = vim.fn.expand('%')
+      local fext = base:match("^.+%.(.*)$")
+      if path:find('wsl.localhost') and
+            \ (fext == nil or fext == 'rb') then
+        wsl("chmod +x '" .. path .. "'")
+      end
+    end
+EOF
+endif
+
+if match(&runtimepath, 'coc') != -1
+  " Coc extensions
+  let g:coc_global_extensions = ['coc-tsserver']
+
+  " Remap keys for applying codeAction to the current line.
+  nmap <leader>ac  <Plug>(coc-codeaction)
+  " Apply AutoFix to problem on the current line.
+  nmap <leader>qf  <Plug>(coc-fix-current)
+
+  " GoTo code navigation.
+  nmap <silent> gd <Plug>(coc-definition)
+  nmap <silent> gy <Plug>(coc-type-definition)
+  nmap <silent> gi <Plug>(coc-implementation)
+  nmap <silent> gr <Plug>(coc-references)
+
+  inoremap <silent><expr> <TAB> coc#pum#visible() ? coc#pum#confirm() : "\<C-y>"
+endif
+
+lua << EOF
+
+  -- Configure for edit with nvim in browser textarea
+  vim.g.firenvim_config = {
+      globalSettings = { alt = "all" },
+      localSettings = {
+          [".*"] = {
+              cmdline  = "neovim",
+              content  = "text",
+              priority = 0,
+              selector = "textarea",
+              takeover = "never"
+          }
+      }
+  }
+EOF
+
+"echo "Loading " . g:nv_init

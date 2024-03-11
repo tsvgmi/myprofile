@@ -1,13 +1,13 @@
 #!/bin/env bash
 . ${0%/*}/../etc/tool.env
-############################################################################
+####################################################################
 # File:        /home/tvuong/bin/mount_usb
 # Author:      tvuong
 # Created:     2024-02-17 16:39:15 -0800
 # Copyright (c) Thien H Vuong - 2024.
 # Description:
 # $Id$
-############################################################################
+####################################################################
 
 oper=$1; shift
 case $oper in
@@ -26,6 +26,17 @@ case $oper in
     else
       F_logMsg E "weston (x-service) not found"
     fi
+    ;;
+
+  #@Use: fix-winexe
+  #@Des: Enable running windows exe again
+  #
+  # There are racing condition at startup which cause this to
+  # go awy resulting in format error when running exe file
+  fix-winexe)
+    echo ":WSLInterop:M::MZ::/init:PF" | \
+    sudo tee /usr/lib/binfmt.d/WSLInterop.conf
+    sudo systemctl restart systemd-binfmt
     ;;
 
   *)

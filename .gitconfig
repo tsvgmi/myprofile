@@ -1,0 +1,36 @@
+[diff]
+    tool = vimdiff
+[difftool]
+    prompt = false
+	trustExitCode = true
+[user]
+	email = thienv@gmail.com
+	name = thienv
+[credential]
+	helper = cache --timeout 3600000
+[core]
+	pager = less -X -F
+	pager = less -F -X
+	pager = less -R
+	pager = less -R -F
+	pager = less -R -F -X
+	editor = nvim
+[oh-my-zsh]
+	hide-dirty = 1
+	hide-status = 1
+[commit]
+	gpgSign = false
+[pull]
+	rebase = false
+[gui]
+	pruneduringfetch = true
+[smartgit "submodule"]
+	fetchalways = false
+	update = true
+	initializenew = true
+[push]
+	recurseSubmodules = check
+[status]
+	showUntrackedFiles = no
+[init]
+	defaultBranch = main

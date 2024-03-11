@@ -1,3 +1,4 @@
+name: MainDev
 windows:
   - name:   Smule
     root:   ~/SRC/hacauto
@@ -5,7 +6,7 @@ windows:
     focus:  true
     panes:
       - commands:
-          - xrun smuleauto.rb play THV_13
+          - bin/smuleauto.rb play THV_13
         focus: true
       - commands:
           - tail -f smule.log &
@@ -23,20 +24,6 @@ windows:
     panes:
       - commands:
       - commands:
-  - name: react-win
-    root: ~/winhome/SRC
-    layout: even-vertical
-    panes:
-      - commands:
-          - exec powershell.exe
-      - commands:
-          - exec powershell.exe
-#  - name: VUE
-#    root: ~/SRC/vite-ruby
-#    layout: even-vertical
-#    panes:
-#      - commands:
-#      - commands:
   - name: Kubenetes
     root: ~/SRC/Kube
     layout: even-vertical

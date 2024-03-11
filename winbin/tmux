@@ -1,0 +1,82 @@
+#!/bin/env bash
+. ${0%/*}/app.env
+####################################################################
+# File:        /home/tvuong/bin/mount_usb
+# Author:      tvuong
+# Created:     2024-02-17 16:39:15 -0800
+# Copyright (c) Thien H Vuong - 2024.
+# Description:
+# $Id$
+####################################################################
+
+#==================================================================
+# Function:    [start_ocil]
+# Description: .
+#==================================================================
+function start_ocil {
+  typeset session=$1
+  typeset shell=$2
+
+  if ! tmux list-sessions | grep $session; then
+    tmux new-session -d -s $session
+    [ "$shell" ] && tmux set -t $session default-command $shell
+    tmux send-keys -t $session "exec teamocil $session" C-m
+  fi
+  set -x
+  exec tmux attach -t $session -d
+}
+
+shell=
+while getopts :hlsS:-: i; do
+  if [[ "$i" = "-" ]]; then
+    i="${OPTARG%%:*}" OPTARG="${OPTARG#$i:}" i=-$i
+  fi
+  case $i in
+  h|-help)
+    exec emman.rb format $0 | cat ;;
+  l|-list)
+    cd ~/.teamocil
+    exec ls *.yml ;;
+  s|-session)
+    exec tmux list-session ;;
+  S|-shell)
+    shell=$OPTARG ;;
+  *)
+    F_usageOper $oper ;;
+  esac
+done
+let i=$OPTIND-1; shift $i; OPTIND=0
+
+cd
+if [ $# -gt 0 ]; then
+  session=$1
+  sfile=~/.teamocil/$session.yml
+  [[ -f "$sfile" ]] || F_abort "Session ${session} is not defined - $sfile"
+  start_ocil $session $shell
+  exit 0
+fi
+
+exec tmux
+exit 0
+
+__END__
+
+=head1 NAME
+tmux - Running tmux/teamocil session
+
+=head1 SYNOPSIS
+
+  * tmux [--help|--list|--session] [--shell=] [session-name]
+
+=head1 DESCRIPTION
+
+teamocil allows open tmux with preset windows/tabs to start working.
+This script allow starting directly from windows including using
+tmux to open windows cmd and/or powershell
+
+  --shell=  Default shell to open (could be cmd.exe, etc..)
+  --list    List available sessions
+  --session List existing tmux sessions
+
+=head1 OPERATIONS
+
