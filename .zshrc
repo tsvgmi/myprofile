@@ -124,13 +124,17 @@ zstyle ':vcs_info:git:*' formats '%b'
 
 export PROMPT='%F{yellow}%h %y %1d%f [${vcs_info_msg_0_}]%# '
 
-source ~/.aliases
+[ -f ~/.aliases ] && source ~/.aliases
 
 # For miniconda
-eval "$(/home/tvuong/miniconda3/bin/conda shell.zsh hook)"
+if [ -x ~/miniconda3/bin/conda ]; then
+  eval "$(~/miniconda3/bin/conda shell.zsh hook)"
+fi
 
 # For rbenv
-eval "$(~/.rbenv/bin/rbenv init - zsh)"
+if [ -x ~/.rbenv/bin/rbenv ]; then
+  eval "$(~/.rbenv/bin/rbenv init - zsh)"
+fi
 
 [ "$TMUX_PANE" -o "$VSCODE_INJECTION" ] || cd
 
@@ -148,6 +152,8 @@ if [ -d ~/PKG/spark ]; then
   export PYSPARK_DRIVER_PYTHON_OPTS='notebook'
   PATH=$PATH:$SPARK_HOME/bin
 fi
+
+[ -d ~/.tool ] || mkdir ~/.tool
 
 export WSL_UTF8=1
 export WSLENV=$WSLENV:WSL_UTF8
